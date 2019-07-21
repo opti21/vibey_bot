@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+        <title>Sweet Bot</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+    </head>
+    <body>
+    <div class="se-pre-con"></div>
+    <div class="container">
+        <h1>Welcome!</h1>
+        <h2>Hey there <%= feUser.display_name %> wassup!?</h2>
+        
+        <table>
+
+        </table>
+       
+    </div>
+    
+    <script src="vendor/jquery/jquery.js"></script>
+    <script src="js/jquery-ui.min.js"></script>
+    <script src="js/velocity.min.js"></script>
+    <script src="js/jquery.animateNumber.min.js"></script>
+
+    <span id="twitchID"><%= feUser.display_name %></span>
+
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script src="js/script.js"></script>
+    
+    </body>
+</html>
