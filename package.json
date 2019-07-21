@@ -1,5 +1,5 @@
 {
-  "name": "chillbot",
+  "name": "vibey_bot",
   "version": "1.0.0",
   "description": "Just a sweet dashboard to see your live twitch stats",
   "main": "server.js",
