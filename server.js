@@ -106,9 +106,6 @@ app.get('/dashboard', (req, res) => {
 	}
 });
 
-app.post("/webhooks/github", function (req, res) {
-
-})
 
 function passValue(value) {
   return 'JSON.parse(Base64.decode("' + new Buffer(JSON.stringify(value)).toString('base64') + '"))'
