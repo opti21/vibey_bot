@@ -161,8 +161,8 @@ botclient.on('chat', (channel, userstate, message, self) => {
 		
 	}
 
-	if (message[0] === '!whosthechillest') {
-		botclient.say(twitchchan[0])
+	if (message[0] === '!whoschill') {
+		botclient.say(twitchchan[0], `Billy is the chill`)
 	}
 })
 
