@@ -10,14 +10,29 @@
         <link rel="stylesheet" href="css/bootstrap.min.css">
     </head>
     <body>
-    <div class="se-pre-con"></div>
     <div class="container">
         <h1>Welcome!</h1>
-        <h2>Hey there <%= feUser.display_name %> wassup!?</h2>
+        <h2>Song Requests</h2>
         
-        <table>
-
+        <table id="sr-table" class="display">
+            <thead>
+                <tr>
+                    <th>Track Requested</th>
+                    <th>Requested By:</th>
+                    <th>Edit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% requests.forEach(request => { %>
+                    <tr>
+                        <td>Row 1 Data 1</td>
+                        <td>Row 1 Data 2</td>
+                        <td></td>
+                    </tr>
+                <% }) %>
+            </tbody>
         </table>
+            
        
     </div>
     
@@ -30,6 +45,14 @@
 
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     <script src="js/script.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css"/>
+    <script type="text/javascript" src="DataTables/datatables.min.js"></script>
+    <script>
+        $(document).ready( function () {
+            $('#sr-table').DataTable();
+        } );
+    </script>
     
     </body>
 </html>
