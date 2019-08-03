@@ -24,9 +24,9 @@ channel.bind('sr-event', function(data) {
     // chatMessageId = makeid(5)
     srElement.setAttribute('class', 'song-request')
     srElement.innerHTML = `
-      <td><a href="${data.link}">${data.track} - ${data.artist}</a> <a href="${data.link}">Spotify Link</a></td>
+      <td><a href="${data.link}">${data.track} - ${data.artist}</a> <a id="spotify" href="${data.uri}"><i class="fab fa-spotify"></i></a></td>
       <td>${data.reqBy}</td>
-      <td> <button class="delete btn btn-danger" data-srID="${data.id}"> <i class="fas fa-minus-circle"></i> </button> </td>
+      <td> <button class="delete btn btn-danger btn-sm" data-srID="${data.id}"> <i class="fas fa-minus-circle"></i> </button> </td>
     `
     srContainer.append(srElement)
   } catch (err) {
@@ -34,11 +34,10 @@ channel.bind('sr-event', function(data) {
   }
 });
 
-socket.on('new-request' , (reqBy, track, artist, uri)  => {
-  
-  socket.on('emit-test', emit => {
-    console.log(`${emit}`)
-  })
-  
-})
-
+$(function(){
+  $("tbody").each(function(elem,index){
+    var arr = $.makeArray($("tr",this).detach());
+    arr.reverse();
+      $(this).append(arr);
+  });
+});
