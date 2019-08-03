@@ -10,10 +10,6 @@
 	background: url(../img/Preloader_3.gif) center no-repeat #fff;
 }
 
-#chat-col  {
-    height: 400px !important;
-    width: 500px !important;
-    overflow: scroll;
-    display:flex;
-    flex-direction:column-reverse;
+#spotify {
+	color: #1DB954
 }

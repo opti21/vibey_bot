@@ -10,6 +10,37 @@ const twitchStrategy = require('passport-twitch-new').Strategy
 const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser')
 const cookieSession = require('cookie-session')
+const spotifyUri = require('spotify-uri');
+const Spotify = require('node-spotify-api');
+const YouTube = require('simple-youtube-api');
+const youtube = new YouTube(config.ytAPI);
+const moment = require('moment');
+const Discord = require('discord.js');
+var Pusher = require('pusher');
+
+var channels_client = new Pusher({
+  appId: '826343',
+  key: '94254303a6a5048bf191',
+  secret: '66b39f01edb0769876cf',
+  cluster: 'us2',
+  useTLS: true
+});
+
+
+//Discord
+// const discord = new Discord.Client();
+
+// discord.once('ready', () => {
+// 	console.log('Ready!');
+// });
+
+// discord.login(config.discord);
+
+//Spotify Credentials
+const spotify = new Spotify({
+  id: config.spID,
+  secret: config.spSecret
+});
 
 app.set('trust proxy', 1)
 app.set('views', './views')
@@ -32,7 +63,7 @@ const User = require('./models/users')
 passport.use(new twitchStrategy({
 	clientID: config.twitchClientID,
 	clientSecret: config.twitchSecret,
-	callbackURL: `http://${config.appIP}:3000/auth/twitch/callback`,
+	callbackURL: `http://${config.appURL}/auth/twitch/callback`,
 	scope: "user:read:email"
 },
 function(accessToken, refreshToken, profile, done) {
@@ -85,17 +116,21 @@ app.get('/logout', function (req, res){
   res.redirect('/');
 });
 
-app.get('/dashboard', (req, res) => {
+app.get('/dashboard', async (req, res) => {
 	try {
 		if (req.session && req.session.passport.user) {
-			User.findOne({ twitch_id: req.session.passport.user.id }, (err, user) => {
-				if (!user) {
-					res.redirect('/login');
-				} else {
+			await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
+				//TODO: move admins to .env
+				var admins = ['opti_21', 'veryhandsomebilly']
+				var feSongRequests = await SongRequest.find();
+				if (user.username ===  admins[0] || admins[1]) {
 					// expose the user info to the template
 					res.render('dashboard', {
-						feUser: user
+						feUser: user.username,
+						requests: feSongRequests
 					})
+				} else {
+					res.redirect('/login');
 				}
 			})
 		} else {
@@ -117,7 +152,7 @@ const tmi = require("tmi.js");
 const twitchclientid = process.env.TWITCH_CLIENTID;
 const twitchuser = process.env.TWITCH_USER;
 const twitchpass = process.env.TWITCH_PASS;
-const twitchchan = ['veryhandsomebilly'];
+const twitchchan = ['opti_21'];
 
 const tmiOptions = {
     options: {
@@ -146,7 +181,8 @@ io.on('disconnect', (socket) => {
 
 io.on('connection', (socket) => {
 	io.removeAllListeners();
-  console.log('socket connected ' + socket.id)
+	console.log('socket connected' + socket.id)
+	
 });
 
 // Bot says hello on connect
@@ -154,15 +190,61 @@ io.on('connection', (socket) => {
 //   botclient.say(twitchchan[0], `Hey Chat! Send me those vibes`)
 // });
 
+// Regex
+var URLRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
+var spRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:track\/|\?uri=spotify:track:)((\w|-){22})/;
+var ytRegex = /(?:https?:\/\/)?(?:(?:(?:www\.?)?youtube\.com(?:\/(?:(?:watch\?.*?(v=[^&\s]+).*)|(?:v(\/.*))|(channel\/.+)|(?:user\/(.+))|(?:results\?(search_query=.+))))?)|(?:youtu\.be(\/.*)?))/;
 
+// Song Requests
+const SongRequest = require('./models/songRequests')
 botclient.on('chat', (channel, userstate, message, self) => {
 	var message = message.trim().split(" ");
 	if (message[0] === '!sr' || message[0] === '!songrequest') {
-		
-	}
+		if (URLRegex.test(message[1])) {
+			if (spRegex.test(message[1])) {
+				var spID = spotifyUri.parse(message[1])
+				var spURI = spotifyUri.formatURI(message[1])
+				spotify
+					.request(`https://api.spotify.com/v1/tracks/${spID.id}`)
+					.then(function(data) {
+						var newSpotSR = new SongRequest ({track:{name: data.name, artist: data.artists[0].name, link: message[1], uri: spURI}, requestedBy: userstate.username, timeOfReq: moment.utc()});
+						newSpotSR.save()
+							.then((doc) => {
+								botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist}`);
+								// Real time push to front end
+								channels_client.trigger('sr-channel', 'sr-event', {
+									"reqBy": `${doc.requestedBy}`,
+									"track": `${doc.track[0].name}`,
+									"artist": `${doc.track[0].artist}`,
+									"uri": `${doc.track[0].uri}`,
+									"link": `${doc.track[0].link}`
+								});
+							})
+							.catch(err => {console.error(err)});
+					})
+					.catch(function(err) {
+						console.error('Error occurred: ' + err); 
+					});
+				
+			}
 
-	if (message[0] === '!whoschill') {
-		botclient.say(twitchchan[0], `Chat is the chill`)
+			if (ytRegex.test(message[1])) {
+				youtube.getVideo(message[1])
+					.then(video => {
+						var newYTSR = new SongRequest ({track:{name: video.title, link: message[1]}, requestedBy: userstate.username, timeOfReq: moment.utc()});
+						newYTSR.save()
+							.then((doc) => {botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name}`);})
+							.catch(err => {console.error(err)});
+					})
+					.catch(err => {
+						botclient.say(twitchchan[0], `The correct format is !sr URL`)
+					});
+			}
+		} else {
+			// TODO: Build request for regular text search
+			botclient.say(twitchchan[0], `The correct format is !sr URL`)
+			
+		}
 	}
 })
 

@@ -6,18 +6,60 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+        
         <link rel="stylesheet" href="css/style.css">
         <link rel="stylesheet" href="css/bootstrap.min.css">
+        <style>
+            body {
+                color: white;
+                background-color: #2d3436;
+            }
+        </style>
     </head>
     <body>
-    <div class="se-pre-con"></div>
     <div class="container">
-        <h1>Welcome!</h1>
-        <h2>Hey there <%= feUser.display_name %> wassup!?</h2>
-        
-        <table>
+        <h1>Vibey Requests!</h1>
 
+        <!-- <h2>Current Mix</h2>
+        <table id="sr-table" class="table table-dark">
+            <thead>
+                <tr>
+                    <th scope="col">Track Requested</th>
+                    <th scope="col">Requested By:</th>
+                    <th scope="col">Edit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% requests.forEach(request => { %>
+                    <tr>
+                        <td><a href="<%= request.track[0].uri %>"><%= request.track[0].name %></a></td>
+                        <td><%= request.requestedBy %></td>
+                        <td> <button class="delete btn btn-danger" id="<%= request.id %>" data-sectionName=""> <i class="fas fa-minus-circle"></i> </button> </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table> -->
+        
+         <h2>Song Requests</h2>
+        <table id="sr-table" class="table table-dark table-hover table-sm">
+            <thead>
+                <tr>
+                    <th scope="col">Track Requested</th>
+                    <th scope="col">Requested By:</th>
+                    <th scope="col">Edit</th>
+                </tr>
+            </thead>
+            <tbody class="" id="srContainer">
+                <% requests.forEach(request => { %>
+                    <tr class="">
+                        <td><a href="<%= request.track[0].link %>"><%= request.track[0].name %></a> <a id="spotify" href="<%= request.track[0].uri %>"><i class="fab fa-spotify"></i></a></td>
+                        <td><%= request.requestedBy %></td>
+                        <td> <button class="delete btn btn-danger btn-sm" id="<%= request.id %>" data-sectionName=""> <i class="fas fa-minus-circle"></i> </button> </td>
+                    </tr>
+                <% }) %>
+            </tbody>
         </table>
+            
        
     </div>
     
@@ -28,8 +70,17 @@
 
     <span id="twitchID"><%= feUser.display_name %></span>
 
-    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <!-- <script src="http://localhost:3000/socket.io/socket.io.js"></script> -->
+    <script src="https://js.pusher.com/4.4/pusher.min.js"></script>
     <script src="js/script.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css"/>
+    <script type="text/javascript" src="DataTables/datatables.min.js"></script>
+    <script>
+        // $(document).ready( function () {
+        //     $('#sr-table').DataTable();
+        // } );
+    </script>
     
     </body>
 </html>
