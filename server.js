@@ -16,16 +16,25 @@ const YouTube = require('simple-youtube-api');
 const youtube = new YouTube(config.ytAPI);
 const moment = require('moment');
 const Discord = require('discord.js');
+var Pusher = require('pusher');
+
+var channels_client = new Pusher({
+  appId: '826343',
+  key: '94254303a6a5048bf191',
+  secret: '66b39f01edb0769876cf',
+  cluster: 'us2',
+  useTLS: true
+});
 
 
 //Discord
-const discord = new Discord.Client();
+// const discord = new Discord.Client();
 
 // discord.once('ready', () => {
 // 	console.log('Ready!');
 // });
 
-discord.login(config.discord);
+// discord.login(config.discord);
 
 //Spotify Credentials
 const spotify = new Spotify({
@@ -107,17 +116,18 @@ app.get('/logout', function (req, res){
   res.redirect('/');
 });
 
-app.get('/dashboard', (req, res) => {
+app.get('/dashboard', async (req, res) => {
 	try {
 		if (req.session && req.session.passport.user) {
-			User.findOne({ twitch_id: req.session.passport.user.id }, (err, user) => {
+			await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
 				//TODO: move admins to .env
 				var admins = ['opti_21', 'veryhandsomebilly']
+				var feSongRequests = await SongRequest.find();
 				if (user.username ===  admins[0] || admins[1]) {
 					// expose the user info to the template
 					res.render('dashboard', {
 						feUser: user.username,
-						requests: reuqests
+						requests: feSongRequests
 					})
 				} else {
 					res.redirect('/login');
@@ -170,7 +180,8 @@ io.on('disconnect', (socket) => {
 
 io.on('connection', (socket) => {
 	io.removeAllListeners();
-  console.log('socket connected' + socket.id)
+	console.log('socket connected' + socket.id)
+	
 });
 
 // Bot says hello on connect
@@ -197,7 +208,17 @@ botclient.on('chat', (channel, userstate, message, self) => {
 					.then(function(data) {
 						var newSpotSR = new SongRequest ({track:{name: data.name, artist: data.artists[0].name, link: message[1], uri: spURI}, requestedBy: userstate.username, timeOfReq: moment.utc()});
 						newSpotSR.save()
-							.then((doc) => {botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist}`);})
+							.then((doc) => {
+								botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist}`);
+								// Real time push to front end
+								channels_client.trigger('sr-channel', 'sr-event', {
+									"reqBy": `${doc.requestedBy}`,
+									"track": `${doc.track[0].name}`,
+									"artist": `${doc.track[0].artist}`,
+									"uri": `${doc.track[0].uri}`,
+									"link": `${doc.track[0].link}`
+								});
+							})
 							.catch(err => {console.error(err)});
 					})
 					.catch(function(err) {
@@ -221,12 +242,13 @@ botclient.on('chat', (channel, userstate, message, self) => {
 		} else {
 			// TODO: Build request for regular text search
 			botclient.say(twitchchan[0], `The correct format is !sr URL`)
+			
 		}
 	}
 
-	if (message[0] === '!whosthechillest') {
-		botclient.say(twitchchan[0])
-	}
+	// if (message[0] === '!whosthechillest') {
+	// 	botclient.say(twitchchan[0])
+	// }
 })
 
 
