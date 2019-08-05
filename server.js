@@ -67,17 +67,24 @@ passport.use(new twitchStrategy({
 	scope: "user:read:email"
 },
 function(accessToken, refreshToken, profile, done) {
-	let user = new User ({
-		twitch_id: profile.id,
-		username: profile.login,
-		display_name: profile.display_name,
-		email: profile.email,
-		profile_pic_url: profile.profile_image_url,
-		provider: 'twitch',
-		twitch: profile
-	})
-	user.save();
-	return done(null, profile)
+	var UserSearch = User.findOne({ twitch_id: profile.id }).exec();
+	if (!UserSearch) {
+		let user = new User ({
+			twitch_id: profile.id,
+			username: profile.login,
+			display_name: profile.display_name,
+			email: profile.email,
+			profile_pic_url: profile.profile_image_url,
+			provider: 'twitch',
+			twitch: profile
+		})
+		user.save();
+		return done(null, profile)
+	} else {
+		return done(null, profile)
+	}
+	
+	
 }
 ));
 
