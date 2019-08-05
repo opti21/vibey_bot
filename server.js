@@ -126,20 +126,20 @@ app.get('/logout', function (req, res){
 app.get('/dashboard', async (req, res) => {
 	try {
 		if (req.session && req.session.passport.user) {
-			await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
+			var currUser = User.findOne({ twitch_id: req.session.passport.user.id }).exec();
+			console.log(`Current User: ` + currUser)
 				//TODO: move admins to .env
 				var admins = ['opti_21', 'veryhandsomebilly']
 				var feSongRequests = await SongRequest.find();
-				if (user.username ===  admins[0] || admins[1]) {
+				if (currUser.username ===  admins[0] || admins[1]) {
 					// expose the user info to the template
 					res.render('dashboard', {
-						feUser: user.username,
+						feUser: currUser.username,
 						requests: feSongRequests
 					})
 				} else {
 					res.redirect('/login');
 				}
-			})
 		} else {
 			res.redirect('/login')
 		}
