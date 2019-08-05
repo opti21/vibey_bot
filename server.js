@@ -66,24 +66,24 @@ passport.use(new twitchStrategy({
 	callbackURL: `${config.appURL}/auth/twitch/callback`,
 	scope: "user:read:email"
 },
-function(accessToken, refreshToken, profile, done) {
-	var UserSearch = User.findOne({ twitch_id: profile.id }).exec();
-	if (!UserSearch) {
-		let user = new User ({
-			twitch_id: profile.id,
-			username: profile.login,
-			display_name: profile.display_name,
-			email: profile.email,
-			profile_pic_url: profile.profile_image_url,
-			provider: 'twitch',
-			twitch: profile
-		})
-		user.save();
-		return done(null, profile)
-	} else {
-		return done(null, profile)
-	}
-	
+function async(accessToken, refreshToken, profile, done) {
+	await User.findOne({ twitch_id: profile.id }, async (err, user) => {
+		if (!user) {
+			let newUser = new User ({
+				twitch_id: profile.id,
+				username: profile.login,
+				display_name: profile.display_name,
+				email: profile.email,
+				profile_pic_url: profile.profile_image_url,
+				provider: 'twitch',
+				twitch: profile
+			})
+			newUser.save();
+			return done(null, profile)
+		} else {
+			return done(null, profile)
+		}
+	})
 	
 }
 ));
@@ -126,21 +126,21 @@ app.get('/logout', function (req, res){
 app.get('/dashboard', async (req, res) => {
 	try {
 		if (req.session && req.session.passport.user) {
-			var currUser = User.findOne({ twitch_id: req.session.passport.user.id }).exec();
-			console.log(`Current User: ` + currUser.username)
-			console.log(`Current Id: ` + currUser.id)
+			await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
+				console.log(user.username + ' is logged in')
 				//TODO: move admins to .env
 				var admins = ['opti_21', 'veryhandsomebilly']
 				var feSongRequests = await SongRequest.find();
-				if (currUser.username ===  admins[0] || admins[1]) {
+				if (user.username ===  admins[0] || admins[1]) {
 					// expose the user info to the template
 					res.render('dashboard', {
-						feUser: currUser.username,
+						feUser: user.username,
 						requests: feSongRequests
 					})
 				} else {
 					res.redirect('/login');
 				}
+			})
 		} else {
 			res.redirect('/login')
 		}
@@ -148,7 +148,6 @@ app.get('/dashboard', async (req, res) => {
 		console.error(err)
 	}
 });
-
 
 function passValue(value) {
   return 'JSON.parse(Base64.decode("' + new Buffer(JSON.stringify(value)).toString('base64') + '"))'
@@ -254,6 +253,10 @@ botclient.on('chat', (channel, userstate, message, self) => {
 			
 		}
 	}
+
+	// if (message[0] === '!whosthechillest') {
+	// 	botclient.say(twitchchan[0])
+	// }
 })
 
 
