@@ -127,7 +127,8 @@ app.get('/dashboard', async (req, res) => {
 	try {
 		if (req.session && req.session.passport.user) {
 			var currUser = User.findOne({ twitch_id: req.session.passport.user.id }).exec();
-			console.log(`Current User: ` + currUser)
+			console.log(`Current User: ` + currUser.username)
+			console.log(`Current Id: ` + currUser.id)
 				//TODO: move admins to .env
 				var admins = ['opti_21', 'veryhandsomebilly']
 				var feSongRequests = await SongRequest.find();
