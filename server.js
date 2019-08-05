@@ -66,7 +66,7 @@ passport.use(new twitchStrategy({
 	callbackURL: `${config.appURL}/auth/twitch/callback`,
 	scope: "user:read:email"
 },
-function async(accessToken, refreshToken, profile, done) {
+async function(accessToken, refreshToken, profile, done) {
 	await User.findOne({ twitch_id: profile.id }, async (err, user) => {
 		if (!user) {
 			let newUser = new User ({
