@@ -63,7 +63,7 @@ const User = require('./models/users')
 passport.use(new twitchStrategy({
 	clientID: config.twitchClientID,
 	clientSecret: config.twitchSecret,
-	callbackURL: `http://${config.appURL}/auth/twitch/callback`,
+	callbackURL: `${config.appURL}/auth/twitch/callback`,
 	scope: "user:read:email"
 },
 function(accessToken, refreshToken, profile, done) {
