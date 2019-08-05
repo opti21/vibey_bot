@@ -148,6 +148,7 @@ app.get('/dashboard', async (req, res) => {
 	}
 });
 
+
 function passValue(value) {
   return 'JSON.parse(Base64.decode("' + new Buffer(JSON.stringify(value)).toString('base64') + '"))'
 }
@@ -252,10 +253,6 @@ botclient.on('chat', (channel, userstate, message, self) => {
 			
 		}
 	}
-
-	// if (message[0] === '!whosthechillest') {
-	// 	botclient.say(twitchchan[0])
-	// }
 })
 
 
