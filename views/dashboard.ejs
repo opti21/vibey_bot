@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
-        <title>Sweet Bot</title>
+        <title>Vibey Bot</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -52,7 +52,7 @@
             <tbody class="" id="srContainer">
                 <% requests.forEach(request => { %>
                     <tr class="">
-                        <td><a href="<%= request.track[0].link %>"><%= request.track[0].name %></a> <a id="spotify" href="<%= request.track[0].uri %>"><i class="fab fa-spotify"></i></a></td>
+                        <td><a href="<%= request.track[0].link %>"><%= request.track[0].name %> - <%= request.track[0].artist %></a> <a id="spotify" href="<%= request.track[0].uri %>"><i class="fab fa-spotify" data-toggle="tooltip" data-placement="top" title="Open in Spotify"></i></a></td>
                         <td><%= request.requestedBy %></td>
                         <td> <button class="delete btn btn-danger btn-sm" id="<%= request.id %>" data-sectionName=""> <i class="fas fa-minus-circle"></i> </button> </td>
                     </tr>
@@ -63,24 +63,17 @@
        
     </div>
     
+    <script src="vendor/bootstrap/js/bootstrap.bundle.js"></script>
     <script src="vendor/jquery/jquery.js"></script>
     <script src="js/jquery-ui.min.js"></script>
     <script src="js/velocity.min.js"></script>
     <script src="js/jquery.animateNumber.min.js"></script>
+    <script src="js/jquery.gsap.min.js"></script>
 
     <span id="twitchID"><%= feUser.display_name %></span>
 
-    <!-- <script src="http://localhost:3000/socket.io/socket.io.js"></script> -->
     <script src="https://js.pusher.com/4.4/pusher.min.js"></script>
     <script src="js/script.js"></script>
-
-    <link rel="stylesheet" type="text/css" href="DataTables/datatables.min.css"/>
-    <script type="text/javascript" src="DataTables/datatables.min.js"></script>
-    <script>
-        // $(document).ready( function () {
-        //     $('#sr-table').DataTable();
-        // } );
-    </script>
     
     </body>
 </html>
