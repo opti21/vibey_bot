@@ -174,7 +174,7 @@ const tmi = require("tmi.js");
 const twitchclientid = process.env.TWITCH_CLIENTID;
 const twitchuser = process.env.TWITCH_USER;
 const twitchpass = process.env.TWITCH_PASS;
-const twitchchan = ['opti_21'];
+const twitchchan = ['veryhandsomebilly'];
 
 const tmiOptions = {
     options: {
