@@ -72,21 +72,27 @@ passport.use(new twitchStrategy({
 	scope: "user:read:email"
 },
 function(accessToken, refreshToken, profile, done) {
-	var UserSearch = User.findOne({ twitch_id: profile.id }).exec();
-	if (!UserSearch) {
-		let user = new User ({
-			twitch_id: profile.id,
-			username: profile.login,
-			display_name: profile.display_name,
-			email: profile.email,
-			profile_pic_url: profile.profile_image_url,
-			provider: 'twitch',
-			twitch: profile
-		})
-		user.save();
-		return done(null, profile)
-	} else {
-		return done(null, profile)
+	try {
+		var UserSearch = User.findOne({ twitch_id: profile.id }).exec();
+		if (!UserSearch) {
+			let user = new User ({
+				twitch_id: profile.id,
+				username: profile.login,
+				display_name: profile.display_name,
+				email: profile.email,
+				profile_pic_url: profile.profile_image_url,
+				provider: 'twitch',
+				twitch: profile
+			})
+			console.log('New user created')
+			user.save();
+			return done(null, profile)
+		} else {
+			console.log('User already exists')
+			return done(null, profile)
+		}
+	} catch (err) {
+		console.error(err)
 	}
 }
 ));
@@ -124,6 +130,7 @@ app.get('/dashboard', async (req, res) => {
 		if (req.session && req.session.passport.user) {
 			await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
 				//TODO: move admin array to .env
+				console.log(user.username)
 				var admins = ['opti_21', 'veryhandsomebilly']
 				var feSongRequests = await SongRequest.find();
 				if (user.username ===  admins[0] || admins[1]) {
