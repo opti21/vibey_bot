@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const config = {
     appURL: process.env.APP_URL,
-    databaseURL: process.env.DATABASE_URL,
+    databaseURI: process.env.DATABASE_URI,
     twitchClientID: process.env.TWITCH_CLIENTID,
     twitchUser: process.env.TWITCH_USER,
     twitchPass: process.env.TWITCH_PASS,

@@ -9,7 +9,16 @@
 	z-index: 9999;
 	background: url(../img/Preloader_3.gif) center no-repeat #fff;
 }
-
-#spotify {
+#sr-container {
+	display: flex; 
+  flex-direction: column-reverse;
+}
+.spotify {
 	color: #1DB954
+}
+.youtube {
+	color: #c4302b
+}
+.srLink {
+	color: #ffffff
 }
