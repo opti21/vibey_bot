@@ -31,7 +31,7 @@ channel.bind('sr-event', function(data) {
         <td> <button class="btn btn-success btn-sm mr-3">Add to Mix</button> <button class="delete btn btn-danger btn-sm" data-srID="${data.id}" data-srName="${data.track}"> <i class="fas fa-minus-circle"></i> </button> </td>
       `
     }
-    srContainer.apend(srElement)
+    srContainer.append(srElement)
   } catch (err) {
     console.error(err)
   }
