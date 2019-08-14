@@ -71,26 +71,30 @@ passport.use(new twitchStrategy({
 	callbackURL: `${config.appURL}/auth/twitch/callback`,
 	scope: "user:read:email"
 },
-function(accessToken, refreshToken, profile, done) {
+async function(accessToken, refreshToken, profile, done) {
 	try {
-		var UserSearch = User.findOne({ twitch_id: profile.id }).exec();
-		if (!UserSearch) {
-			let user = new User ({
-				twitch_id: profile.id,
-				username: profile.login,
-				display_name: profile.display_name,
-				email: profile.email,
-				profile_pic_url: profile.profile_image_url,
-				provider: 'twitch',
-				twitch: profile
-			})
-			console.log('New user created')
-			user.save();
-			return done(null, profile)
-		} else {
-			console.log('User already exists')
-			return done(null, profile)
-		}
+		User.findOne({ twitch_id: profile.id }).exec()
+		.then(function(UserSearch){
+			console.log(UserSearch)
+			if (!UserSearch) {
+				let user = new User ({
+					twitch_id: profile.id,
+					username: profile.login,
+					display_name: profile.display_name,
+					email: profile.email,
+					profile_pic_url: profile.profile_image_url,
+					provider: 'twitch',
+					twitch: profile
+				})
+				console.log('New user created')
+				user.save();
+				return done(null, profile)
+			} else {
+				console.log('User already exists')
+				console.log(UserSearch.twitch_id)
+				return done(null, profile)
+			}
+		})
 	} catch (err) {
 		console.error(err)
 	}
