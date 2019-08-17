@@ -26,7 +26,6 @@ var channels_client = new Pusher({
   useTLS: true
 });
 
-
 //Discord
 // const discord = new Discord.Client();
 
@@ -55,7 +54,7 @@ app.use(passport.initialize());
 // Databae
 const mongoose = require('mongoose')
 mongoose.connect(config.databaseURI, {useNewUrlParser: true}).catch(function (reason) {
-	// TODO: kill process if DB doesn't connect
+	// TODO: kill process if DB doesn't connect or generate error
 	console.log('Unable to connect to the mongodb instance. Error: ', reason);
 });
 
@@ -71,25 +70,34 @@ passport.use(new twitchStrategy({
 	callbackURL: `${config.appURL}/auth/twitch/callback`,
 	scope: "user:read:email"
 },
-function(accessToken, refreshToken, profile, done) {
-	var UserSearch = User.findOne({ twitch_id: profile.id }).exec();
-	if (!UserSearch) {
-		let user = new User ({
-			twitch_id: profile.id,
-			username: profile.login,
-			display_name: profile.display_name,
-			email: profile.email,
-			profile_pic_url: profile.profile_image_url,
-			provider: 'twitch',
-			twitch: profile
-		})
-		user.save();
-		return done(null, profile)
-	} else {
-		return done(null, profile)
+async function(accessToken, refreshToken, profile, done) {
+	try {
+		User.findOne({ twitch_id: profile.id }).exec()
+		.then(function(UserSearch){
+			console.log(UserSearch)
+			if (UserSearch === null) {
+				let user = new User ({
+					twitch_id: profile.id,
+					username: profile.login,
+					display_name: profile.display_name,
+					email: profile.email,
+					profile_pic_url: profile.profile_image_url,
+					provider: 'twitch',
+					twitch: profile
+				})
+				console.log('New user created')
+				user.save();
+				return done(null, profile)
+			} else {
+				console.log('User already exists')
+				console.log(UserSearch.twitch_id)
+				return done(null, profile)
+			}
+		});
+	} catch (err) {
+		console.error(err)
 	}
-}
-));
+}));
 
 passport.serializeUser(function(user, done) {
 	done(null, user);
@@ -122,20 +130,24 @@ app.get('/logout', function (req, res){
 app.get('/dashboard', async (req, res) => {
 	try {
 		if (req.session && req.session.passport.user) {
-			await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
-				//TODO: move admin array to .env
-				var admins = ['opti_21', 'veryhandsomebilly']
-				var feSongRequests = await SongRequest.find();
-				if (user.username ===  admins[0] || admins[1]) {
-					// expose the user info to the template
-					res.render('dashboard', {
-						feUser: user.username,
-						requests: feSongRequests
-					})
-				} else {
-					res.redirect('/login');
-				}
-			})
+			try {
+				await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
+					console.log(user.username)
+					var admins = ['opti_21', 'veryhandsomebilly', 'vibey_bot']
+					var feSongRequests = await SongRequest.find();
+					if (admins.includes(user.username)) {
+						// expose the user info to the template
+						res.render('dashboard', {
+							feUser: user.username,
+							requests: feSongRequests
+						})
+					} else {
+						res.redirect('/login');
+					}
+				})
+			} catch (err) {
+				console.error(err)
+			}
 		} else {
 			res.redirect('/login')
 		}
@@ -144,7 +156,6 @@ app.get('/dashboard', async (req, res) => {
 	}
 });
 
-// TODO: Delete song request
 app.get('/dashboard/delete/:id', async(req, res) => {
 	if (req.session && req.session.passport.user) {
 			await SongRequest.deleteOne({ _id: req.params.id}).exec().then(
@@ -160,10 +171,10 @@ app.get('/dashboard/delete/:id', async(req, res) => {
 
 // Twitch Client
 const tmi = require("tmi.js");
-const twitchclientid = process.env.TWITCH_CLIENTID;
-const twitchuser = process.env.TWITCH_USER;
-const twitchpass = process.env.TWITCH_PASS;
-const twitchchan = ['opti_21'];
+const twitchclientid = config.twitchClientID;
+const twitchuser = config.twitchUser;
+const twitchpass = config.twitchPass;
+const twitchchan = config.twitchChan;
 
 const tmiOptions = {
     options: {
@@ -213,6 +224,7 @@ botclient.on('chat', (channel, userstate, message, self) => {
 								botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist}`);
 								// Real time data push to front end
 								channels_client.trigger('sr-channel', 'sr-event', {
+									"id": `${doc._id}`,
 									"reqBy": `${doc.requestedBy}`,
 									"track": `${doc.track[0].name}`,
 									"artist": `${doc.track[0].artist}`,
@@ -237,6 +249,7 @@ botclient.on('chat', (channel, userstate, message, self) => {
 							.then((doc) => {botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name}`);
 								// Real time data push to front end
 								channels_client.trigger('sr-channel', 'sr-event', {
+									"id": `${doc._id}`,
 									"reqBy": `${doc.requestedBy}`,
 									"track": `${doc.track[0].name}`,
 									"link": `${doc.track[0].link}`,
