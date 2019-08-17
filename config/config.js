@@ -8,6 +8,7 @@ const config = {
     twitchPass: process.env.TWITCH_PASS,
     twitchSecret: process.env.TWITCH_SECRET,
     twitchCB: process.env.TWITCH_CALLBACK_URL,
+    twitchChan: ['opti_21'],
     sessionSecret: process.env.SESSION_SECRET,
     spID: process.env.SPOTIFY_ID,
     spSecret: process.env.SPOTIFY_SECRET,
