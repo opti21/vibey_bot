@@ -71,6 +71,7 @@ passport.use(new twitchStrategy({
 	callbackURL: `${config.appURL}/auth/twitch/callback`,
 	scope: "user:read:email"
 },
+<<<<<<< HEAD
 async function(accessToken, refreshToken, profile, done) {
 	try {
 		User.findOne({ twitch_id: profile.id }).exec()
@@ -97,6 +98,24 @@ async function(accessToken, refreshToken, profile, done) {
 		})
 	} catch (err) {
 		console.error(err)
+=======
+function(accessToken, refreshToken, profile, done) {
+	var UserSearch = User.findOne({ twitch_id: profile.id }).exec();
+	if (!UserSearch) {
+		let user = new User ({
+			twitch_id: profile.id,
+			username: profile.login,
+			display_name: profile.display_name,
+			email: profile.email,
+			profile_pic_url: profile.profile_image_url,
+			provider: 'twitch',
+			twitch: profile
+		})
+		user.save();
+		return done(null, profile)
+	} else {
+		return done(null, profile)
+>>>>>>> parent of 76d97b4... Ch ch changes
 	}
 }
 ));
@@ -134,7 +153,10 @@ app.get('/dashboard', async (req, res) => {
 		if (req.session && req.session.passport.user) {
 			await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
 				//TODO: move admin array to .env
+<<<<<<< HEAD
 				console.log(user.username)
+=======
+>>>>>>> parent of 76d97b4... Ch ch changes
 				var admins = ['opti_21', 'veryhandsomebilly']
 				var feSongRequests = await SongRequest.find();
 				if (user.username ===  admins[0] || admins[1]) {
@@ -174,7 +196,11 @@ const tmi = require("tmi.js");
 const twitchclientid = process.env.TWITCH_CLIENTID;
 const twitchuser = process.env.TWITCH_USER;
 const twitchpass = process.env.TWITCH_PASS;
+<<<<<<< HEAD
 const twitchchan = ['veryhandsomebilly'];
+=======
+const twitchchan = ['opti_21'];
+>>>>>>> parent of 76d97b4... Ch ch changes
 
 const tmiOptions = {
     options: {

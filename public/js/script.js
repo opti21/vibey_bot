@@ -50,7 +50,7 @@ channel.bind('sr-event', function(data) {
 
 
 // Delete Song Request
-$('#srContainer').on('click', '.delete.btn', function() {
+$('.delete.btn').click(function() {
   var srName = $(this).attr('data-srName')
   var srId = $(this).attr('data-srID')
   swal.fire({
