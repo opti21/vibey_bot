@@ -26,6 +26,7 @@ var channels_client = new Pusher({
   useTLS: true
 });
 
+
 //Discord
 // const discord = new Discord.Client();
 
@@ -54,7 +55,7 @@ app.use(passport.initialize());
 // Databae
 const mongoose = require('mongoose')
 mongoose.connect(config.databaseURI, {useNewUrlParser: true}).catch(function (reason) {
-	// TODO: kill process if DB doesn't connect or generate error
+	// TODO: kill process if DB doesn't connect
 	console.log('Unable to connect to the mongodb instance. Error: ', reason);
 });
 
@@ -75,7 +76,7 @@ async function(accessToken, refreshToken, profile, done) {
 		User.findOne({ twitch_id: profile.id }).exec()
 		.then(function(UserSearch){
 			console.log(UserSearch)
-			if (UserSearch === null) {
+			if (!UserSearch) {
 				let user = new User ({
 					twitch_id: profile.id,
 					username: profile.login,
@@ -93,11 +94,12 @@ async function(accessToken, refreshToken, profile, done) {
 				console.log(UserSearch.twitch_id)
 				return done(null, profile)
 			}
-		});
+		})
 	} catch (err) {
 		console.error(err)
 	}
-}));
+}
+));
 
 passport.serializeUser(function(user, done) {
 	done(null, user);
@@ -130,24 +132,21 @@ app.get('/logout', function (req, res){
 app.get('/dashboard', async (req, res) => {
 	try {
 		if (req.session && req.session.passport.user) {
-			try {
-				await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
-					console.log(user.username)
-					var admins = ['opti_21', 'veryhandsomebilly', 'vibey_bot']
-					var feSongRequests = await SongRequest.find();
-					if (admins.includes(user.username)) {
-						// expose the user info to the template
-						res.render('dashboard', {
-							feUser: user.username,
-							requests: feSongRequests
-						})
-					} else {
-						res.redirect('/login');
-					}
-				})
-			} catch (err) {
-				console.error(err)
-			}
+			await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
+				//TODO: move admin array to .env
+				console.log(user.username)
+				var admins = ['opti_21', 'veryhandsomebilly']
+				var feSongRequests = await SongRequest.find();
+				if (user.username ===  admins[0] || admins[1]) {
+					// expose the user info to the template
+					res.render('dashboard', {
+						feUser: user.username,
+						requests: feSongRequests
+					})
+				} else {
+					res.redirect('/login');
+				}
+			})
 		} else {
 			res.redirect('/login')
 		}
@@ -156,6 +155,7 @@ app.get('/dashboard', async (req, res) => {
 	}
 });
 
+// TODO: Delete song request
 app.get('/dashboard/delete/:id', async(req, res) => {
 	if (req.session && req.session.passport.user) {
 			await SongRequest.deleteOne({ _id: req.params.id}).exec().then(
@@ -171,10 +171,10 @@ app.get('/dashboard/delete/:id', async(req, res) => {
 
 // Twitch Client
 const tmi = require("tmi.js");
-const twitchclientid = config.twitchClientID;
-const twitchuser = config.twitchUser;
-const twitchpass = config.twitchPass;
-const twitchchan = config.twitchChan;
+const twitchclientid = process.env.TWITCH_CLIENTID;
+const twitchuser = process.env.TWITCH_USER;
+const twitchpass = process.env.TWITCH_PASS;
+const twitchchan = ['veryhandsomebilly'];
 
 const tmiOptions = {
     options: {
@@ -224,7 +224,6 @@ botclient.on('chat', (channel, userstate, message, self) => {
 								botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist}`);
 								// Real time data push to front end
 								channels_client.trigger('sr-channel', 'sr-event', {
-									"id": `${doc._id}`,
 									"reqBy": `${doc.requestedBy}`,
 									"track": `${doc.track[0].name}`,
 									"artist": `${doc.track[0].artist}`,
@@ -249,7 +248,6 @@ botclient.on('chat', (channel, userstate, message, self) => {
 							.then((doc) => {botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name}`);
 								// Real time data push to front end
 								channels_client.trigger('sr-channel', 'sr-event', {
-									"id": `${doc._id}`,
 									"reqBy": `${doc.requestedBy}`,
 									"track": `${doc.track[0].name}`,
 									"link": `${doc.track[0].link}`,
@@ -268,6 +266,10 @@ botclient.on('chat', (channel, userstate, message, self) => {
 			
 		}
 	}
+
+	// if (message[0] === '!whosthechillest') {
+	// 	botclient.say(twitchchan[0])
+	// }
 })
 
 
