@@ -75,7 +75,6 @@ async function(accessToken, refreshToken, profile, done) {
 	try {
 		User.findOne({ twitch_id: profile.id }).exec()
 		.then(function(UserSearch){
-			console.log(UserSearch)
 			if (UserSearch === null) {
 				let user = new User ({
 					twitch_id: profile.id,
