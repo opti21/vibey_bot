@@ -150,9 +150,10 @@ app.get('/dashboard', async (req, res) => {
 });
 
 // TODO: Delete song request
+const ObjectId = mongoose.Types.ObjectId;
 app.get('/dashboard/delete/:id', async(req, res) => {
 	if (req.session && req.session.passport.user) {
-			await SongRequest.deleteOne({ _id: req.params.id}).exec().then(
+			await SongRequest.deleteOne({ _id: ObjectId(req.params.id)}).exec().then(
 				res.status(200).send('Request deleted')
 			), function (err) {
 				console.error(err)
