@@ -76,7 +76,7 @@ async function(accessToken, refreshToken, profile, done) {
 		User.findOne({ twitch_id: profile.id }).exec()
 		.then(function(UserSearch){
 			console.log(UserSearch)
-			if (!UserSearch) {
+			if (UserSearch === null) {
 				let user = new User ({
 					twitch_id: profile.id,
 					username: profile.login,
@@ -131,25 +131,20 @@ app.get('/logout', function (req, res){
 //Dashboard
 app.get('/dashboard', async (req, res) => {
 	try {
-		if (req.session && req.session.passport.user) {
-			await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
-				//TODO: move admin array to .env
-				console.log(user.username)
-				var admins = ['opti_21', 'veryhandsomebilly']
-				var feSongRequests = await SongRequest.find();
-				if (user.username ===  admins[0] || admins[1]) {
-					// expose the user info to the template
-					res.render('dashboard', {
-						feUser: user.username,
-						requests: feSongRequests
-					})
-				} else {
-					res.redirect('/login');
-				}
-			})
-		} else {
-			res.redirect('/login')
-		}
+		await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
+			console.log(user.username)
+			var admins = ['opti_21', 'veryhandsomebilly', 'vibey_bot']
+			var feSongRequests = await SongRequest.find();
+			if (admins.includes(user.username)) {
+				// expose the user info to the template
+				res.render('dashboard', {
+					feUser: user.username,
+					requests: feSongRequests
+				})
+			} else {
+				res.redirect('/login');
+			}
+		})
 	} catch (err) {
 		console.error(err)
 	}
@@ -171,10 +166,10 @@ app.get('/dashboard/delete/:id', async(req, res) => {
 
 // Twitch Client
 const tmi = require("tmi.js");
-const twitchclientid = process.env.TWITCH_CLIENTID;
-const twitchuser = process.env.TWITCH_USER;
-const twitchpass = process.env.TWITCH_PASS;
-const twitchchan = ['veryhandsomebilly'];
+const twitchclientid = config.twitchClientID;
+const twitchuser = config.twitchUser;
+const twitchpass = config.twitchPass;
+const twitchchan = config.twitchChan;
 
 const tmiOptions = {
     options: {
