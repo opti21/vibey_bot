@@ -62,7 +62,7 @@ channel.bind('mix-event', function(data) {
         <td><a class="srLink" href="${data.link}">${data.track} - ${data.artist}</a> <a class="spotify" href="${data.uri}"><i class="fab fa-spotify" title="Open in Spotify"></i></a></td>
         <td>${data.reqBy}</td>
         <td> 
-          <button class="btn btn-success btn-sm mr-3" data-srID="${data.id}">Add to Mix</button> 
+          <button class="btn btn-success btn-sm mr-3 mix-add" data-srID="${data.id}">Add to Mix</button> 
           <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track} - ${data.artist}"> <i class="fas fa-minus-circle"></i> </button>
         </td>
       `
