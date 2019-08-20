@@ -55,7 +55,7 @@ app.use(passport.initialize());
 // Databae
 const mongoose = require('mongoose')
 mongoose.connect(config.databaseURI, {useNewUrlParser: true}).catch(function (reason) {
-	// TODO: kill process if DB doesn't connect
+	// TODO: Throw error page if DB doesn't connect
 	console.log('Unable to connect to the mongodb instance. Error: ', reason);
 });
 
@@ -145,21 +145,6 @@ app.get('/dashboard', async (req, res) => {
 			} else {
 				res.redirect('/login');
 			}
-		// Previous	
-		// await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
-		// 	console.log(user.username)
-		// 	var admins = ['opti_21', 'veryhandsomebilly', 'vibey_bot']
-		// 	var feSongRequests = await SongRequest.find();
-		// 	if (admins.includes(user.username)) {
-		// 		// expose the user info to the template
-		// 		res.render('dashboard', {
-		// 			feUser: user.username,
-		// 			requests: feSongRequests
-		// 		})
-		// 	} else {
-		// 		res.redirect('/login');
-		// 	}
-		// })
 	} catch (err) {
 		console.error(err)
 	}
