@@ -13,7 +13,8 @@ const config = {
     spID: process.env.SPOTIFY_ID,
     spSecret: process.env.SPOTIFY_SECRET,
     ytAPI: process.env.YT_API,
-    discord: process.env.DISCORD
+    discord: process.env.DISCORD,
+    admins: ['opti_21', 'veryhandsomebilly', 'vibey_bot']
    };
 
 module.exports = config;
