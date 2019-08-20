@@ -128,28 +128,43 @@ app.get('/logout', function (req, res){
 });
 
 //Dashboard
+const mixReqs = require('./models/mixRequests')
 app.get('/dashboard', async (req, res) => {
 	try {
-		await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
-			console.log(user.username)
-			var admins = ['opti_21', 'veryhandsomebilly', 'vibey_bot']
+		var user = await User.findOne({ twitch_id: req.session.passport.user.id });
+		console.log(user.username)
+			var admins = config.admins;
 			var feSongRequests = await SongRequest.find();
+			var mixRequests = await mixReqs.find();
 			if (admins.includes(user.username)) {
-				// expose the user info to the template
 				res.render('dashboard', {
 					feUser: user.username,
-					requests: feSongRequests
+					requests: feSongRequests,
+					mixReqs: mixRequests
 				})
 			} else {
 				res.redirect('/login');
 			}
-		})
+		// Previous	
+		// await User.findOne({ twitch_id: req.session.passport.user.id }, async (err, user) => {
+		// 	console.log(user.username)
+		// 	var admins = ['opti_21', 'veryhandsomebilly', 'vibey_bot']
+		// 	var feSongRequests = await SongRequest.find();
+		// 	if (admins.includes(user.username)) {
+		// 		// expose the user info to the template
+		// 		res.render('dashboard', {
+		// 			feUser: user.username,
+		// 			requests: feSongRequests
+		// 		})
+		// 	} else {
+		// 		res.redirect('/login');
+		// 	}
+		// })
 	} catch (err) {
 		console.error(err)
 	}
 });
 
-// TODO: Delete song request
 app.get('/dashboard/delete/:id', async(req, res) => {
 	if (req.session && req.session.passport.user) {
 			await SongRequest.deleteOne({ _id: req.params.id}).exec().then(
@@ -157,6 +172,46 @@ app.get('/dashboard/delete/:id', async(req, res) => {
 			), function (err) {
 				console.error(err)
 				res.status(500).send('Error deleting song request')
+			};
+	} else {
+		res.redirect('/index')
+	}
+});
+
+app.get('/mix/add/:id', async(req, res) => {
+	if (req.session && req.session.passport.user) {
+			await SongRequest.findById(req.params.id, (err, request) => {
+				var mixAdd = new mixReqs ({track:{name: request.track[0].name, artist: request.track[0].artist, link: request.track[0].link, uri: request.track[0].uri}, requestedBy: request.requestedBy, timeOfReq: request.timeOfReq, source: request.source})
+				mixAdd.save().then((doc) => {
+					try {
+						res.status(200).send('Added to Mix');
+						channels_client.trigger('sr-channel', 'mix-event', {
+							"id": `${doc.id}`,
+							"reqBy": `${doc.requestedBy}`,
+							"track": `${doc.track[0].name}`,
+							"artist": `${doc.track[0].artist}`,
+							"uri": `${doc.track[0].uri}`,
+							"link": `${doc.track[0].link}`,
+							"source": `${doc.source}`
+						});
+					} catch (err) {
+						console.error(err)
+						res.status(500).send('Error Adding song to mix')
+					};
+				});
+			});
+	} else {
+		res.redirect('/index')
+	}
+});
+
+app.get('/mix/remove/:id', async(req, res) => {
+	if (req.session && req.session.passport.user) {
+			await mixReqs.deleteOne({ _id: req.params.id}).exec().then(
+				res.status(200).send('Song Removed from mix')
+			), function (err) {
+				console.error(err)
+				res.status(500).send('Error removing song from mix')
 			};
 	} else {
 		res.redirect('/index')
@@ -218,6 +273,7 @@ botclient.on('chat', (channel, userstate, message, self) => {
 								botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist}`);
 								// Real time data push to front end
 								channels_client.trigger('sr-channel', 'sr-event', {
+									"id": `${doc.id}`,
 									"reqBy": `${doc.requestedBy}`,
 									"track": `${doc.track[0].name}`,
 									"artist": `${doc.track[0].artist}`,
@@ -242,6 +298,7 @@ botclient.on('chat', (channel, userstate, message, self) => {
 							.then((doc) => {botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name}`);
 								// Real time data push to front end
 								channels_client.trigger('sr-channel', 'sr-event', {
+									"id": `${doc.id}`,
 									"reqBy": `${doc.requestedBy}`,
 									"track": `${doc.track[0].name}`,
 									"link": `${doc.track[0].link}`,
