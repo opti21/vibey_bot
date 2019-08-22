@@ -297,7 +297,6 @@ botclient.on('chat', (channel, userstate, message, self) => {
 		} else {
 			// Searches YouTube when no URL is provided
 			var query = message.slice(1).join(" ")
-			botclient.say(twitchchan[0], `Searching for: ${query}`)
 			youtube.search(query, 1)
 				.then(results => {
 					var newYTSR = new SongRequest ({track:{name: results[0].title, link: `https://www.youtube.com/watch?v=${results[0].id}`}, requestedBy: userstate.username, timeOfReq: moment.utc(), source: 'youtube'});
