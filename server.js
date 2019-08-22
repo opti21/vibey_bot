@@ -163,6 +163,21 @@ app.get('/dashboard/delete/:id', async(req, res) => {
 	}
 });
 
+app.get('/dashboard/deleteall', (req, res) => {
+	if (req.session && req.session.passport.user) {
+		try {
+			SongRequest.deleteMany({}).exec();
+			res.status(200).send('Queue cleared')
+		} catch (err) {
+			res.status(500).send('Error clearing queue!')
+			console.error(err)
+		}
+			
+	} else {
+		res.redirect('/index')
+	}
+});
+
 app.get('/mix/add/:id', async(req, res) => {
 	if (req.session && req.session.passport.user) {
 			await SongRequest.findById(req.params.id, (err, request) => {
@@ -245,7 +260,7 @@ const SongRequest = require('./models/songRequests')
 botclient.on('chat', (channel, userstate, message, self) => {
 	if (self) return;
 	var message = message.trim().split(" ");
-	if (message[0] === '!sr' || '!songrequest' && !self) {
+	if (message[0] === '!sr' || message[0] === '!songrequest') {
 		if (URLRegex.test(message[1])) {
 			if (spRegex.test(message[1])) {
 				var spID = spotifyUri.parse(message[1])
@@ -294,7 +309,7 @@ botclient.on('chat', (channel, userstate, message, self) => {
 							.catch(err => {console.error(err)});
 					});
 			}
-		} else {
+		};
 			// Searches YouTube when no URL is provided
 			var query = message.slice(1).join(" ")
 			youtube.search(query, 1)
@@ -314,8 +329,6 @@ botclient.on('chat', (channel, userstate, message, self) => {
 							.catch(err => {console.error(err)});
 				})
 				.catch(console.error)
-			
-		}
 	}
 
 	// if (message[0] === '!whosthechillest') {

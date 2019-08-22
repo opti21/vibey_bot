@@ -154,6 +154,49 @@ $('#mixContainer').on('click', '.mix.delete', function() {
       xhr.send();
 })
 
+// Clear Queue 
+$('#clear-queue').on('click', '.delete-queue', function() {
+  swal.fire({
+    title: `Are you sure you want to clear the queue?`,
+    text: "You won't be able to revert this!",
+    type: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Yes, delete it!',
+  }).then((result) => {
+    if (result.value) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', `/dashboard/deleteall`);
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          Swal.fire({
+            title:'Cleared!',
+            text: `Queue has been cleared.`,
+            type:'success',
+            timer: 500,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            onBeforeOpen: () => {
+              Swal.showLoading()
+            },
+            onClose: () => {
+              location.reload();
+            }
+          });
+        } else {
+          Swal.fire(
+            'Uh Oh!',
+            `There was an error clearing the queue. Error: ${xhr.responseText}`,
+            'error'
+          )
+        }
+      }
+      xhr.send();
+    }
+  })
+});
+
 
 // Delete Song Request
 $('#srContainer').on('click', '.delete.btn', function() {
@@ -204,4 +247,4 @@ $('#srContainer').on('click', '.delete.btn', function() {
       xhr.send();
     }
   })
-})
+});
