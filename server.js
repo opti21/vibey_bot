@@ -243,8 +243,9 @@ var ytRegex = /(?:https?:\/\/)?(?:(?:(?:www\.?)?youtube\.com(?:\/(?:(?:watch\?.*
 // Song Requests
 const SongRequest = require('./models/songRequests')
 botclient.on('chat', (channel, userstate, message, self) => {
+	if (self) return;
 	var message = message.trim().split(" ");
-	if (message[0] === '!sr' || message[0] === '!songrequest') {
+	if (message[0] === '!sr' || '!songrequest' && !self) {
 		if (URLRegex.test(message[1])) {
 			if (spRegex.test(message[1])) {
 				var spID = spotifyUri.parse(message[1])
@@ -291,14 +292,28 @@ botclient.on('chat', (channel, userstate, message, self) => {
 								});
 							})
 							.catch(err => {console.error(err)});
-					})
-					.catch(err => {
-						botclient.say(twitchchan[0], `The correct format is !sr URL`)
 					});
 			}
 		} else {
-			// TODO: Build request for regular text search
-			botclient.say(twitchchan[0], `The correct format is !sr URL`)
+			// Searches YouTube when no URL is provided
+			var query = message.slice(1).join(" ")
+			youtube.search(query, 1)
+				.then(results => {
+					var newYTSR = new SongRequest ({track:{name: results[0].title, link: `https://www.youtube.com/watch?v=${results[0].id}`}, requestedBy: userstate.username, timeOfReq: moment.utc(), source: 'youtube'});
+						newYTSR.save()
+							.then((doc) => {botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name}`);
+								// Real time data push to front end
+								channels_client.trigger('sr-channel', 'sr-event', {
+									"id": `${doc.id}`,
+									"reqBy": `${doc.requestedBy}`,
+									"track": `${doc.track[0].name}`,
+									"link": `${doc.track[0].link}`,
+									"source": `${doc.source}`
+								});
+							})
+							.catch(err => {console.error(err)});
+				})
+				.catch(console.error)
 			
 		}
 	}

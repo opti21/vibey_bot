@@ -30,7 +30,7 @@
             </thead>
             <tbody class="" id="mixContainer">
                 <% mixReqs.forEach(request => { %>
-                    <tr id="<%= request.id %>">
+                    <tr width="100%" id="<%= request.id %>">
                         <td>
                             <% if(request.source === 'spotify'){ %>
                                 <a class="srLink" href="<%= request.track[0].link %>" target="_blank"><%= request.track[0].name %> - <%= request.track[0].artist %></a>
@@ -43,8 +43,7 @@
                         </td>
                         <td><%= request.requestedBy %></td>
                         <td>
-                          <button class="btn btn-success btn-sm mr-3 mix-add" data-srID="<%= request.id %>">Add to Mix</button>
-                          <button class="delete btn btn-danger btn-sm mix" data-srID="<%= request.id %>" data-srName="<%= request.track[0].name %>"> <i class="fas fa-minus-circle"></i> </button>
+                          <button class="delete btn btn-danger btn-sm mix" data-srID="<%= request.id %>" data-srName="<%= request.track[0].name %>"> Remove from Mix </button>
                         </td>
                     </tr>
                 <% }) %>
@@ -64,7 +63,7 @@
             </thead>
             <tbody class="" id="srContainer">
                 <% requests.forEach(request => { %>
-                    <tr id="<%= request.id %>">
+                    <tr width="100%" id="<%= request.id %>">
                         <td>
                             <% if(request.source === 'spotify'){ %>
                                 <a class="srLink" href="<%= request.track[0].link %>" target="_blank"><%= request.track[0].name %> - <%= request.track[0].artist %></a>
@@ -94,7 +93,6 @@
     <script src="js/velocity.min.js"></script>
     <script src="js/jquery.animateNumber.min.js"></script>
     <script src="vendor/gsap/TweenMax.min.js"></script>
-    <!-- <script src="vendor/gsap/jquery.gsap.min.js"></script> -->
 
     <span id="twitchID"><%= feUser.display_name %></span>
 
