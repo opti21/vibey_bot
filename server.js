@@ -313,7 +313,7 @@ botclient.on('chat', (channel, userstate, message, self) => {
 					.then(video => {
 						var newYTSR = new SongRequest ({track:{name: video.title, link: message[1]}, requestedBy: userstate.username, timeOfReq: moment.utc(), source: 'youtube'});
 						newYTSR.save()
-							.then((doc) => {botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name}`);
+							.then((doc) => {botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name} ${doc.track[0].link}`);
 								// Real time data push to front end
 								channels_client.trigger('sr-channel', 'sr-event', {
 									"id": `${doc.id}`,
@@ -327,25 +327,33 @@ botclient.on('chat', (channel, userstate, message, self) => {
 					});
 			}
 		};
-			// Searches YouTube when no URL is provided
-			var query = message.slice(1).join(" ")
-			youtube.search(query, 1)
-				.then(results => {
-					var newYTSR = new SongRequest ({track:{name: results[0].title, link: `https://www.youtube.com/watch?v=${results[0].id}`}, requestedBy: userstate.username, timeOfReq: moment.utc(), source: 'youtube'});
-						newYTSR.save()
-							.then((doc) => {botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name}`);
-								// Real time data push to front end
-								channels_client.trigger('sr-channel', 'sr-event', {
-									"id": `${doc.id}`,
-									"reqBy": `${doc.requestedBy}`,
-									"track": `${doc.track[0].name}`,
-									"link": `${doc.track[0].link}`,
-									"source": `${doc.source}`
-								});
-							})
-							.catch(err => {console.error(err)});
-				})
-				.catch(console.error)
+		// Check for text content
+		if (message[1] === undefined) {
+			botclient.say(channel, `No input recieved. !requests to see how to submit requests`);
+		} else {
+				// Searches YouTube when only text is provided
+				if (!ytRegex.test(message[1])) {
+					var query = message.slice(1).join(" ")
+					youtube.search(query, 1)
+						.then(results => {
+							var newYTSR = new SongRequest ({track:{name: results[0].title, link: `https://youtu.be/${results[0].id}`}, requestedBy: userstate.username, timeOfReq: moment.utc(), source: 'youtube'});
+								newYTSR.save()
+									.then((doc) => {
+										botclient.say(channel, `@${doc.requestedBy} requested ${doc.track[0].name} https://youtu.be/${results[0].id}`);
+										// Real time data push to front end
+										channels_client.trigger('sr-channel', 'sr-event', {
+											"id": `${doc.id}`,
+											"reqBy": `${doc.requestedBy}`,
+											"track": `${doc.track[0].name}`,
+											"link": `${doc.track[0].link}`,
+											"source": `${doc.source}`
+										});
+									})
+									.catch(err => {console.error(err)});
+						})
+						.catch(console.error)
+				}
+			}
 	}
 
 	// if (message[0] === '!whosthechillest') {

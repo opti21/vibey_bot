@@ -39,17 +39,24 @@ channel.bind('mix-event', function(data) {
       `
     }
     mixContainer.append(mixElement)
+    // Animate newly created element
+    TweenMax.from(mixElement, 1, {autoAlpha:0, ease:Power4.easeOut})
+
   } catch (err) {
     console.error(err)
   }
 });
 
+// Clear specific tr based off of <tr id="id">
 channel.bind('mix-remove', function(data) {
-  var el = document.getElementById(`${data.id}`)
-  el.remove()
+  TweenMax.to(`#${data.id}`, .5, {autoAlpha:0, margin: 0, onComplete:function(){
+    $(`#${data.id}`).remove();
+  }});
 });
 
-// Clear Mix
+// Clear all rows of table body
 channel.bind('clear-mix', function(data) {
-  $("#mix-table tbody tr").remove();
+  TweenMax.to(`#mix-table tbody tr`, .5, {autoAlpha:0, margin: 0, onComplete:function(){
+    $(`#mix-table tbody tr`).remove();
+  }});
 });
