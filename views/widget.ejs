@@ -14,7 +14,7 @@
     <div class="container">
         <h1 class="text-light bg-info p-3">Current Mix</h1>
         <table id="mix-table" class="table table-dark table-hover table-lg">
-            <tbody class="" id="mixContainer">
+            <tbody id="mixContainer">
                 <% mixReqs.forEach(request => { %>
                     <tr width="100%" id="<%= request.id %>">
                         <td>
@@ -43,6 +43,7 @@
 
     <script src="https://js.pusher.com/4.4/pusher.min.js"></script>
     <script src="js/sweetalert2.all.min.js"></script>
+    <!-- <script src="js/mix-script.js"></script> -->
     <script src="js/mix-script.min.js"></script>
     
     </body>
