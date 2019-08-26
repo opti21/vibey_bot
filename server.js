@@ -3,11 +3,9 @@ const config = require('./config/config');
 const express = require('express')
 const app = express()
 const server = require('http').Server(app)
-const io = require('socket.io')(server)
 const logger = require('morgan')
 const passport = require('passport')
 const twitchStrategy = require('passport-twitch-new').Strategy
-const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser')
 const cookieSession = require('cookie-session')
 const spotifyUri = require('spotify-uri');
@@ -15,9 +13,9 @@ const Spotify = require('node-spotify-api');
 const YouTube = require('simple-youtube-api');
 const youtube = new YouTube(config.ytAPI);
 const moment = require('moment');
-const Discord = require('discord.js');
-var Pusher = require('pusher');
+const Pusher = require('pusher');
 
+// Real time data
 var channels_client = new Pusher({
   appId: '826343',
   key: '94254303a6a5048bf191',
@@ -25,16 +23,6 @@ var channels_client = new Pusher({
   cluster: 'us2',
   useTLS: true
 });
-
-
-//Discord
-// const discord = new Discord.Client();
-
-// discord.once('ready', () => {
-// 	console.log('Ready!');
-// });
-
-// discord.login(config.discord);
 
 //Spotify Credentials
 const spotify = new Spotify({
@@ -150,14 +138,39 @@ app.get('/dashboard', async (req, res) => {
 	}
 });
 
+// Stream Widget
+app.get('/widget', async (req, res) => {
+		var mixRequests = await mixReqs.find();
+		res.render('widget',{
+			mixReqs: mixRequests
+		})
+});
+
 app.get('/dashboard/delete/:id', async(req, res) => {
 	if (req.session && req.session.passport.user) {
-			await SongRequest.deleteOne({ _id: req.params.id}).exec().then(
-				res.status(200).send('Request deleted')
-			), function (err) {
-				console.error(err)
-				res.status(500).send('Error deleting song request')
-			};
+		try {
+			await SongRequest.deleteOne({ _id: req.params.id}).exec();
+			res.status(200).send('Request deleted')
+		} catch (err) {
+			console.error(err)
+			res.status(500).send('Error deleting song request')
+		}
+	} else {
+		res.redirect('/index')
+	}
+});
+
+app.get('/dashboard/mix/deleteall', async (req, res) => {
+	if (req.session && req.session.passport.user) {
+		try {
+			await mixReqs.deleteMany({}).exec();
+			channels_client.trigger('sr-channel', 'clear-mix', {});
+			res.status(200).send('Mix cleared')
+		} catch (err) {
+			res.status(500).send('Error clearing mix!')
+			console.error(err)
+		}
+			
 	} else {
 		res.redirect('/index')
 	}
@@ -207,12 +220,16 @@ app.get('/mix/add/:id', async(req, res) => {
 
 app.get('/mix/remove/:id', async(req, res) => {
 	if (req.session && req.session.passport.user) {
-			await mixReqs.deleteOne({ _id: req.params.id}).exec().then(
-				res.status(200).send('Song Removed from mix')
-			), function (err) {
-				console.error(err)
-				res.status(500).send('Error removing song from mix')
-			};
+		try {
+			await mixReqs.deleteOne({ _id: req.params.id}).exec();
+			channels_client.trigger('sr-channel', 'mix-remove', {
+				"id":`${req.params.id}`
+			});
+			res.status(200).send('Song Removed from mix')
+		} catch (err) {
+			console.error(err)
+			res.status(500).send('Error removing song from mix')
+		}
 	} else {
 		res.redirect('/index')
 	}

@@ -1,0 +1,15 @@
+body {
+	background-color: rgba(0,0,0,0);
+}
+.spotify {
+	color: #1DB954
+}
+.youtube {
+	color: #fc0800
+}
+.srLink {
+	color: #ffffff;
+}
+#mix-table{
+	font-size: 30px;
+}

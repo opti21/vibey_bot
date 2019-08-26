@@ -9,10 +9,6 @@ function makeid(length) {
   return result;
 }
 
-const User = document.getElementById('twitchID').innerText
-$('#twitchID').remove();
-console.log(User)
-
 var pusher = new Pusher('94254303a6a5048bf191', {
   cluster: 'us2',
   forceTLS: true
@@ -137,9 +133,7 @@ $('#mixContainer').on('click', '.mix.delete', function() {
             Toast.fire({
               type: 'success',
               title: 'Song Removed from mix!'
-            })
-            var el = document.getElementById(`${srId}`)
-            el.remove()
+            });
           } catch (err) {
             console.error(err)
           }
@@ -153,6 +147,11 @@ $('#mixContainer').on('click', '.mix.delete', function() {
       }
       xhr.send();
 })
+
+channel.bind('mix-remove', function(data) {
+  var el = document.getElementById(`${data.id}`)
+  el.remove()
+});
 
 // Clear Queue 
 $('#clear-queue').on('click', '.delete-queue', function() {
@@ -181,13 +180,56 @@ $('#clear-queue').on('click', '.delete-queue', function() {
               Swal.showLoading()
             },
             onClose: () => {
-              location.reload();
+              $("#sr-table tbody tr").remove();
             }
           });
         } else {
           Swal.fire(
             'Uh Oh!',
             `There was an error clearing the queue. Error: ${xhr.responseText}`,
+            'error'
+          )
+        }
+      }
+      xhr.send();
+    }
+  })
+});
+
+// Clear Mix
+$('#clear-mix').on('click', '.delete-mix', function() {
+  swal.fire({
+    title: `Are you sure you want to clear the mix?`,
+    text: "You won't be able to revert this!",
+    type: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Yes, delete it!',
+  }).then((result) => {
+    if (result.value) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', `/dashboard/mix/deleteall`);
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          Swal.fire({
+            title:'Cleared!',
+            text: `Mix has been cleared.`,
+            type:'success',
+            timer: 500,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            onBeforeOpen: () => {
+              Swal.showLoading()
+            },
+            onClose: () => {
+              $("#mix-table tbody tr").remove();
+            }
+          });
+        } else {
+          Swal.fire(
+            'Uh Oh!',
+            `There was an error clearing the mix. Error: ${xhr.responseText}`,
             'error'
           )
         }
