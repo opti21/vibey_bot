@@ -1,0 +1,55 @@
+// Generate random IDs for table elements
+function makeid(length) {
+  var result           = '';
+  var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for ( var i = 0; i < length; i++ ) {
+     result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+var pusher = new Pusher('94254303a6a5048bf191', {
+  cluster: 'us2',
+  forceTLS: true
+});
+
+// realtime song add to mix
+var channel = pusher.subscribe('sr-channel');
+channel.bind('mix-event', function(data) {
+  try { 
+    console.log('Song added to mix')
+    var mixContainer = document.getElementById('mixContainer')
+    var mixElement = document.createElement('tr');
+    mixElement.setAttribute('class', 'song-request');
+    mixElement.setAttribute('id', `${data.id}`);
+    if (data.source === 'spotify') {
+      mixElement.innerHTML = `
+        <td><a class="srLink" href="${data.link}">${data.track} - ${data.artist}</a> <a class="spotify" href="${data.uri}"><i class="fab fa-spotify" title="Open in Spotify"></i></a></td>
+        <td>${data.reqBy}</td>
+        <td> 
+          <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track} - ${data.artist}"> Remove from Mix </button>
+        </td>
+      `
+    }
+    if (data.source === 'youtube') {
+      mixElement.innerHTML = `
+        <td><a class="srLink" href="${data.link}">${data.track}</a> <a class="youtube" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
+        <td>${data.reqBy}</td>
+      `
+    }
+    mixContainer.append(mixElement)
+  } catch (err) {
+    console.error(err)
+  }
+});
+
+channel.bind('mix-remove', function(data) {
+  var el = document.getElementById(`${data.id}`)
+  el.remove()
+});
+
+// Clear Mix
+channel.bind('clear-mix', function(data) {
+  $("#mix-table tbody tr").remove();
+});

@@ -25,6 +25,10 @@ const userSchema = new mongoose.Schema ({
 	},
 	twitch: {
 		type: JSON
+	},
+	is_admin: {
+		type: Boolean,
+		default: false
 	}
 })
 
