@@ -67,7 +67,7 @@
                     <th scope="col">Edit</th>
                 </tr>
             </thead>
-            <tbody class="" id="srContainer">
+            <tbody id="srContainer">
                 <% requests.forEach(request => { %>
                     <tr width="100%" id="<%= request.id %>">
                         <td>
@@ -91,6 +91,7 @@
         </table>
             
         <a href="/logout"><button class="btn btn-danger">Logout</button></a>
+        <p class="text-muted">v1.0.2 made with ❤️ by opti_21</p>
     </div>
     
     <script src="vendor/jquery/jquery.js"></script>
@@ -103,6 +104,7 @@
     <script src="https://js.pusher.com/4.4/pusher.min.js"></script>
     <script src="js/sweetalert2.all.min.js"></script>
     <script src="js/script.min.js"></script>
+    <!-- <script src="js/script.js"></script> -->
     
     </body>
 </html>
