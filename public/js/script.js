@@ -42,7 +42,7 @@ channel.bind('sr-event', function(data) {
           <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track}"> <i class="fas fa-minus-circle"></i> </button> </td>
       `
     }
-    srContainer.append(srElement)
+    srContainer.prepend(srElement)
   } catch (err) {
     console.error(err)
   }
@@ -74,20 +74,20 @@ channel.bind('mix-event', function(data) {
         </td>
       `
     }
-    mixContainer.append(mixElement)
+    mixContainer.prepend(mixElement)
   } catch (err) {
     console.error(err)
   }
 });
 
 // Flips table data
-// $(function(){
-//   $("tbody").each(function(elem,index){
-//     var arr = $.makeArray($("tr",this).detach());
-//     arr.reverse();
-//       $(this).append(arr);
-//   });
-// });
+$(function(){
+  $("#srContainer").each(function(elem,index){
+    var arr = $.makeArray($("tr",this).detach());
+    arr.reverse();
+      $(this).append(arr);
+  });
+});
 
 const Toast = Swal.mixin({
   toast: true,
@@ -148,6 +148,7 @@ $('#mixContainer').on('click', '.mix.delete', function() {
       xhr.send();
 })
 
+// Delete individual song from mix
 channel.bind('mix-remove', function(data) {
   var el = document.getElementById(`${data.id}`)
   el.remove()
