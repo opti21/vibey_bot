@@ -1,23 +1,25 @@
 // Generate random IDs for table elements
 function makeid(length) {
-  var result           = '';
-  var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var result = '';
+  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   var charactersLength = characters.length;
-  for ( var i = 0; i < length; i++ ) {
-     result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  for (var i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   return result;
 }
 
+// Pusher Poduction *** UNCOMMENT THIS BEFORE COMMIT ***
 var pusher = new Pusher('94254303a6a5048bf191', {
   cluster: 'us2',
   forceTLS: true
 });
 
+
 // Realtime song request
 var channel = pusher.subscribe('sr-channel');
-channel.bind('sr-event', function(data) {
-  try { 
+channel.bind('sr-event', function (data) {
+  try {
     console.log('New Request')
     var srContainer = document.getElementById('srContainer')
     var srElement = document.createElement('tr');
@@ -28,6 +30,9 @@ channel.bind('sr-event', function(data) {
         <td><a class="srLink" href="${data.link}">${data.track} - ${data.artist}</a> <a class="spotify" href="${data.uri}"><i class="fab fa-spotify" title="Open in Spotify"></i></a></td>
         <td>${data.reqBy}</td>
         <td>
+          <div class="timeReq" data-time="${data.timeOfReq}"></div>
+        </td>
+        <td>
           <button class="btn btn-success btn-sm mr-3 mix-add" data-srID="${data.id}">Add to Mix</button>
           <button class="delete btn btn-danger btn-sm" data-srID="${data.id}" data-srName="${data.track} - ${data.artist}"> <i class="fas fa-minus-circle"></i> </button>
         </td>
@@ -37,6 +42,9 @@ channel.bind('sr-event', function(data) {
       srElement.innerHTML = `
         <td><a class="srLink" href="${data.link}">${data.track}</a> <a class="youtube" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
         <td>${data.reqBy}</td>
+        <td>
+          <div class="timeReq" data-time="${data.timeOfReq}"></div>
+        </td>
         <td> 
           <button class="btn btn-success btn-sm mr-3 mix-add" data-srID="${data.id}">Add to Mix</button> 
           <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track}"> <i class="fas fa-minus-circle"></i> </button> </td>
@@ -48,9 +56,20 @@ channel.bind('sr-event', function(data) {
   }
 });
 
+var timeDiff = setInterval(reqTime, 1000);
+
+function reqTime() {
+  $('.timeReq').each(function () {
+
+    var ago = moment.utc(`${$(this).attr('data-time')}`).fromNow();
+    $(this).text(`${ago}`)
+
+  })
+}
+
 // realtime song add to mix
-channel.bind('mix-event', function(data) {
-  try { 
+channel.bind('mix-event', function (data) {
+  try {
     console.log('Song added to mix')
     var mixContainer = document.getElementById('mixContainer')
     var mixElement = document.createElement('tr');
@@ -81,11 +100,11 @@ channel.bind('mix-event', function(data) {
 });
 
 // Flips table data
-$(function(){
-  $("#srContainer").each(function(elem,index){
-    var arr = $.makeArray($("tr",this).detach());
+$(function () {
+  $("#srContainer").each(function (elem, index) {
+    var arr = $.makeArray($("tr", this).detach());
     arr.reverse();
-      $(this).append(arr);
+    $(this).append(arr);
   });
 });
 
@@ -97,65 +116,65 @@ const Toast = Swal.mixin({
 })
 
 // Add request to mix
-$('#srContainer').on('click', '.mix-add.btn', function() {
+$('#srContainer').on('click', '.mix-add.btn', function () {
   var srId = $(this).attr('data-srID')
   var xhr = new XMLHttpRequest();
-      xhr.open('GET', `/mix/add/${srId}`);
-      xhr.onload = function() {
-        if (xhr.status === 200) {
-          try {
-            Toast.fire({
-              type: 'success',
-              title: 'Song Added to Mix!'
-            })
-          } catch (err) {
-            console.error(err)
-          }
-        } else {
-          Toast.fire({
-            type: 'error',
-            title: 'Error adding song!',
-            text: '${xhr.responseText}'
-          })
-        }
+  xhr.open('GET', `/mix/add/${srId}`);
+  xhr.onload = function () {
+    if (xhr.status === 200) {
+      try {
+        Toast.fire({
+          type: 'success',
+          title: 'Song Added to Mix!'
+        })
+      } catch (err) {
+        console.error(err)
       }
-      xhr.send();
+    } else {
+      Toast.fire({
+        type: 'error',
+        title: 'Error adding song!',
+        text: '${xhr.responseText}'
+      })
+    }
+  }
+  xhr.send();
 })
 
 // Delete request from mix
-$('#mixContainer').on('click', '.mix.delete', function() {
+$('#mixContainer').on('click', '.mix.delete', function () {
   var srId = $(this).attr('data-srID')
   var xhr = new XMLHttpRequest();
-      xhr.open('GET', `/mix/remove/${srId}`);
-      xhr.onload = function() {
-        if (xhr.status === 200) {
-          try {
-            Toast.fire({
-              type: 'success',
-              title: 'Song Removed from mix!'
-            });
-          } catch (err) {
-            console.error(err)
-          }
-        } else {
-          Toast.fire({
-            type: 'error',
-            title: 'Error removing song from mix!',
-            text: '${xhr.responseText}'
-          })
-        }
+  xhr.open('GET', `/mix/remove/${srId}`);
+  xhr.onload = function () {
+    if (xhr.status === 200) {
+      try {
+        Toast.fire({
+          type: 'success',
+          title: 'Song Removed from mix!'
+        });
+      } catch (err) {
+        console.error(err)
       }
-      xhr.send();
+    } else {
+      Toast.fire({
+        type: 'error',
+        title: 'Error removing song from mix!',
+        text: '${xhr.responseText}'
+      })
+    }
+  }
+  xhr.send();
 })
 
 // Delete individual song from mix
-channel.bind('mix-remove', function(data) {
+channel.bind('mix-remove', function (data) {
   var el = document.getElementById(`${data.id}`)
   el.remove()
 });
 
 // Clear Queue 
-$('#clear-queue').on('click', '.delete-queue', function() {
+$('#clear-queue').on('click', '.delete-queue', function () {
   swal.fire({
     title: `Are you sure you want to clear the queue?`,
     text: "You won't be able to revert this!",
@@ -168,12 +187,12 @@ $('#clear-queue').on('click', '.delete-queue', function() {
     if (result.value) {
       var xhr = new XMLHttpRequest();
       xhr.open('GET', `/dashboard/deleteall`);
-      xhr.onload = function() {
+      xhr.onload = function () {
         if (xhr.status === 200) {
           Swal.fire({
-            title:'Cleared!',
+            title: 'Cleared!',
             text: `Queue has been cleared.`,
-            type:'success',
+            type: 'success',
             timer: 500,
             allowOutsideClick: false,
             allowEscapeKey: false,
@@ -198,7 +217,7 @@ $('#clear-queue').on('click', '.delete-queue', function() {
 });
 
 // Clear Mix
-$('#clear-mix').on('click', '.delete-mix', function() {
+$('#clear-mix').on('click', '.delete-mix', function () {
   swal.fire({
     title: `Are you sure you want to clear the mix?`,
     text: "You won't be able to revert this!",
@@ -211,12 +230,12 @@ $('#clear-mix').on('click', '.delete-mix', function() {
     if (result.value) {
       var xhr = new XMLHttpRequest();
       xhr.open('GET', `/dashboard/mix/deleteall`);
-      xhr.onload = function() {
+      xhr.onload = function () {
         if (xhr.status === 200) {
           Swal.fire({
-            title:'Cleared!',
+            title: 'Cleared!',
             text: `Mix has been cleared.`,
-            type:'success',
+            type: 'success',
             timer: 500,
             allowOutsideClick: false,
             allowEscapeKey: false,
@@ -242,7 +261,7 @@ $('#clear-mix').on('click', '.delete-mix', function() {
 
 
 // Delete Song Request
-$('#srContainer').on('click', '.delete.btn', function() {
+$('#srContainer').on('click', '.delete.btn', function () {
   var srName = $(this).attr('data-srName')
   var srId = $(this).attr('data-srID')
   swal.fire({
@@ -257,12 +276,12 @@ $('#srContainer').on('click', '.delete.btn', function() {
     if (result.value) {
       var xhr = new XMLHttpRequest();
       xhr.open('GET', `/dashboard/delete/${srId}`);
-      xhr.onload = function() {
+      xhr.onload = function () {
         if (xhr.status === 200) {
           Swal.fire({
-            title:'Deleted!',
+            title: 'Deleted!',
             text: `${srName} has been deleted.`,
-            type:'success',
+            type: 'success',
             timer: 500,
             allowOutsideClick: false,
             allowEscapeKey: false,
@@ -271,9 +290,11 @@ $('#srContainer').on('click', '.delete.btn', function() {
             },
             onClose: () => {
               try {
-                TweenMax.to(`#${srId}`, .5, {autoAlpha:0, margin: 0, onComplete:function(){
-                  $(`#${srId}`).remove();
-                }});
+                TweenMax.to(`#${srId}`, .5, {
+                  autoAlpha: 0, margin: 0, onComplete: function () {
+                    $(`#${srId}`).remove();
+                  }
+                });
               } catch (err) {
                 console.error(err)
               }
