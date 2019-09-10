@@ -1,6 +1,6 @@
 body {
 	background-color: rgba(0, 0, 0, 0) !important;
-	font-family: 'Indie Flower', cursive !important;
+	font-family: 'Montserrat', sans-serif;
 }
 .mixContainer {
 	padding: 10px;
@@ -25,4 +25,5 @@ body {
 	background-color: rgb(231, 216, 1);
 	color: black;
 	font-size: 25px;
+	text-transform: uppercase; 
 }

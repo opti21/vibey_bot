@@ -30,7 +30,7 @@ channel.bind('mix-event', function (data) {
   var mixElement = document.createElement('div');
   mixElement.setAttribute('class', 'mix-request');
   mixElement.setAttribute('id', `${data.id}`);
-  mixElement.innerHTML = `${data.track} - ${data.reqBy}`
+  mixElement.innerHTML = `${data.track} - <u>${data.reqBy}</u>`
 
   mixContainer.appendChild(mixElement)
   $(".mix-request").textFit()
