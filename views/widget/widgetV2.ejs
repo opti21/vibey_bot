@@ -7,7 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Indie+Flower&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/widget-v2.css">
     <!-- <link rel="stylesheet" href="../css/bootstrap.min.css"> -->
 </head>
@@ -42,7 +42,7 @@
         <% mixReqs.forEach(request => { %>
         <div id="<%= request.id %>" class="mix-request" data-fittext="true" data-fittext-size-min="12"
             data-fittext-size-max="25">
-            <%= request.track[0].name %> - <%= request.requestedBy %>
+            <%= request.track[0].name %> - <u><%= request.requestedBy %></u>
         </div>
         <% }) %>
     </div>
