@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+    <title>Live Widget</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Indie+Flower&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/widget-v2.css">
+    <!-- <link rel="stylesheet" href="../css/bootstrap.min.css"> -->
+</head>
+
+<body>
+    <div id="mixContainer" class="mixContainer">
+        <!-- <h1 class="text-light bg-info p-3">Current Mix - !requests</h1>
+        <table id="mix-table" class="table table-dark table-hover table-lg">
+            <tbody id="mixContainer">
+                <% mixReqs.forEach(request => { %>
+                <tr width="100%" id="<%= request.id %>">
+                    <td>
+                        <% if(request.source === 'spotify'){ %>
+                        <a class="srLink" href="<%= request.track[0].link %>"
+                            target="_blank"><%= request.track[0].name %> - <%= request.track[0].artist %></a>
+                        <a class="spotify" href="<%= request.track[0].uri %>"><i class="fab fa-spotify"
+                                title="Open in Spotify"></i></a>
+                        <% } %>
+                        <% if(request.source === 'youtube'){ %>
+                        <a class="srLink" href="<%= request.track[0].link %>"
+                            target="_blank"><%= request.track[0].name %></a>
+                        <a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
+                                title="Open on Youtube"></i></a>
+                        <% } %>
+                    </td>
+                    <td><%= request.requestedBy %></td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table> -->
+
+        <% mixReqs.forEach(request => { %>
+        <div id="<%= request.id %>" class="mix-request" data-fittext="true" data-fittext-size-min="12"
+            data-fittext-size-max="25">
+            <%= request.track[0].name %> - <%= request.requestedBy %>
+        </div>
+        <% }) %>
+    </div>
+
+    <script src="../vendor/jquery/jquery.js"></script>
+    <!-- <script src="../vendor/bootstrap/js/bootstrap.bundle.js"></script> -->
+    <script src="../js/jquery-ui.min.js"></script>
+    <script src="../vendor/gsap/TweenMax.min.js"></script>
+
+    <script src="https://js.pusher.com/4.4/pusher.min.js"></script>
+    <script src="../js/jquery.textFit.min.js"></script>
+    <script src="../js/widget-v2.js"></script>
+    <!-- <script src="../js/mix-script.min.js"></script> -->
+
+</body>
+
+</html>
