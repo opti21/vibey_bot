@@ -1,0 +1,28 @@
+body {
+	background-color: rgba(0, 0, 0, 0) !important;
+	font-family: 'Indie Flower', cursive !important;
+}
+.mixContainer {
+	padding: 10px;
+	display: grid;
+  grid-template-columns: 160px 100px;
+	grid-gap: 10px;
+	width: 330px;
+}
+.spotify {
+	color: #1DB954
+}
+.youtube {
+	color: #fc0800
+}
+.srLink {
+	color: #ffffff;
+}
+.mix-request {
+	width: 150px;
+	height: 150px;
+	padding: 5px;
+	background-color: rgb(231, 216, 1);
+	color: black;
+	font-size: 25px;
+}

@@ -9,12 +9,25 @@ function makeid(length) {
   return result;
 }
 
+$(document).ready(function () {
+  $('#sr-table').DataTable({
+    fixedHeader: true,
+    "ordering": false,
+    "paging": false
+  });
+});
+
 // Pusher Poduction *** UNCOMMENT THIS BEFORE COMMIT ***
 var pusher = new Pusher('94254303a6a5048bf191', {
   cluster: 'us2',
   forceTLS: true
 });
 
+// // Pusher DEVELOPMENT
+// var pusher = new Pusher('41f9377a48633b3302ff', {
+//   cluster: 'us2',
+//   forceTLS: true
+// });
 
 // Realtime song request
 var channel = pusher.subscribe('sr-channel');
@@ -33,7 +46,7 @@ channel.bind('sr-event', function (data) {
           <div class="timeReq" data-time="${data.timeOfReq}"></div>
         </td>
         <td>
-          <button class="btn btn-success btn-sm mr-3 mix-add" data-srID="${data.id}">Add to Mix</button>
+          <button class="btn btn-success btn-sm mr-3 p-3 mix-add" data-srID="${data.id}">Mix +</button>
           <button class="delete btn btn-danger btn-sm" data-srID="${data.id}" data-srName="${data.track} - ${data.artist}"> <i class="fas fa-minus-circle"></i> </button>
         </td>
       `
@@ -46,7 +59,7 @@ channel.bind('sr-event', function (data) {
           <div class="timeReq" data-time="${data.timeOfReq}"></div>
         </td>
         <td> 
-          <button class="btn btn-success btn-sm mr-3 mix-add" data-srID="${data.id}">Add to Mix</button> 
+          <button class="btn btn-success btn-sm mr-3 p-3 mix-add" data-srID="${data.id}">Mix +</button> 
           <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track}"> <i class="fas fa-minus-circle"></i> </button> </td>
       `
     }

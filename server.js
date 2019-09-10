@@ -132,7 +132,6 @@ app.get("/logout", function (req, res) {
   req.user = null;
   req.logout();
   res.render("bye");
-  console.log(req.session)
 });
 
 // Check to see if user is authenticated with passport 
@@ -153,7 +152,6 @@ app.get("/test", function (req, res) {
 // Dashboard
 const mixReqs = require("./models/mixRequests");
 app.get("/dashboard", loggedIn, async (req, res) => {
-  console.log(req.session.passport.user)
   try {
     var user = await User.findOne({ twitch_id: req.user.id });
     console.log(user.username);
@@ -177,10 +175,18 @@ app.get("/dashboard", loggedIn, async (req, res) => {
 // Stream Widget
 app.get("/widget", async (req, res) => {
   var mixRequests = await mixReqs.find();
-  res.render("widget", {
+  res.render("widget/widget", {
     mixReqs: mixRequests
   });
 });
+
+app.get("/widget/v2", async (req, res) => {
+  var mixRequests = await mixReqs.find();
+  res.render("widget/widgetV2", {
+    mixReqs: mixRequests
+  });
+});
+
 
 app.get("/dashboard/delete/:id", loggedIn, async (req, res) => {
   try {
