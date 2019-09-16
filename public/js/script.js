@@ -58,7 +58,7 @@ channel.bind('sr-event', function (data) {
         </td>
       `
     }
-    if (data.source === 'youtube') {
+    if (data.source === 'youtube' || 'text') {
       srElement.innerHTML = `
         <td><a class="srLink" target="_blank" href="${data.link}">${data.track}</a> <a class="youtube" target="_blank" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
         <td>${data.reqBy}</td>
