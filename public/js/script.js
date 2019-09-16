@@ -9,12 +9,19 @@ function makeid(length) {
   return result;
 }
 
+
+
 $(document).ready(function () {
   $('#sr-table').DataTable({
     fixedHeader: true,
     "ordering": false,
     "paging": false
   });
+});
+
+$("#menu-toggle").click(function (e) {
+  e.preventDefault();
+  $("#wrapper").toggleClass("toggled");
 });
 
 // Pusher Poduction *** UNCOMMENT THIS BEFORE COMMIT ***
@@ -40,7 +47,7 @@ channel.bind('sr-event', function (data) {
     srElement.setAttribute('id', `${data.id}`);
     if (data.source === 'spotify') {
       srElement.innerHTML = `
-        <td><a class="srLink" href="${data.link}">${data.track} - ${data.artist}</a> <a class="spotify" href="${data.uri}"><i class="fab fa-spotify" title="Open in Spotify"></i></a></td>
+        <td><a class="srLink" target="_blank" href="${data.link}">${data.track} - ${data.artist}</a> <a class="spotify" target="_blank" href="${data.uri}"><i class="fab fa-spotify" title="Open in Spotify"></i></a></td>
         <td>${data.reqBy}</td>
         <td>
           <div class="timeReq" data-time="${data.timeOfReq}"></div>
@@ -53,7 +60,7 @@ channel.bind('sr-event', function (data) {
     }
     if (data.source === 'youtube') {
       srElement.innerHTML = `
-        <td><a class="srLink" href="${data.link}">${data.track}</a> <a class="youtube" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
+        <td><a class="srLink" target="_blank" href="${data.link}">${data.track}</a> <a class="youtube" target="_blank" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
         <td>${data.reqBy}</td>
         <td>
           <div class="timeReq" data-time="${data.timeOfReq}"></div>
@@ -90,19 +97,19 @@ channel.bind('mix-event', function (data) {
     mixElement.setAttribute('id', `${data.id}`);
     if (data.source === 'spotify') {
       mixElement.innerHTML = `
-        <td><a class="srLink" href="${data.link}">${data.track} - ${data.artist}</a> <a class="spotify" href="${data.uri}"><i class="fab fa-spotify" title="Open in Spotify"></i></a></td>
+        <td><a class="srLink" target="_blank" href="${data.link}">${data.track} - ${data.artist}</a> <a class="spotify" href="${data.uri}"><i class="fab fa-spotify" title="Open in Spotify"></i></a></td>
         <td>${data.reqBy}</td>
         <td> 
-          <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track} - ${data.artist}"> Remove from Mix </button>
+          <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track} - ${data.artist}"> Remove </button>
         </td>
       `
     }
-    if (data.source === 'youtube') {
+    if (data.source === 'youtube' || 'text') {
       mixElement.innerHTML = `
-        <td><a class="srLink" href="${data.link}">${data.track}</a> <a class="youtube" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
+        <td><a class="srLink" target="_blank" href="${data.link}">${data.track}</a> <a class="youtube" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
         <td>${data.reqBy}</td>
         <td> 
-          <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track}"> Remove from Mix </button>
+          <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track}"> Remove </button>
         </td>
       `
     }
@@ -199,7 +206,7 @@ $('#clear-queue').on('click', '.delete-queue', function () {
   }).then((result) => {
     if (result.value) {
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', `/dashboard/deleteall`);
+      xhr.open('GET', `/requests/deleteall`);
       xhr.onload = function () {
         if (xhr.status === 200) {
           Swal.fire({
@@ -242,7 +249,7 @@ $('#clear-mix').on('click', '.delete-mix', function () {
   }).then((result) => {
     if (result.value) {
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', `/dashboard/mix/deleteall`);
+      xhr.open('GET', `/requests/mix/deleteall`);
       xhr.onload = function () {
         if (xhr.status === 200) {
           Swal.fire({
@@ -288,7 +295,7 @@ $('#srContainer').on('click', '.delete.btn', function () {
   }).then((result) => {
     if (result.value) {
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', `/dashboard/delete/${srId}`);
+      xhr.open('GET', `/requests/delete/${srId}`);
       xhr.onload = function () {
         if (xhr.status === 200) {
           Swal.fire({

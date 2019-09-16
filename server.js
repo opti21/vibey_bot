@@ -16,7 +16,7 @@ const moment = require("moment");
 const Pusher = require("pusher");
 
 // Real time data
-var channels_client = new Pusher(config.pusher);
+var pusher_client = new Pusher(config.pusher);
 
 //Spotify Credentials
 const spotify = new Spotify({
@@ -110,8 +110,8 @@ app.get(
   passport.authenticate("twitch", { failureRedirect: "/login" }),
   function (req, res) {
     // Successful authentication, redirect home.
-    // res.redirect("/dashboard");
-    res.redirect("/dashboard");
+    // res.redirect("/requests");
+    res.redirect("/requests");
   }
 );
 
@@ -151,7 +151,7 @@ app.get("/test", function (req, res) {
 
 // Dashboard
 const mixReqs = require("./models/mixRequests");
-app.get("/dashboard", loggedIn, async (req, res) => {
+app.get("/requests", loggedIn, async (req, res) => {
   try {
     var user = await User.findOne({ twitch_id: req.user.id });
     console.log(user.username);
@@ -159,10 +159,27 @@ app.get("/dashboard", loggedIn, async (req, res) => {
     var feSongRequests = await SongRequest.find();
     var mixRequests = await mixReqs.find();
     if (admins.includes(user.username)) {
-      res.render("dashboard", {
+      res.render("requests", {
         feUser: user.username,
         requests: feSongRequests,
         mixReqs: mixRequests
+      });
+    } else {
+      res.redirect("/login");
+    }
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+app.get("/polls", loggedIn, async (req, res) => {
+  try {
+    var user = await User.findOne({ twitch_id: req.user.id });
+    console.log(user.username);
+    var admins = config.admins;
+    if (admins.includes(user.username)) {
+      res.render("polls", {
+        feUser: user.username,
       });
     } else {
       res.redirect("/login");
@@ -188,7 +205,7 @@ app.get("/widget/v2", async (req, res) => {
 });
 
 
-app.get("/dashboard/delete/:id", loggedIn, async (req, res) => {
+app.get("/requests/delete/:id", loggedIn, async (req, res) => {
   try {
     await SongRequest.deleteOne({ _id: req.params.id }).exec();
     res.status(200).send("Request deleted");
@@ -198,10 +215,10 @@ app.get("/dashboard/delete/:id", loggedIn, async (req, res) => {
   }
 });
 
-app.get("/dashboard/mix/deleteall", loggedIn, async (req, res) => {
+app.get("/requests/mix/deleteall", loggedIn, async (req, res) => {
   try {
     await mixReqs.deleteMany({}).exec();
-    channels_client.trigger("sr-channel", "clear-mix", {});
+    pusher_client.trigger("sr-channel", "clear-mix", {});
     res.status(200).send("Mix cleared");
   } catch (err) {
     res.status(500).send("Error clearing mix!");
@@ -209,7 +226,7 @@ app.get("/dashboard/mix/deleteall", loggedIn, async (req, res) => {
   }
 });
 
-app.get("/dashboard/deleteall", loggedIn, (req, res) => {
+app.get("/requests/deleteall", loggedIn, (req, res) => {
   try {
     SongRequest.deleteMany({}).exec();
     res.status(200).send("Queue cleared");
@@ -238,7 +255,7 @@ app.get("/mix/add/:id", loggedIn, async (req, res) => {
     mixAdd.save().then(doc => {
       try {
         res.status(200).send("Added to Mix");
-        channels_client.trigger("sr-channel", "mix-event", {
+        pusher_client.trigger("sr-channel", "mix-event", {
           id: `${doc.id}`,
           reqBy: `${doc.requestedBy}`,
           track: `${doc.track[0].name}`,
@@ -258,7 +275,7 @@ app.get("/mix/add/:id", loggedIn, async (req, res) => {
 app.get("/mix/remove/:id", loggedIn, async (req, res) => {
   try {
     await mixReqs.deleteOne({ _id: req.params.id }).exec();
-    channels_client.trigger("sr-channel", "mix-remove", {
+    pusher_client.trigger("sr-channel", "mix-remove", {
       id: `${req.params.id}`
     });
     res.status(200).send("Song Removed from mix");
@@ -342,7 +359,7 @@ botclient.on("chat", (channel, userstate, message, self) => {
                   `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist}`
                 );
                 // Real time data push to front end
-                channels_client.trigger("sr-channel", "sr-event", {
+                pusher_client.trigger("sr-channel", "sr-event", {
                   id: `${doc.id}`,
                   reqBy: `${doc.requestedBy}`,
                   track: `${doc.track[0].name}`,
@@ -363,34 +380,35 @@ botclient.on("chat", (channel, userstate, message, self) => {
       }
 
       if (ytRegex.test(message[1])) {
-        youtube.getVideo(message[1]).then(video => {
-          var newYTSR = new SongRequest({
-            track: { name: video.title, link: message[1] },
-            requestedBy: userstate.username,
-            timeOfReq: moment.utc().format(),
-            source: "youtube"
-          });
-          newYTSR
-            .save()
-            .then(doc => {
-              botclient.say(
-                channel,
-                `@${doc.requestedBy} requested ${doc.track[0].name} ${doc.track[0].link}`
-              );
-              // Real time data push to front end
-              channels_client.trigger("sr-channel", "sr-event", {
-                id: `${doc.id}`,
-                reqBy: `${doc.requestedBy}`,
-                track: `${doc.track[0].name}`,
-                link: `${doc.track[0].link}`,
-                source: `${doc.source}`,
-                timeOfReq: `${doc.timeOfReq}`
-              });
-            })
-            .catch(err => {
-              console.error(err);
-            });
+        var newYTSR = new SongRequest({
+          track: {
+            name: message[1],
+            link: message[1]
+          },
+          requestedBy: userstate.username,
+          timeOfReq: moment.utc().format(),
+          source: "youtube"
         });
+        newYTSR
+          .save()
+          .then(doc => {
+            botclient.say(
+              channel,
+              `@${doc.requestedBy} requested ${doc.track[0].name} ${doc.track[0].link}`
+            );
+            // Real time data push to front end
+            pusher_client.trigger("sr-channel", "sr-event", {
+              id: `${doc.id}`,
+              reqBy: `${doc.requestedBy}`,
+              track: `${doc.track[0].name}`,
+              link: `${doc.track[0].link}`,
+              source: `${doc.source}`,
+              timeOfReq: `${doc.timeOfReq}`
+            });
+          })
+          .catch(err => {
+            console.error(err);
+          });
       }
     }
     // Check for text content
@@ -402,41 +420,69 @@ botclient.on("chat", (channel, userstate, message, self) => {
     } else {
       // Searches YouTube when only text is provided
       if (!ytRegex.test(message[1])) {
-        var query = message.slice(1).join(" ");
-        youtube
-          .search(query, 1)
-          .then(results => {
-            var newYTSR = new SongRequest({
-              track: {
-                name: results[0].title,
-                link: `https://youtu.be/${results[0].id}`
-              },
-              requestedBy: userstate.username,
-              timeOfReq: moment.utc().format(),
-              source: "youtube"
-            });
-            newYTSR
-              .save()
-              .then(doc => {
-                botclient.say(
-                  channel,
-                  `@${doc.requestedBy} requested ${doc.track[0].name} https://youtu.be/${results[0].id}`
-                );
-                // Real time data push to front end
-                channels_client.trigger("sr-channel", "sr-event", {
-                  id: `${doc.id}`,
-                  reqBy: `${doc.requestedBy}`,
-                  track: `${doc.track[0].name}`,
-                  link: `${doc.track[0].link}`,
-                  source: `${doc.source}`,
-                  timeOfReq: `${doc.timeOfReq}`
-                });
-              })
-              .catch(err => {
-                console.error(err);
-              });
-          })
+        var request = message.slice(1).join(" ");
+        var ytQuery = message.slice(1).join("+")
+        var ytSearch = `https://www.youtube.com/results?search_query=${ytQuery}`
+        var newText = new SongRequest({
+          track: {
+            name: request,
+            link: ytSearch
+          },
+          requestedBy: userstate.username,
+          timeOfReq: moment.utc().format(),
+          source: 'text'
+        })
+        newText.save().then(doc => {
+          botclient.say(
+            channel,
+            `@${doc.requestedBy} requested ${doc.track[0].name}`
+          )
+          // Real time data push to front end
+          pusher_client.trigger("sr-channel", "sr-event", {
+            id: `${doc.id}`,
+            reqBy: `${doc.requestedBy}`,
+            track: `${doc.track[0].name}`,
+            link: `${doc.track[0].link}`,
+            source: `${doc.source}`,
+            timeOfReq: `${doc.timeOfReq}`
+          });
+        })
           .catch(console.error);
+        // TODO: Find fix for youtube API limit
+        // youtube
+        //   .search(query, 1)
+        //   .then(results => {
+        //     var newYTSR = new SongRequest({
+        //       track: {
+        //         name: results[0].title,
+        //         link: `https://youtu.be/${results[0].id}`
+        //       },
+        //       requestedBy: userstate.username,
+        //       timeOfReq: moment.utc().format(),
+        //       source: "youtube"
+        //     });
+        //     newYTSR
+        //       .save()
+        //       .then(doc => {
+        //         botclient.say(
+        //           channel,
+        //           `@${doc.requestedBy} requested ${doc.track[0].name} https://youtu.be/${results[0].id}`
+        //         );
+        //         // Real time data push to front end
+        //         pusher_client.trigger("sr-channel", "sr-event", {
+        //           id: `${doc.id}`,
+        //           reqBy: `${doc.requestedBy}`,
+        //           track: `${doc.track[0].name}`,
+        //           link: `${doc.track[0].link}`,
+        //           source: `${doc.source}`,
+        //           timeOfReq: `${doc.timeOfReq}`
+        //         });
+        //       })
+        //       .catch(err => {
+        //         console.error(err);
+        //       });
+        // })
+        // .catch(console.error);
       }
     }
   }

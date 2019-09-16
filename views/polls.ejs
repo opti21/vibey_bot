@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+	<title>Vibey Poll</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="css/requests.css">
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="vendor/DataTables/datatables.min.css" />
+</head>
+
+<body>
+	<div class="d-flex bg-dark" id="wrapper">
+
+		<!-- Sidebar -->
+		<div class="bg-dark" id="sidebar-wrapper">
+			<div class="sidebar-heading">Vibey Menu</div>
+			<div class="list-group list-group-flush">
+				<a href="/requests" class="list-group-item list-group-item-action bg-dark text-white"><i
+						class="fas fa-music mr-2"></i>Requests<span class="sr-only">(current)</span></a>
+				<a href="/polls" class="list-group-item list-group-item-action bg-dark text-white active"> <i
+						class="fas fa-poll mr-2"></i>Poll</a>
+				<a href="#" class="list-group-item list-group-item-action bg-dark text-muted"> <i
+						class="fas fa-cogs mr-1"></i>Settings (soon)</a>
+			</div>
+		</div>
+		<!-- /#sidebar-wrapper -->
+
+		<!-- Page Content -->
+		<div id="page-content-wrapper">
+
+			<div class="container-fluid">
+				<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+					<button class="btn btn-dark mr-3" id="menu-toggle"><i class="fas fa-bars"></i></button>
+					<span class="navbar-brand mb-0 h1">Vibey Bot</span>
+				</nav>
+				<h1>Polls</h1>
+
+			</div>
+		</div>
+	</div>
+	<!-- /#page-content-wrapper -->
+
+	</div>
+	<!-- /#wrapper -->
+
+	<!-- Menu Toggle Script -->
+	<script>
+		$("#menu-toggle").click(function (e) {
+			e.preventDefault();
+			$("#wrapper").toggleClass("toggled");
+		});
+	</script>
+
+	<script src="vendor/jquery/jquery.js"></script>
+	<script src="vendor/bootstrap/js/bootstrap.bundle.js"></script>
+	<script src="js/jquery-ui.min.js"></script>
+	<script src="vendor/gsap/TweenMax.min.js"></script>
+	<script src="js/moment.min.js"></script>
+
+	<script src="https://js.pusher.com/4.4/pusher.min.js"></script>
+	<script src="js/sweetalert2.all.min.js"></script>
+	<script type="text/javascript" src="vendor/DataTables/datatables.min.js"></script>
+	<!-- <script src="js/script.min.js"></script> -->
+	<script src="js/script.js"></script>
+
+</body>
+
+</html>
