@@ -380,35 +380,34 @@ botclient.on("chat", (channel, userstate, message, self) => {
       }
 
       if (ytRegex.test(message[1])) {
-        var newYTSR = new SongRequest({
-          track: {
-            name: message[1],
-            link: message[1]
-          },
-          requestedBy: userstate.username,
-          timeOfReq: moment.utc().format(),
-          source: "youtube"
-        });
-        newYTSR
-          .save()
-          .then(doc => {
-            botclient.say(
-              channel,
-              `@${doc.requestedBy} requested ${doc.track[0].name} ${doc.track[0].link}`
-            );
-            // Real time data push to front end
-            pusher_client.trigger("sr-channel", "sr-event", {
-              id: `${doc.id}`,
-              reqBy: `${doc.requestedBy}`,
-              track: `${doc.track[0].name}`,
-              link: `${doc.track[0].link}`,
-              source: `${doc.source}`,
-              timeOfReq: `${doc.timeOfReq}`
-            });
-          })
-          .catch(err => {
-            console.error(err);
+        youtube.getVideo(message[1]).then(video => {
+          var newYTSR = new SongRequest({
+            track: { name: video.title, link: message[1] },
+            requestedBy: userstate.username,
+            timeOfReq: moment.utc().format(),
+            source: "youtube"
           });
+          newYTSR
+            .save()
+            .then(doc => {
+              botclient.say(
+                channel,
+                `@${doc.requestedBy} requested ${doc.track[0].name} ${doc.track[0].link}`
+              );
+              // Real time data push to front end
+              pusher_client.trigger("sr-channel", "sr-event", {
+                id: `${doc.id}`,
+                reqBy: `${doc.requestedBy}`,
+                track: `${doc.track[0].name}`,
+                link: `${doc.track[0].link}`,
+                source: `${doc.source}`,
+                timeOfReq: `${doc.timeOfReq}`
+              });
+            })
+            .catch(err => {
+              console.error(err);
+            });
+        });
       }
     }
     // Check for text content
