@@ -58,7 +58,19 @@ channel.bind('sr-event', function (data) {
         </td>
       `
     }
-    if (data.source === 'youtube' || 'text') {
+    if (data.source === 'youtube') {
+      srElement.innerHTML = `
+        <td><a class="srLink" target="_blank" href="${data.link}">${data.track}</a> <a class="youtube" target="_blank" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
+        <td>${data.reqBy}</td>
+        <td>
+          <div class="timeReq" data-time="${data.timeOfReq}"></div>
+        </td>
+        <td> 
+          <button class="btn btn-success btn-sm mr-3 p-3 mix-add" data-srID="${data.id}">Mix +</button> 
+          <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track}"> <i class="fas fa-minus-circle"></i> </button> </td>
+      `
+    }
+    if (data.source === 'text') {
       srElement.innerHTML = `
         <td><a class="srLink" target="_blank" href="${data.link}">${data.track}</a> <a class="youtube" target="_blank" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
         <td>${data.reqBy}</td>
@@ -105,6 +117,15 @@ channel.bind('mix-event', function (data) {
       `
     }
     if (data.source === 'youtube' || 'text') {
+      mixElement.innerHTML = `
+        <td><a class="srLink" target="_blank" href="${data.link}">${data.track}</a> <a class="youtube" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
+        <td>${data.reqBy}</td>
+        <td> 
+          <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track}"> Remove </button>
+        </td>
+      `
+    }
+    if (data.source === 'text') {
       mixElement.innerHTML = `
         <td><a class="srLink" target="_blank" href="${data.link}">${data.track}</a> <a class="youtube" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
         <td>${data.reqBy}</td>

@@ -61,8 +61,12 @@
 											<%= request.track[0].artist %></a>
 										<a class="spotify" href="<%= request.track[0].uri %>"><i class="fab fa-spotify"
 												title="Open in Spotify"></i></a>
-										<% } %>
-										<% if(request.source === 'youtube' || 'text'){ %>
+										<% } if(request.source === 'youtube'){ %>
+										<a class="srLink" href="<%= request.track[0].link %>"
+											target="_blank"><%= request.track[0].name %></a>
+										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
+												title="Open on Youtube"></i></a>
+										<% } if(request.source === 'text'){ %>
 										<a class="srLink" href="<%= request.track[0].link %>"
 											target="_blank"><%= request.track[0].name %></a>
 										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
@@ -109,8 +113,12 @@
 											<%= request.track[0].artist %></a>
 										<a class="spotify" href="<%= request.track[0].uri %>"><i class="fab fa-spotify"
 												title="Open in Spotify"></i></a>
-										<% } %>
-										<% if(request.source === 'youtube' || 'text'){ %>
+										<% } if(request.source === 'youtube'){ %>
+										<a class="srLink" href="<%= request.track[0].link %>"
+											target="_blank"><%= request.track[0].name %></a>
+										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
+												title="Open on Youtube"></i></a>
+										<% } if(request.source === 'text'){ %>
 										<a class="srLink" href="<%= request.track[0].link %>"
 											target="_blank"><%= request.track[0].name %></a>
 										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
@@ -131,10 +139,10 @@
 				<div class="row">
 					<div class="col">
 						<a href="/logout"><button class="btn btn-danger">Logout</button></a>
-						<p class="text-muted text-center">v0.3.1 made with ❤️ by opti_21</p>
+						<p class="text-muted text-center">v<%= version %> made with ❤️ by opti_21</p>
 					</div>
 				</div>
-			</div>`
+			</div>
 		</div>
 	</div>
 	<!-- /#page-content-wrapper -->
@@ -143,12 +151,6 @@
 	<!-- /#wrapper -->
 
 	<!-- Menu Toggle Script -->
-	<script>
-		$("#menu-toggle").click(function (e) {
-			e.preventDefault();
-			$("#wrapper").toggleClass("toggled");
-		});
-	</script>
 
 	<script src="vendor/jquery/jquery.js"></script>
 	<script src="vendor/bootstrap/js/bootstrap.bundle.js"></script>
@@ -159,8 +161,8 @@
 	<script src="https://js.pusher.com/4.4/pusher.min.js"></script>
 	<script src="js/sweetalert2.all.min.js"></script>
 	<script type="text/javascript" src="vendor/DataTables/datatables.min.js"></script>
-	<script src="js/script.min.js"></script>
-	<!-- <script src="js/script.js"></script> -->
+	<!-- <script src="js/script.min.js"></script> -->
+	<script src="js/script.js"></script>
 
 </body>
 

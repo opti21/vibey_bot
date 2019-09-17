@@ -1,6 +1,6 @@
 {
   "name": "vibey_bot",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Just a sweet dashboard to see your live twitch stats",
   "main": "server.js",
   "scripts": {
@@ -25,6 +25,7 @@
     "passport-oauth": "^1.0.0",
     "passport-twitch-new": "0.0.1",
     "pkginfo": "^0.4.1",
+    "project-version": "^1.2.0",
     "pusher": "^2.2.2",
     "simple-youtube-api": "^5.2.1",
     "socket.io": "^2.2.0",
