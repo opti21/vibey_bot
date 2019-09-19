@@ -425,40 +425,68 @@ botclient.on("chat", (channel, userstate, message, self) => {
       // Searches Spotify when only text is provided
       if (!ytRegex.test(message[1])) {
         var request = message.slice(1).join(" ");
+        var ytQuery = message.slice(1).join("+")
+        var ytSearch = `https://www.youtube.com/results?search_query=${ytQuery}`
         spotify.search({ type: 'track', query: `${request}`, limit: 1 }, function (err, data) {
-          if (err) {
-            return console.log('Error occurred: ' + err);
-          }
-          var newSpotSR = new SongRequest({
-            track: {
-              name: data.tracks.items[0].name,
-              artist: data.tracks.items[0].artists[0].name,
-              link: data.tracks.items[0].external_urls.spotify,
-              uri: data.tracks.items[0].uri
-            },
-            requestedBy: userstate.username,
-            timeOfReq: moment.utc().format(),
-            source: "spotify"
-          });
-          newSpotSR
-            .save()
-            .then(doc => {
+          if (data === null) {
+            var newText = new SongRequest({
+              track: {
+                name: request,
+                link: ytSearch
+              },
+              requestedBy: userstate.username,
+              timeOfReq: moment.utc().format(),
+              source: 'text'
+            })
+            newText.save().then(doc => {
               botclient.say(
                 channel,
-                `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist} - ${doc.track[0].link}`
-              );
+                `@${doc.requestedBy} requested ${doc.track[0].name}`
+              )
               // Real time data push to front end
               pusher_client.trigger("sr-channel", "sr-event", {
                 id: `${doc.id}`,
                 reqBy: `${doc.requestedBy}`,
                 track: `${doc.track[0].name}`,
-                artist: `${doc.track[0].artist}`,
-                uri: `${doc.track[0].uri}`,
                 link: `${doc.track[0].link}`,
                 source: `${doc.source}`,
                 timeOfReq: `${doc.timeOfReq}`
               });
+            })
+              .catch(console.error);
+          } else {
+            var newSpotSR = new SongRequest({
+              track: {
+                name: data.tracks.items[0].name,
+                artist: data.tracks.items[0].artists[0].name,
+                link: data.tracks.items[0].external_urls.spotify,
+                uri: data.tracks.items[0].uri
+              },
+              requestedBy: userstate.username,
+              timeOfReq: moment.utc().format(),
+              source: "spotify"
             });
+            newSpotSR
+              .save()
+              .then(doc => {
+                botclient.say(
+                  channel,
+                  `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist} - ${doc.track[0].link}`
+                );
+                // Real time data push to front end
+                pusher_client.trigger("sr-channel", "sr-event", {
+                  id: `${doc.id}`,
+                  reqBy: `${doc.requestedBy}`,
+                  track: `${doc.track[0].name}`,
+                  artist: `${doc.track[0].artist}`,
+                  uri: `${doc.track[0].uri}`,
+                  link: `${doc.track[0].link}`,
+                  source: `${doc.source}`,
+                  timeOfReq: `${doc.timeOfReq}`
+                });
+              });
+          }
+
         });
         // var request = message.slice(1).join(" ");
         // var ytQuery = message.slice(1).join("+")
