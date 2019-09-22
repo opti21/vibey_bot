@@ -422,38 +422,73 @@ botclient.on("chat", (channel, userstate, message, self) => {
         `No input recieved. !requests to see how to submit requests`
       );
     } else {
-      // Searches Spotify when only text is provided
+      // Searches Spotify & Youtube when only text is provided
       if (!ytRegex.test(message[1])) {
         var request = message.slice(1).join(" ");
         var ytQuery = message.slice(1).join("+")
         var ytSearch = `https://www.youtube.com/results?search_query=${ytQuery}`
         spotify.search({ type: 'track', query: `${request}`, limit: 1 }, function (err, data) {
           if (data === null) {
-            var newText = new SongRequest({
-              track: {
-                name: request,
-                link: ytSearch
-              },
-              requestedBy: userstate.username,
-              timeOfReq: moment.utc().format(),
-              source: 'text'
-            })
-            newText.save().then(doc => {
-              botclient.say(
-                channel,
-                `@${doc.requestedBy} requested ${doc.track[0].name}`
-              )
-              // Real time data push to front end
-              pusher_client.trigger("sr-channel", "sr-event", {
-                id: `${doc.id}`,
-                reqBy: `${doc.requestedBy}`,
-                track: `${doc.track[0].name}`,
-                link: `${doc.track[0].link}`,
-                source: `${doc.source}`,
-                timeOfReq: `${doc.timeOfReq}`
-              });
-            })
+            youtube
+              .search(request, 1)
+              .then(results => {
+                var newYTSR = new SongRequest({
+                  track: {
+                    name: results[0].title,
+                    link: `https://youtu.be/${results[0].id}`
+                  },
+                  requestedBy: userstate.username,
+                  timeOfReq: moment.utc().format(),
+                  source: "youtube"
+                });
+                newYTSR
+                  .save()
+                  .then(doc => {
+                    botclient.say(
+                      channel,
+                      `@${doc.requestedBy} requested ${doc.track[0].name} https://youtu.be/${results[0].id}`
+                    );
+                    // Real time data push to front end
+                    pusher_client.trigger("sr-channel", "sr-event", {
+                      id: `${doc.id}`,
+                      reqBy: `${doc.requestedBy}`,
+                      track: `${doc.track[0].name}`,
+                      link: `${doc.track[0].link}`,
+                      source: `${doc.source}`,
+                      timeOfReq: `${doc.timeOfReq}`
+                    });
+                  })
+                  .catch(err => {
+                    console.error(err);
+                  });
+              })
               .catch(console.error);
+
+            // var newText = new SongRequest({
+            //   track: {
+            //     name: request,
+            //     link: ytSearch
+            //   },
+            //   requestedBy: userstate.username,
+            //   timeOfReq: moment.utc().format(),
+            //   source: 'text'
+            // })
+            // newText.save().then(doc => {
+            //   botclient.say(
+            //     channel,
+            //     `@${doc.requestedBy} requested ${doc.track[0].name}`
+            //   )
+            //   // Real time data push to front end
+            //   pusher_client.trigger("sr-channel", "sr-event", {
+            //     id: `${doc.id}`,
+            //     reqBy: `${doc.requestedBy}`,
+            //     track: `${doc.track[0].name}`,
+            //     link: `${doc.track[0].link}`,
+            //     source: `${doc.source}`,
+            //     timeOfReq: `${doc.timeOfReq}`
+            //   });
+            // })
+            //   .catch(console.error);
           } else {
             var newSpotSR = new SongRequest({
               track: {
@@ -514,41 +549,6 @@ botclient.on("chat", (channel, userstate, message, self) => {
         //     source: `${doc.source}`,
         //     timeOfReq: `${doc.timeOfReq}`
         //   });
-        // })
-        // .catch(console.error);
-        // TODO: Find fix for youtube API limit
-        // youtube
-        //   .search(query, 1)
-        //   .then(results => {
-        //     var newYTSR = new SongRequest({
-        //       track: {
-        //         name: results[0].title,
-        //         link: `https://youtu.be/${results[0].id}`
-        //       },
-        //       requestedBy: userstate.username,
-        //       timeOfReq: moment.utc().format(),
-        //       source: "youtube"
-        //     });
-        //     newYTSR
-        //       .save()
-        //       .then(doc => {
-        //         botclient.say(
-        //           channel,
-        //           `@${doc.requestedBy} requested ${doc.track[0].name} https://youtu.be/${results[0].id}`
-        //         );
-        //         // Real time data push to front end
-        //         pusher_client.trigger("sr-channel", "sr-event", {
-        //           id: `${doc.id}`,
-        //           reqBy: `${doc.requestedBy}`,
-        //           track: `${doc.track[0].name}`,
-        //           link: `${doc.track[0].link}`,
-        //           source: `${doc.source}`,
-        //           timeOfReq: `${doc.timeOfReq}`
-        //         });
-        //       })
-        //       .catch(err => {
-        //         console.error(err);
-        //       });
         // })
         // .catch(console.error);
       }
