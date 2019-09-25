@@ -618,10 +618,9 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       var i = currV + 1
       var tUser = userstate.username
 
-      // $set: { "choices.$.votes": i }
       await Poll.findOneAndUpdate({ "_id": poll.id, "choices.id": cID },
-        { $push: { voters: tUser } }, { useFindAndModify: false, new: true }, (err, doc) => {
-          // console.log(doc.choices[cIndex].votes)
+        { $push: { voters: tUser }, $set: { "choices.$.votes": i } }, { useFindAndModify: false, new: true }, (err, doc) => {
+          console.log(doc.choices[cIndex].votes)
           console.log(doc)
         })
     }
