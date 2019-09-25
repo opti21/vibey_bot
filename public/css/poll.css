@@ -20,7 +20,7 @@ body {
 	margin-bottom: 5px;
 }
 .left {
-	height: 90vh;
+	height: 80vh;
 	overflow: hidden;
   overflow-y: scroll;
 }

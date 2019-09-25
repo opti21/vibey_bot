@@ -1,65 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>Vibey Song Requests</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="css/bootstrap.min.css">
-        <link href="https://fonts.googleapis.com/css?family=Emblema+One|Press+Start+2P&display=swap" rel="stylesheet">
-        <style>
-					.fullscreen-bg {
-							position: fixed;
-							top: 0;
-							right: 0;
-							bottom: 0;
-							left: 0;
-							overflow: hidden;
-							z-index: -100;
-					}
 
-					.fullscreen-bg__video {
-							position: absolute;
-							top: 50%;
-							left: 50%;
-							width: auto;
-							height: auto;
-							min-width: 100%;
-							min-height: 100%;
-							-webkit-transform: translate(-50%, -50%);
-								-moz-transform: translate(-50%, -50%);
-									-ms-transform: translate(-50%, -50%);
-								transform: translate(-50%, -50%);
-					}
+<head>
+	<title>Vibey Bot</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<link href="https://fonts.googleapis.com/css?family=Emblema+One|Press+Start+2P&display=swap" rel="stylesheet">
+	<link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+	<style>
+		.fullscreen-bg {
+			position: fixed;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			overflow: hidden;
+			z-index: -100;
+		}
 
-					@media (max-width: 767px) {
-							.fullscreen-bg {
-									background: url('img/Ma-Vibes.jpg') center center / cover no-repeat;
-							}
+		.fullscreen-bg__video {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: auto;
+			height: auto;
+			min-width: 100%;
+			min-height: 100%;
+			-webkit-transform: translate(-50%, -50%);
+			-moz-transform: translate(-50%, -50%);
+			-ms-transform: translate(-50%, -50%);
+			transform: translate(-50%, -50%);
+		}
 
-							.fullscreen-bg__video {
-									display: none;
-							}
-					}
-        </style>
-    </head>
-    <body>
-        <div class="fullscreen-bg">
-            <video loop muted autoplay poster="img/Ma-Vibes.jpg" class="fullscreen-bg__video">
-                <source src="video/Ma-Vibes.webm" type="video/webm">
-                <source src="video/Ma-Vibes.mp4" type="video/mp4">
-                <source src="video/Ma-Vibes.ogv" type="video/ogg">
-            </video>
-        </div>
-        <br>
-        <div class="container">
-            <div class="row h-100">
-							<div class="col-sm-12 my-auto">
-								<h1 style="font-family: 'Emblema One', cursive; font-size: 100px; color:rgba(83, 51, 237, 1)">Vibey Bot</h1>
-                <a class="btn btn-primary" href="/auth/twitch" role="button">Login to Twitch</a>
-							</div>
-                
-            </div>
-				</div>
-				
-		</body>
+		@media (max-width: 767px) {
+			.fullscreen-bg {
+				background: url('img/Ma-Vibes.jpg') center center / cover no-repeat;
+			}
+
+			.fullscreen-bg__video {
+				display: none;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<div class="fullscreen-bg">
+		<video loop muted autoplay poster="img/Ma-Vibes.jpg" class="fullscreen-bg__video">
+			<source src="video/Ma-Vibes.webm" type="video/webm">
+			<source src="video/Ma-Vibes.mp4" type="video/mp4">
+			<source src="video/Ma-Vibes.ogv" type="video/ogg">
+		</video>
+	</div>
+	<br>
+	<div class="container">
+		<div class="row h-100">
+			<div class="col-sm-12 my-auto">
+				<h1 style="font-family: 'Emblema One', cursive; font-size: 100px; color:rgb(255, 255, 255)"> <i
+						class="far fa-hand-peace"></i>Vibey Bot</h1>
+				<a class="btn btn-primary" href="/auth/twitch" role="button">Login to Twitch</a>
+			</div>
+
+		</div>
+	</div>
+
+</body>
+
 </html>

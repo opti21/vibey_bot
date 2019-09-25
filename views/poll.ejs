@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+	<title>Vibey Poll</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="css/poll.css">
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="vendor/DataTables/datatables.min.css" />
+</head>
+
+<body>
+	<div class="d-flex bg-dark" id="wrapper">
+
+		<!-- Sidebar -->
+		<div class="bg-dark border-right border-secondary" id="sidebar-wrapper">
+			<div class="sidebar-heading">Vibey Menu</div>
+			<div class="list-group list-group-flush">
+				<a href="/requests" class="list-group-item list-group-item-action bg-dark text-white"><i
+						class="fas fa-music mr-2"></i>Requests<span class="sr-only">(current)</span></a>
+				<a href="/poll" class="list-group-item list-group-item-action bg-dark active"> <i
+						class="fas fa-poll mr-2"></i>Poll</a>
+				<a href="" class="list-group-item list-group-item-action bg-dark text-muted"> <i
+						class="fas fa-cogs mr-1"></i>Settings (soon)</a>
+			</div>
+			<div id="version">
+				<p class="text-muted ml-3 mt-3">v<%= version %></p>
+				<p class="text-muted text-center ml-3 mt-3">Made with ❤️ by opti_21</p>
+				<a href="/logout"><button class="ml-3 mb-3 btn btn-sm btn-danger">Logout</button></a>
+			</div>
+		</div>
+		<!-- /#sidebar-wrapper -->
+
+		<!-- Page Content -->
+		<div id="page-content-wrapper">
+
+			<div class="container-fluid">
+				<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+					<button class="btn btn-dark mr-3" id="menu-toggle"><i class="fas fa-bars"></i></button>
+					<span class="navbar-brand mb-0 h1"><i class="far fa-hand-peace"></i> Vibey Bot</span>
+				</nav>
+				<div class="row">
+					<div class="col left">
+						<h2>New Poll</h2>
+						<form id="poll-form" action="/newpoll" method="post">
+							<div class="form-group">
+								<label for="poll-text">Poll Text:</label>
+								<input type="text" class="form-control" id="poll-text" name="polltext" placeholder="Poll text"
+									tabindex="1" required>
+							</div>
+							<div class="form-group field_wrapper">
+								<label for="choice1" class="mb-4">Choices</label>
+								<button type="button" class="btn btn-sm btn-success add_button">Add Choice</button>
+								<button type="button" class="btn btn-sm btn-danger remove_button">Remove Choice</button>
+								<input type="text" class="form-control mb-2" placeholder="Choice 1" id="choice1" name="choice"
+									tabindex="2" required>
+								<input type="text" class="form-control mb-2" placeholder="Choice 2" id="choice2" name="choice"
+									tabindex="3" required>
+							</div>
+							<div class="text-right">
+								<button class="btn btn-success " type="submit">Start Poll</button>
+							</div>
+						</form>
+					</div>
+					<div class="col right">
+						<h2>Current Poll</h2>
+						</h2>
+						<div id="pollWrap">
+							<% polls.forEach(poll => { 
+								if (poll.active = true) {
+								%>
+
+							<div class="card bg-dark mb-3">
+								<div id="<%= poll._id %>" class="card-header currText">
+									<i class="spinner fas fa-circle-notch" style="color:limegreen"></i> <%= poll.polltext %>
+								</div>
+								<ul class="list-group list-group-flush text-dark">
+									<% poll.choices.forEach(choice => { %>
+									<li class="list-group-item"><%= choice.text %>
+										<div class="progress">
+											<div id="<%= choice.id %>" class="progress-bar" role="progressbar" style="width: 0%"></div>
+										</div>
+									</li>
+									<% }) %>
+								</ul>
+							</div>
+							<% } } ) %>
+						</div>
+						<button class="btn btn-danger" id="closePoll">Close Poll</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- /#page-content-wrapper -->
+
+	</div>
+	<!-- /#wrapper -->
+
+	<script src="vendor/jquery/jquery.js"></script>
+	<script src="vendor/bootstrap/js/bootstrap.bundle.js"></script>
+	<script src="vendor/gsap/TweenMax.min.js"></script>
+	<script src="js/moment.min.js"></script>
+	<script src="https://js.pusher.com/4.4/pusher.min.js"></script>
+	<script src="js/sweetalert2.all.min.js"></script>
+	<script type="text/javascript" src="vendor/DataTables/datatables.min.js"></script>
+	<script src="js/poll.js"></script>
+
+</body>
+
+</html>

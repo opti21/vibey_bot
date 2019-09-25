@@ -16,6 +16,9 @@ const YouTube = require("simple-youtube-api");
 const youtube = new YouTube(config.ytAPI);
 const moment = require("moment");
 const Pusher = require("pusher");
+const admins = config.admins;
+const exec = require('child_process').exec;
+
 
 // Real time data
 var pusher_client = new Pusher(config.pusher);
@@ -33,6 +36,7 @@ app.use(express.static("public"));
 app.use(logger("dev"));
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use(
   cookieSession({
     name: 'session',
@@ -57,8 +61,13 @@ const db = mongoose.connection;
 db.on("error", error => console.error(error));
 db.once("open", () => console.log("Connected to Mongoose " + Date()));
 
-// Twitch auth
+//Models
 const User = require("./models/users");
+const mixReqs = require("./models/mixRequests");
+const SongRequest = require("./models/songRequests");
+const Poll = require("./models/polls")
+
+// Twitch auth
 passport.use(
   new twitchStrategy(
     {
@@ -152,12 +161,10 @@ app.get("/test", function (req, res) {
 });
 
 // Dashboard
-const mixReqs = require("./models/mixRequests");
 app.get("/requests", loggedIn, async (req, res) => {
   try {
     var user = await User.findOne({ twitch_id: req.user.id });
     console.log(user.username);
-    var admins = config.admins;
     var feSongRequests = await SongRequest.find();
     var mixRequests = await mixReqs.find();
     if (admins.includes(user.username)) {
@@ -165,24 +172,6 @@ app.get("/requests", loggedIn, async (req, res) => {
         feUser: user.username,
         requests: feSongRequests,
         mixReqs: mixRequests,
-        version: version
-      });
-    } else {
-      res.redirect("/login");
-    }
-  } catch (err) {
-    console.error(err);
-  }
-});
-
-app.get("/polls", loggedIn, async (req, res) => {
-  try {
-    var user = await User.findOne({ twitch_id: req.user.id });
-    console.log(user.username);
-    var admins = config.admins;
-    if (admins.includes(user.username)) {
-      res.render("polls", {
-        feUser: user.username,
         version: version
       });
     } else {
@@ -289,6 +278,71 @@ app.get("/mix/remove/:id", loggedIn, async (req, res) => {
   }
 });
 
+app.get("/poll", loggedIn, async (req, res) => {
+  try {
+    var user = await User.findOne({ twitch_id: req.user.id });
+    var polls = await Poll.find()
+    console.log(user.username);
+    if (admins.includes(user.username)) {
+      res.render("poll", {
+        version: version,
+        polls: polls
+      });
+    } else {
+      res.redirect("/login");
+    }
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+
+app.post("/newpoll", loggedIn, async (req, res) => {
+  try {
+    var pollText = req.body[0].value
+    var choices = req.body.slice(1)
+    var choiceArray = []
+    var votes = []
+    choices.forEach(choiceAppend);
+
+    function choiceAppend(element, index, array) {
+      var choice = {
+        id: makeid(10),
+        text: choices[index].value,
+        votes: 0
+      }
+      choiceArray.push(choice);
+    }
+
+    console.log(choiceArray)
+
+    var newPoll = new Poll({
+      active: true,
+      polltext: pollText,
+      choices: choiceArray,
+      votes: votes
+    })
+    await newPoll.save().then(doc => {
+      res.send(doc)
+      console.log(doc)
+    })
+  } catch (err) {
+    console.error(err)
+  }
+})
+
+app.get("/poll/deleteall", loggedIn, (req, res) => {
+  try {
+    Poll.deleteMany({}).exec().then(
+      res.status(200).send("Poll Closed")
+    );
+
+  } catch (err) {
+    res.status(500).send("Error closing Poll");
+    console.error(err);
+  }
+});
+
 //404
 app.get('*', (req, res) => {
   res.render('404')
@@ -322,9 +376,17 @@ const botclient = new tmi.client(tmiOptions);
 botclient.connect();
 
 // Bot says hello on connect
-// botclient.on('connected', (address, port) => {
-//   botclient.say(twitchchan[0], `Hey Chat! Send me those vibes`)
-// });
+botclient.on('connected', (address, port) => {
+  // botclient.say(twitchchan[0], `Hey Chat! Send me those vibes`)
+  var cmd = `osascript -e 'display notification "${address} on port ${port}" with title "Connected to Twitch!" sound name "Submarine"'`;
+
+  exec(cmd, function (error, stdout, stderr) {
+    // command output is in stdout
+    if (error) {
+      console.error(error)
+    }
+  });
+});
 
 // Regex
 var URLRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
@@ -332,8 +394,7 @@ var spRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:track\/|\?uri=s
 var ytRegex = /(?:https?:\/\/)?(?:(?:(?:www\.?)?youtube\.com(?:\/(?:(?:watch\?.*?(v=[^&\s]+).*)|(?:v(\/.*))|(channel\/.+)|(?:user\/(.+))|(?:results\?(search_query=.+))))?)|(?:youtu\.be(\/.*)?))/;
 
 // Song Requests
-const SongRequest = require("./models/songRequests");
-botclient.on("chat", (channel, userstate, message, self) => {
+botclient.on("chat", async (channel, userstate, message, self) => {
   if (self) return;
   var message = message.trim().split(" ");
   if (message[0] === "!sr" || message[0] === "!songrequest") {
@@ -523,41 +584,79 @@ botclient.on("chat", (channel, userstate, message, self) => {
           }
 
         });
-        // var request = message.slice(1).join(" ");
-        // var ytQuery = message.slice(1).join("+")
-        // var ytSearch = `https://www.youtube.com/results?search_query=${ytQuery}`
-        // var newText = new SongRequest({
-        //   track: {
-        //     name: request,
-        //     link: ytSearch
-        //   },
-        //   requestedBy: userstate.username,
-        //   timeOfReq: moment.utc().format(),
-        //   source: 'text'
-        // })
-        // newText.save().then(doc => {
-        //   botclient.say(
-        //     channel,
-        //     `@${doc.requestedBy} requested ${doc.track[0].name}`
-        //   )
-        //   // Real time data push to front end
-        //   pusher_client.trigger("sr-channel", "sr-event", {
-        //     id: `${doc.id}`,
-        //     reqBy: `${doc.requestedBy}`,
-        //     track: `${doc.track[0].name}`,
-        //     link: `${doc.track[0].link}`,
-        //     source: `${doc.source}`,
-        //     timeOfReq: `${doc.timeOfReq}`
-        //   });
-        // })
-        // .catch(console.error);
       }
     }
   }
 
-  // if (message[0] === '!whosthechillest') {
-  // 	botclient.say(twitchchan[0])
-  // }
+  if (message[0] === '!c') {
+    var poll = await Poll.findOne({});
+    if (!poll) {
+      botclient.say(
+        channel,
+        `Unfortunately there is no poll right now :(`
+      );
+      return
+    }
+    if (message[1] === undefined) {
+      botclient.say(
+        channel,
+        `No choice selected`
+      );
+      return
+    }
+    if (poll.voters.includes(userstate.username)) {
+      botclient.say(
+        channel,
+        `@${userstate.username} you've already voted`
+      );
+      return
+    } else {
+      var choice = parseInt(message[1], 10);
+      var cIndex = choice - 1;
+      var cID = poll.choices[cIndex].id
+      var currV = poll.choices[cIndex].votes;
+      var i = currV + 1
+      var tUser = userstate.username
+
+      // $set: { "choices.$.votes": i }
+      await Poll.findOneAndUpdate({ "_id": poll.id, "choices.id": cID },
+        { $push: { voters: tUser } }, { useFindAndModify: false, new: true }, (err, doc) => {
+          // console.log(doc.choices[cIndex].votes)
+          console.log(doc)
+        })
+    }
+
+  }
+
+  if (message[0] === '!close') {
+    if (admins.includes(userstate.username)) {
+      await Poll.deleteMany({}).then((err, doc) => {
+        if (err) {
+          console.error(err);
+          return
+        }
+        botclient.say(
+          channel,
+          `Polls deleted!`
+        );
+      })
+    }
+  }
+
+  if (message[0] === '!p') {
+    var poll = await Poll.findOne({});
+    console.log(poll)
+  }
 });
 
 server.listen(3000);
+
+function makeid(length) {
+  var result = '';
+  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for (var i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  };
+  return result;
+}   
