@@ -24,6 +24,11 @@ body {
 	overflow: hidden;
   overflow-y: scroll;
 }
+.right{
+  height: 90vh;
+  overflow: hidden;
+  overflow-y: scroll;
+}
 
 /*!
  * Start Bootstrap - Simple Sidebar (https://startbootstrap.com/template-overviews/simple-sidebar)

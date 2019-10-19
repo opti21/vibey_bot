@@ -10,6 +10,7 @@
 	<link rel="stylesheet" href="css/requests.css">
 	<link rel="stylesheet" href="css/bootstrap.min.css">
 	<link rel="stylesheet" type="text/css" href="vendor/DataTables/datatables.min.css" />
+	<link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
@@ -21,10 +22,17 @@
 			<div class="list-group list-group-flush">
 				<a href="/requests" class="list-group-item list-group-item-action bg-dark text-white active"><i
 						class="fas fa-music mr-2"></i>Requests<span class="sr-only">(current)</span></a>
-				<a href="" class="list-group-item list-group-item-action bg-dark text-muted"> <i
-						class="fas fa-poll mr-2"></i>Poll (soon)</a>
+				<a href="/poll" class="list-group-item list-group-item-action bg-dark text-white"> <i
+						class="fas fa-poll mr-2"></i>Poll</a>
+				<a href="/good" class="list-group-item list-group-item-action bg-dark"> <i
+						class="far fa-newspaper mr-2"></i>Good News</a>
 				<a href="" class="list-group-item list-group-item-action bg-dark text-muted"> <i
 						class="fas fa-cogs mr-1"></i>Settings (soon)</a>
+			</div>
+			<div id="version">
+				<p class="text-muted ml-3 mt-3">v<%= version %></p>
+				<p class="text-muted text-center ml-3 mt-3">Made with ❤️ by opti_21</p>
+				<a href="/logout"><button class="ml-3 mb-3 btn btn-sm btn-danger">Logout</button></a>
 			</div>
 		</div>
 		<!-- /#sidebar-wrapper -->
@@ -35,7 +43,7 @@
 			<div class="container-fluid">
 				<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
 					<button class="btn btn-dark mr-3" id="menu-toggle"><i class="fas fa-bars"></i></button>
-					<span class="navbar-brand mb-0 h1">Vibey Bot</span>
+					<span class="navbar-brand mb-0 h1"><i class="far fa-hand-peace"></i> Vibey Bot</span>
 				</nav>
 				<div class="row">
 					<div class="col left">
@@ -46,15 +54,22 @@
 						<table id="sr-table" class="table table-dark table-hover table-sm">
 							<thead>
 								<tr>
-									<th scope="col">Track Requested</th>
-									<th scope="col">Requested By:</th>
+									<th scope="col"></th>
+									<th scope="col">Track:</th>
+									<th scope="col">User:</th>
 									<th scope="col"><i class="far fa-clock" title="Time Requested"></i></th>
-									<th scope="col">Edit</th>
 								</tr>
 							</thead>
 							<tbody id="srContainer">
 								<% requests.forEach(request => { %>
 								<tr width="100%" id="<%= request.id %>">
+									<td>
+										<button class="btn btn-success btn-md mr-3 p-1 mix-add" data-srID="<%= request.id %>"> Mix +
+										</button>
+										<button class="delete btn btn-danger btn-sm" data-srID="<%= request.id %>"
+											data-srName="<%= request.track[0].name %>"> <i class="fas fa-minus-circle"></i>
+										</button>
+									</td>
 									<td>
 										<% if(request.source === 'spotify'){ %>
 										<a class="srLink" href="<%= request.track[0].link %>" target="_blank"><%= request.track[0].name %> -
@@ -76,14 +91,6 @@
 									<td><%= request.requestedBy %></td>
 									<td>
 										<div class="timeReq" data-time="<%= request.timeOfReq %>"></div>
-									</td>
-									<td>
-										<button class="btn btn-success btn-sm mr-3 p-3 mix-add" data-srID="<%= request.id %>">
-											Mix +
-										</button>
-										<button class="delete btn btn-danger btn-sm" data-srID="<%= request.id %>"
-											data-srName="<%= request.track[0].name %>"> <i class="fas fa-minus-circle"></i>
-										</button>
 									</td>
 								</tr>
 								<% }) %>
@@ -134,12 +141,6 @@
 								<% }) %>
 							</tbody>
 						</table>
-					</div>
-				</div>
-				<div class="row">
-					<div class="col">
-						<a href="/logout"><button class="btn btn-danger">Logout</button></a>
-						<p class="text-muted text-center">v<%= version %> made with ❤️ by opti_21</p>
 					</div>
 				</div>
 			</div>
