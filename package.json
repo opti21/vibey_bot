@@ -4,7 +4,7 @@
   "description": "Just a sweet dashboard to see your live twitch stats",
   "main": "server.js",
   "scripts": {
-    "dev": "uglifyjs public/js/script.js -c -m -o public/js/script.min.js && nodemon server",
+    "dev": "nodemon server.js --ignore public/",
     "test": "mocha"
   },
   "author": "Brandon Rowe",

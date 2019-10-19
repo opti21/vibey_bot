@@ -20,8 +20,13 @@ body {
 	margin-bottom: 5px;
 }
 .left {
-	height: 80vh;
+	height: 90vh;
 	overflow: hidden;
+  overflow-y: scroll;
+}
+.right{
+  height: 90vh;
+  overflow: hidden;
   overflow-y: scroll;
 }
 

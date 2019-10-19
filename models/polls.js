@@ -7,7 +7,11 @@ const pollSchema = new mongoose.Schema({
 	},
 	polltext: String,
 	choices: Array,
-	voters: Array
+	voters: {
+		type: Array,
+		default: []
+	},
+	winner: String
 })
 
 module.exports = mongoose.model('polls', pollSchema)

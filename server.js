@@ -281,12 +281,10 @@ app.get("/mix/remove/:id", loggedIn, async (req, res) => {
 app.get("/poll", loggedIn, async (req, res) => {
   try {
     var user = await User.findOne({ twitch_id: req.user.id });
-    var polls = await Poll.find()
     console.log(user.username);
     if (admins.includes(user.username)) {
       res.render("poll", {
         version: version,
-        polls: polls
       });
     } else {
       res.redirect("/login");
@@ -296,46 +294,90 @@ app.get("/poll", loggedIn, async (req, res) => {
   }
 });
 
-
-app.post("/newpoll", loggedIn, async (req, res) => {
+app.get("/api/polls", loggedIn, async (req, res) => {
   try {
-    var pollText = req.body[0].value
-    var choices = req.body.slice(1)
-    var choiceArray = []
-    var votes = []
-    choices.forEach(choiceAppend);
-
-    function choiceAppend(element, index, array) {
-      var choice = {
-        id: makeid(10),
-        text: choices[index].value,
-        votes: 0
-      }
-      choiceArray.push(choice);
-    }
-
-    console.log(choiceArray)
-
-    var newPoll = new Poll({
-      active: true,
-      polltext: pollText,
-      choices: choiceArray,
-      votes: votes
-    })
-    await newPoll.save().then(doc => {
-      res.send(doc)
-      console.log(doc)
-    })
+    var polls = await Poll.find()
+    res.send(polls)
   } catch (err) {
     console.error(err)
   }
 })
 
-app.get("/poll/deleteall", loggedIn, (req, res) => {
+
+app.post("/newpoll", loggedIn, async (req, res) => {
   try {
-    Poll.deleteMany({}).exec().then(
-      res.status(200).send("Poll Closed")
-    );
+    var user = await User.findOne({ twitch_id: req.user.id });
+    var poll = await Poll.find({ "active": true })
+    if (poll.length === 0) {
+      var pollText = req.body[0].value
+      var choices = req.body.slice(1)
+      var choiceArray = []
+      var votes = []
+      choices.forEach(choiceAppend);
+
+      function choiceAppend(element, index, array) {
+        var choice = {
+          id: makeid(10),
+          text: choices[index].value,
+          votes: 0
+        }
+        choiceArray.push(choice);
+      }
+
+      console.log(choiceArray)
+
+      var newPoll = new Poll({
+        active: true,
+        polltext: pollText,
+        choices: choiceArray,
+        votes: votes
+      })
+      await newPoll.save().then(doc => {
+        res.send(doc)
+        console.log(doc)
+        botclient.say(twitchchan[0], 'A new poll has started! Vote with !c i.e.(!c 2)')
+        botclient.say(twitchchan[0], `The poll question is: ${pollText}`)
+
+      })
+    } else {
+      console.log(poll)
+      res.status(418).send('Poll is already running')
+    }
+
+  } catch (err) {
+    console.error(err)
+  }
+})
+
+app.get("/poll/close/:id", loggedIn, async (req, res) => {
+  try {
+    var user = await User.findOne({ twitch_id: req.user.id });
+    var poll = await Poll.findOne({ "_id": req.params.id });
+    var choiceArr = []
+    poll.choices.forEach(choice => {
+      choiceArr.push(choice.votes)
+    })
+    console.log(choiceArr)
+    let i = choiceArr.indexOf(Math.max(...choiceArr));
+    let win = poll._id + poll.choices[i].id
+    await Poll.findOneAndUpdate({ "_id": req.params.id },
+      { $set: { "active": false }, "winner": win }, { useFindAndModify: false, new: true }, (err, doc) => {
+        console.log(doc.active)
+        try {
+          res.sendStatus(200)
+
+          botclient.say(twitchchan[0], 'The poll is now closed')
+
+          pusher_client.trigger("pollCh", "pollClose", {
+            pollID: doc._id,
+            win: win
+          });
+
+        } catch (err) {
+          console.error(err)
+        }
+
+      });
 
   } catch (err) {
     res.status(500).send("Error closing Poll");
@@ -587,9 +629,9 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       }
     }
   }
-
+  // Choice selection for polls
   if (message[0] === '!c') {
-    var poll = await Poll.findOne({});
+    var poll = await Poll.findOne({ "active": true });
     if (!poll) {
       botclient.say(
         channel,
@@ -600,7 +642,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     if (message[1] === undefined) {
       botclient.say(
         channel,
-        `No choice selected`
+        `No choice selected !vote to see how to vote`
       );
       return
     }
@@ -613,15 +655,19 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     } else {
       var choice = parseInt(message[1], 10);
       var cIndex = choice - 1;
-      var cID = poll.choices[cIndex].id
+      var cID = poll.choices[cIndex].id;
       var currV = poll.choices[cIndex].votes;
-      var i = currV + 1
-      var tUser = userstate.username
+      var i = currV + 1;
+      var tUser = userstate.username;
 
       await Poll.findOneAndUpdate({ "_id": poll.id, "choices.id": cID },
-        { $push: { voters: tUser }, $set: { "choices.$.votes": i } }, { useFindAndModify: false, new: true }, (err, doc) => {
+        { $addToSet: { voters: tUser }, $set: { "choices.$.votes": i } }, { useFindAndModify: false, new: true }, (err, doc) => {
           console.log(doc.choices[cIndex].votes)
           console.log(doc)
+
+          pusher_client.trigger("pollCh", "pollUpdate", {
+            doc: doc
+          });
         })
     }
 

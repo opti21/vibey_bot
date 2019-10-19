@@ -24,6 +24,8 @@
 						class="fas fa-music mr-2"></i>Requests<span class="sr-only">(current)</span></a>
 				<a href="/poll" class="list-group-item list-group-item-action bg-dark text-white"> <i
 						class="fas fa-poll mr-2"></i>Poll</a>
+				<a href="/good" class="list-group-item list-group-item-action bg-dark"> <i
+						class="far fa-newspaper mr-2"></i>Good News</a>
 				<a href="" class="list-group-item list-group-item-action bg-dark text-muted"> <i
 						class="fas fa-cogs mr-1"></i>Settings (soon)</a>
 			</div>
@@ -52,15 +54,22 @@
 						<table id="sr-table" class="table table-dark table-hover table-sm">
 							<thead>
 								<tr>
-									<th scope="col">Track Requested</th>
-									<th scope="col">Requested By:</th>
+									<th scope="col"></th>
+									<th scope="col">Track:</th>
+									<th scope="col">User:</th>
 									<th scope="col"><i class="far fa-clock" title="Time Requested"></i></th>
-									<th scope="col">Edit</th>
 								</tr>
 							</thead>
 							<tbody id="srContainer">
 								<% requests.forEach(request => { %>
 								<tr width="100%" id="<%= request.id %>">
+									<td>
+										<button class="btn btn-success btn-md mr-3 p-1 mix-add" data-srID="<%= request.id %>"> Mix +
+										</button>
+										<button class="delete btn btn-danger btn-sm" data-srID="<%= request.id %>"
+											data-srName="<%= request.track[0].name %>"> <i class="fas fa-minus-circle"></i>
+										</button>
+									</td>
 									<td>
 										<% if(request.source === 'spotify'){ %>
 										<a class="srLink" href="<%= request.track[0].link %>" target="_blank"><%= request.track[0].name %> -
@@ -82,14 +91,6 @@
 									<td><%= request.requestedBy %></td>
 									<td>
 										<div class="timeReq" data-time="<%= request.timeOfReq %>"></div>
-									</td>
-									<td>
-										<button class="btn btn-success btn-sm mr-3 p-3 mix-add" data-srID="<%= request.id %>">
-											Mix +
-										</button>
-										<button class="delete btn btn-danger btn-sm" data-srID="<%= request.id %>"
-											data-srName="<%= request.track[0].name %>"> <i class="fas fa-minus-circle"></i>
-										</button>
 									</td>
 								</tr>
 								<% }) %>

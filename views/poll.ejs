@@ -23,6 +23,8 @@
 						class="fas fa-music mr-2"></i>Requests<span class="sr-only">(current)</span></a>
 				<a href="/poll" class="list-group-item list-group-item-action bg-dark active"> <i
 						class="fas fa-poll mr-2"></i>Poll</a>
+				<a href="/good" class="list-group-item list-group-item-action bg-dark"> <i class="fas fa-poll mr-2"></i>Good
+					News</a>
 				<a href="" class="list-group-item list-group-item-action bg-dark text-muted"> <i
 						class="fas fa-cogs mr-1"></i>Settings (soon)</a>
 			</div>
@@ -66,30 +68,15 @@
 						</form>
 					</div>
 					<div class="col right">
-						<h2>Current Poll</h2>
-						</h2>
 						<div id="pollWrap">
-							<% polls.forEach(poll => { 
-								if (poll.active = true) {
-								%>
-
-							<div class="card bg-dark mb-3">
-								<div id="<%= poll._id %>" class="card-header currText">
-									<i class="spinner fas fa-circle-notch" style="color:limegreen"></i> <%= poll.polltext %>
-								</div>
-								<ul class="list-group list-group-flush text-dark">
-									<% poll.choices.forEach(choice => { %>
-									<li class="list-group-item"><%= choice.text %>
-										<div class="progress">
-											<div id="<%= choice.id %>" class="progress-bar" role="progressbar" style="width: 0%"></div>
-										</div>
-									</li>
-									<% }) %>
-								</ul>
+							<!-- Polls go here -->
+							<h2>Open Poll</h2>
+							<div class="border-bottom border-secondary" id="openPolls">
 							</div>
-							<% } } ) %>
+							<h2>Closed Polls</h2>
+							<div id="closedPolls">
+							</div>
 						</div>
-						<button class="btn btn-danger" id="closePoll">Close Poll</button>
 					</div>
 				</div>
 			</div>

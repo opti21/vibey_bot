@@ -15,7 +15,7 @@ $(document).ready(function () {
   $('#sr-table').DataTable({
     fixedHeader: true,
     "ordering": false,
-    "paging": false
+    "paging": false,
   });
 });
 
@@ -47,39 +47,41 @@ channel.bind('sr-event', function (data) {
     srElement.setAttribute('id', `${data.id}`);
     if (data.source === 'spotify') {
       srElement.innerHTML = `
+        <td>
+          <button class="btn btn-success btn-sm mr-3 p-3 mix-add" data-srID="${data.id}">Mix +</button>
+          <button class="delete btn btn-danger btn-sm" data-srID="${data.id}" data-srName="${data.track} - ${data.artist}"> <i class="fas fa-minus-circle"></i> </button>
+        </td>
         <td><a class="srLink" target="_blank" href="${data.link}">${data.track} - ${data.artist}</a> <a class="spotify" target="_blank" href="${data.uri}"><i class="fab fa-spotify" title="Open in Spotify"></i></a></td>
         <td>${data.reqBy}</td>
         <td>
           <div class="timeReq" data-time="${data.timeOfReq}"></div>
         </td>
-        <td>
-          <button class="btn btn-success btn-sm mr-3 p-3 mix-add" data-srID="${data.id}">Mix +</button>
-          <button class="delete btn btn-danger btn-sm" data-srID="${data.id}" data-srName="${data.track} - ${data.artist}"> <i class="fas fa-minus-circle"></i> </button>
-        </td>
       `
     }
     if (data.source === 'youtube') {
       srElement.innerHTML = `
+        <td> 
+          <button class="btn btn-success btn-sm mr-3 p-3 mix-add" data-srID="${data.id}">Mix +</button> 
+          <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track}"> <i class="fas fa-minus-circle"></i> </button>
+        </td>
         <td><a class="srLink" target="_blank" href="${data.link}">${data.track}</a> <a class="youtube" target="_blank" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
         <td>${data.reqBy}</td>
         <td>
           <div class="timeReq" data-time="${data.timeOfReq}"></div>
         </td>
-        <td> 
-          <button class="btn btn-success btn-sm mr-3 p-3 mix-add" data-srID="${data.id}">Mix +</button> 
-          <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track}"> <i class="fas fa-minus-circle"></i> </button> </td>
       `
     }
     if (data.source === 'text') {
       srElement.innerHTML = `
+        <td> 
+          <button class="btn btn-success btn-sm mr-3 p-3 mix-add" data-srID="${data.id}">Mix +</button> 
+          <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track}"> <i class="fas fa-minus-circle"></i> </button>
+        </td>
         <td><a class="srLink" target="_blank" href="${data.link}">${data.track}</a> <a class="youtube" target="_blank" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
         <td>${data.reqBy}</td>
         <td>
           <div class="timeReq" data-time="${data.timeOfReq}"></div>
         </td>
-        <td> 
-          <button class="btn btn-success btn-sm mr-3 p-3 mix-add" data-srID="${data.id}">Mix +</button> 
-          <button class="delete btn btn-danger btn-sm mix" data-srID="${data.id}" data-srName="${data.track}"> <i class="fas fa-minus-circle"></i> </button> </td>
       `
     }
     srContainer.prepend(srElement)
@@ -88,6 +90,7 @@ channel.bind('sr-event', function (data) {
   }
 });
 
+// Checks how long ago song was requested
 var timeDiff = setInterval(reqTime, 1000);
 
 function reqTime() {
