@@ -1,13 +1,14 @@
-// Generate random IDs for table elements
-function makeid(length) {
-  var result = '';
-  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  var charactersLength = characters.length;
-  for (var i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
-}
+// Pusher Poduction *** UNCOMMENT THIS BEFORE COMMIT ***
+var pusher = new Pusher('94254303a6a5048bf191', {
+  cluster: 'us2',
+  forceTLS: true
+});
+
+// // Pusher DEVELOPMENT
+// var pusher = new Pusher('41f9377a48633b3302ff', {
+//   cluster: 'us2',
+//   forceTLS: true
+// });
 
 $("#menu-toggle").click(function (e) {
   e.preventDefault();
@@ -62,7 +63,7 @@ $(document).ready(function () {
             choiceElem.innerHTML = `
             ${choice.text}
               <div class="progress">
-                <div id="${poll._id + choice.id}bar" class="progress-bar" role="progressbar" style="width: ${perc}%">${choice.votes}(${perc}%)</div>
+                <div id="${poll._id + choice.id}bar" class="progress-bar" role="progressbar" style="width: ${perc}%">${choice.votes}(${Math.round(perc * 10) / 10}%)</div>
               </div>
             `
             choices.append(choiceElem);
@@ -114,7 +115,7 @@ $(document).ready(function () {
             choiceElem.innerHTML = `
             ${choice.text}
               <div class="progress">
-                <div id="${poll._id + choice.id}bar" class="progress-bar" role="progressbar" style="width: ${perc}%">${choice.votes}(${perc}%)</div>
+                <div id="${poll._id + choice.id}bar" class="progress-bar" role="progressbar" style="width: ${perc}%">${choice.votes}(${Math.round(perc * 10) / 10}%)</div>
               </div>
             `
             choices.append(choiceElem);
@@ -240,17 +241,6 @@ $(document).ready(function () {
   });
 });
 
-// Pusher Poduction *** UNCOMMENT THIS BEFORE COMMIT ***
-var pusher = new Pusher('94254303a6a5048bf191', {
-  cluster: 'us2',
-  forceTLS: true
-});
-
-// // Pusher DEVELOPMENT
-// var pusher = new Pusher('41f9377a48633b3302ff', {
-//   cluster: 'us2',
-//   forceTLS: true
-// });
 
 //Subscribe to Poll Channel
 var channel = pusher.subscribe('pollCh');
@@ -266,7 +256,7 @@ channel.bind('pollUpdate', function (data) {
     var perc = (100 * votes) / total
     console.log(perc)
     choice.setAttribute('style', `width: ${perc}%`)
-    choice.innerText = `${votes}(${perc}%)`
+    choice.innerText = `${votes}(${Math.round(perc * 10) / 10}%)`
 
   })
   total = 0
@@ -318,5 +308,14 @@ $(document).ready(function () {
 });
 
 
-
 //utility function
+// Generate random IDs for table elements
+function makeid(length) {
+  var result = '';
+  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for (var i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
