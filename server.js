@@ -334,10 +334,23 @@ app.post("/newpoll", loggedIn, async (req, res) => {
       })
       await newPoll.save().then(doc => {
         res.send(doc)
-        console.log(doc)
+        var num = 1
+        var choices = []
         botclient.say(twitchchan[0], 'A new poll has started! Vote with !c i.e.(!c 2)')
         botclient.say(twitchchan[0], `The poll question is: ${pollText}`)
 
+        doc.choices.forEach(choice => {
+          botclient.say(twitchchan[0], `!c ${num} = ${choice.text}`)
+          num++;
+          let choiceArr = [`${choice.text}`, choice.votes]
+          choices.push(choiceArr)
+        })
+
+        pusher_client.trigger("pollCh", "pollOpen", {
+          poll: doc
+        });
+        choices = []
+        num = 1;
       })
     } else {
       console.log(poll)
@@ -370,7 +383,8 @@ app.get("/poll/close/:id", loggedIn, async (req, res) => {
 
           pusher_client.trigger("pollCh", "pollClose", {
             pollID: doc._id,
-            win: win
+            win: win,
+            winText: poll.choices[i].text
           });
 
         } catch (err) {
@@ -384,6 +398,15 @@ app.get("/poll/close/:id", loggedIn, async (req, res) => {
     console.error(err);
   }
 });
+
+//TODO: add loggedIn
+app.get("/widget/poll", async (req, res) => {
+  try {
+    res.render("widget/poll-widget")
+  } catch {
+
+  }
+})
 
 //404
 app.get('*', (req, res) => {
@@ -646,44 +669,41 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       );
       return
     }
-    if (poll.voters.includes(userstate.username)) {
-      botclient.say(
-        channel,
-        `@${userstate.username} you've already voted`
-      );
-      return
-    } else {
-      var choice = parseInt(message[1], 10);
-      var cIndex = choice - 1;
-      var cID = poll.choices[cIndex].id;
-      var currV = poll.choices[cIndex].votes;
-      var i = currV + 1;
-      var tUser = userstate.username;
+    // if (poll.voters.includes(userstate.username)) {
+    //   botclient.say(
+    //     channel,
+    //     `@${userstate.username} you've already voted`
+    //   );
+    //   return
+    // } else {
+    var choice = parseInt(message[1], 10);
+    var cIndex = choice - 1;
+    var cID = poll.choices[cIndex].id;
+    var currV = poll.choices[cIndex].votes;
+    var i = currV + 1;
+    var tUser = userstate.username;
 
-      await Poll.findOneAndUpdate({ "_id": poll.id, "choices.id": cID },
-        { $addToSet: { voters: tUser }, $set: { "choices.$.votes": i } }, { useFindAndModify: false, new: true }, (err, doc) => {
-          console.log(doc.choices[cIndex].votes)
-          console.log(doc)
+    await Poll.findOneAndUpdate({ "_id": poll.id, "choices.id": cID },
+      { $addToSet: { voters: tUser }, $set: { "choices.$.votes": i } }, { useFindAndModify: false, new: true }, (err, doc) => {
+        console.log(doc.choices[cIndex].votes)
+        console.log(doc)
 
-          pusher_client.trigger("pollCh", "pollUpdate", {
-            doc: doc
-          });
-        })
-    }
+        pusher_client.trigger("pollCh", "pollUpdate", {
+          doc: doc
+        });
+      })
+    // }
 
   }
 
-  if (message[0] === '!close') {
+  if (message[0] === '!deleteall') {
     if (admins.includes(userstate.username)) {
       await Poll.deleteMany({}).then((err, doc) => {
         if (err) {
           console.error(err);
           return
         }
-        botclient.say(
-          channel,
-          `Polls deleted!`
-        );
+        botclient.say(twitchchan[0], `Polls deleted!`);
       })
     }
   }
