@@ -145,5 +145,8 @@ channel.bind('pollClose', function (data) {
 </div>
   `
   wintl.play()
-  TweenMax.to(`#poll`, 1, { x: -500, autoAlpha: 0 });
+  TweenMax.to(`#poll`, 1, { x: -500, autoAlpha: 0, onComplete: clearText() });
+  function clearText() {
+    document.getElementById('polltext').innerHTML = '';
+  }
 });
