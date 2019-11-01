@@ -451,7 +451,7 @@ app.get("/poll/close/:id", loggedIn, async (req, res) => {
   }
 });
 
-app.get("/widget/poll", loggedIn, async (req, res) => {
+app.get("/widget/poll", async (req, res) => {
   try {
     res.render("widget/poll-widget")
   } catch (err) {
