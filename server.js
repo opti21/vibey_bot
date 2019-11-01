@@ -18,7 +18,7 @@ const moment = require("moment");
 const Pusher = require("pusher");
 const fetchJson = require('fetch-json');
 const ComfyDiscord = require("comfydiscord");
-// ComfyDiscord.Init(config.discord);
+ComfyDiscord.Init(config.discord);
 
 const TwitchCreds = require("./models/twitchCreds");
 
