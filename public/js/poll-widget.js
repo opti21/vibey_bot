@@ -1,24 +1,34 @@
 
 // Pusher Poduction *** UNCOMMENT THIS BEFORE COMMIT ***
-var pusher = new Pusher('94254303a6a5048bf191', {
-  cluster: 'us2',
-  forceTLS: true
-});
-
-// // Pusher DEVELOPMENT
-// var pusher = new Pusher('41f9377a48633b3302ff', {
+// var pusher = new Pusher('94254303a6a5048bf191', {
 //   cluster: 'us2',
 //   forceTLS: true
 // });
 
+// // Pusher DEVELOPMENT
+var pusher = new Pusher('41f9377a48633b3302ff', {
+  cluster: 'us2',
+  forceTLS: true
+});
+
 //Subscribe to Poll Channel
 var channel = pusher.subscribe('pollCh');
+
+var pollColors = ["#003066", "#e7267f", "#9e34eb", "#E100CD", "#00A2BB", "#bc5706", "#d7b005"]
+
+var wintl = new TimelineLite();
+wintl
+  .to('#pollwin', 0.1, { x: -500 })
+  .to('#pollwin', 1, { x: 0 })
+  .to('#pollwin', 1, { x: -500, delay: 10 });
+
+wintl.pause(.1)
 
 // Chart
 $(document).ready(function () {
 
   // Init Chart
-  new Chartkick.PieChart("chart-1", [['choice', 1]], { donut: true, colors: ["#003066", "#00A2BB"], legend: false });
+  new Chartkick.PieChart("chart-1", [['choice', 1]], { donut: true, colors: pollColors, legend: false });
 
   // Fetch active polls
   fetch(`/api/polls`)
@@ -31,17 +41,39 @@ $(document).ready(function () {
       if (poll.active === true) {
         let chart = Chartkick.charts["chart-1"]
         var data = []
-        poll.choices.forEach(choice => {
+        var textCont = document.getElementById("polltext");
+        var textElem = document.createElement("div");
+        var choices = document.createElement('ul');
+
+        textElem.setAttribute('class', 'card text-white bg-info ml-3 mt-3')
+        choices.setAttribute('class', 'list-group list-group-flush text-dark');
+        textElem.innerHTML = `
+          <div class="card-header"><h2>${poll.polltext}</h2></div>
+        `
+
+        poll.choices.forEach(function (choice, i) {
+          var cI = i + 1
+          var choiceElem = document.createElement('li')
+          choiceElem.setAttribute('class', 'list-group-item bg-info text-white')
+          choiceElem.innerHTML = `<div class="choiceColor mr-2" style="background-color: ${pollColors[i]};"></div> <h4>!c ${cI} = ${choice.text}</h4>`
+          choices.append(choiceElem);
+
           console.log(choice)
           var choiceArr = [`${choice.text}`, choice.votes]
           data.push(choiceArr)
         })
+        textElem.append(choices)
+        textCont.append(textElem)
+
         chart.updateData(data)
-        TweenMax.from(`#chart-1`, 1, { x: -500, autoAlpha: 0, ease: Linear.easeNone });
+
+        TweenMax.from(`#poll`, 1, { x: -500, autoAlpha: 0 });
+        wintl.pause(.1)
+
 
 
       } else {
-        TweenMax.to(`#chart-1`, 0.1, { x: -500, autoAlpha: 0, ease: Linear.easeNone });
+        TweenMax.to(`#poll`, 0.1, { x: -500, autoAlpha: 0 });
       }
 
     })
@@ -58,15 +90,33 @@ channel.bind('pollOpen', function (data) {
   let chart = Chartkick.charts["chart-1"]
   let poll = data.poll
   var data = []
+  var textCont = document.getElementById("polltext");
+  var textElem = document.createElement("div");
+  var choices = document.createElement('ul');
 
-  poll.choices.forEach(choice => {
+  textElem.setAttribute('class', 'card text-white bg-info ml-3 mt-3')
+  choices.setAttribute('class', 'list-group list-group-flush text-dark');
+  textElem.innerHTML = `
+          <div class="card-header"><h2>${poll.polltext}</h2></div>
+        `
+
+  poll.choices.forEach(function (choice, i) {
+    var cI = i + 1
+    var choiceElem = document.createElement('li')
+    choiceElem.setAttribute('class', 'list-group-item bg-info text-white')
+    choiceElem.innerHTML = `<div class="choiceColor mr-2" style="background-color: ${pollColors[i]};"></div> <h4>!c ${cI} = ${choice.text}</h4>`
+    choices.append(choiceElem);
+
     var choiceArr = [`${choice.text}`, choice.votes];
     data.push(choiceArr);
   });
   // chart.destroy();
   // console.log(chart)
+  textElem.append(choices)
+  textCont.append(textElem)
   chart.updateData(data)
-  TweenMax.to(`#chart-1`, 1, { x: 0, autoAlpha: 1, ease: Linear.easeNone });
+  wintl.pause(0.1)
+  TweenMax.to(`#poll`, 1, { x: 0, autoAlpha: 1 });
 
 });
 
@@ -85,5 +135,15 @@ channel.bind('pollUpdate', function (data) {
 
 channel.bind('pollClose', function (data) {
   console.log('Poll Closed')
-  TweenMax.to(`#chart-1`, 1, { x: -500, autoAlpha: 0, ease: Linear.easeNone });
+  var winCont = document.getElementById('pollwin')
+  winCont.innerHTML = `
+  <div class="card text-white bg-success ml-3">
+  <div class="card-header"><h4>The winner is:</h4></div>
+  <div class="card-body">
+    <h2 class="card-title">${data.winText}</h5>
+  </div>
+</div>
+  `
+  wintl.play()
+  TweenMax.to(`#poll`, 1, { x: -500, autoAlpha: 0 });
 });

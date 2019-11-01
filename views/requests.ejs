@@ -29,10 +29,14 @@
 				<a href="" class="list-group-item list-group-item-action bg-dark text-muted"> <i
 						class="fas fa-cogs mr-1"></i>Settings (soon)</a>
 			</div>
-			<div id="version">
-				<p class="text-muted ml-3 mt-3">v<%= version %></p>
-				<p class="text-muted text-center ml-3 mt-3">Made with ❤️ by opti_21</p>
-				<a href="/logout"><button class="ml-3 mb-3 btn btn-sm btn-danger">Logout</button></a>
+			<div id="version" class="ml-3">
+				<div id="profile">
+					<img id="profilePic" src="<%= profilePic %>" alt="<%= feUser %> profile picture" class="rounded-circle">
+					<%= feUser %>
+				</div>
+				<p class="text-muted mt-3">v<%= version %></p>
+				<p class="text-muted text-center mt-3">Made with ❤️ by opti_21</p>
+				<a href="/logout"><button class="mb-3 btn btn-sm btn-danger">Logout</button></a>
 			</div>
 		</div>
 		<!-- /#sidebar-wrapper -->

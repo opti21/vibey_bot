@@ -8,12 +8,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Montserrat:800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/widget-v2.css">
-    <!-- <link rel="stylesheet" href="../css/bootstrap.min.css"> -->
+    <link rel="stylesheet" href="../css/poll-widget.css">
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
 </head>
 
 <body>
-    <div id="chart-1" style="height: 300px;"></div>
+    <div id="poll">
+        <div id="chart-1" style="height: 300px; width: 300px;" class="ml-3"></div>
+        <div id="polltext" style="width: 300px;"></div>
+    </div>
+    <div id="pollwin"></div>
+
 
     <script src="../js/Chart.bundle.min.js"></script>
     <script src="../js/chartkick.js"></script>
@@ -21,8 +26,6 @@
     <script src="../vendor/gsap/TweenMax.min.js"></script>
     <script src="https://js.pusher.com/4.4/pusher.min.js"></script>
     <script src="../js/poll-widget.js"></script>
-    <!-- <script src="../js/mix-script.min.js"></script> -->
-
 </body>
 
 </html>

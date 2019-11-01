@@ -16,6 +16,38 @@ const YouTube = require("simple-youtube-api");
 const youtube = new YouTube(config.ytAPI);
 const moment = require("moment");
 const Pusher = require("pusher");
+const fetchJson = require('fetch-json');
+const ComfyDiscord = require("comfydiscord");
+// ComfyDiscord.Init(config.discord);
+
+const TwitchCreds = require("./models/twitchCreds");
+
+getTwitchCreds();
+async function getTwitchCreds() {
+  const twitchCreds = await TwitchCreds.findOne({})
+  console.log(twitchCreds)
+  if (twitchCreds === null) {
+    const twitchUserURL = `https://id.twitch.tv/oauth2/token?client_id=${config.twitchClientID}&client_secret=${config.twitchSecret}&scope=user_read&grant_type=client_credentials`
+    console.log(twitchUserURL)
+    const twitchResource = {}
+    const handleData = (data) => {
+      console.log(data)
+      const newTwitch = new TwitchCreds({
+        accessToken: data.access_token,
+        expireAt: moment().utc().add(data.expires_in, 'seconds')
+      })
+      newTwitch.save().then(console.log('New Twitch Creds created')).catch(console.error);
+
+    }
+    fetchJson.post(twitchUserURL).then(handleData).catch(console.error);
+  } else {
+    console.log('Twitch Creds already exist')
+  }
+}
+
+
+
+
 const admins = config.admins;
 const exec = require('child_process').exec;
 
@@ -51,7 +83,7 @@ app.use(passport.session());
 // Databae
 const mongoose = require("mongoose");
 mongoose
-  .connect(config.databaseURI, { useNewUrlParser: true })
+  .connect(config.databaseURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .catch(function (reason) {
     // TODO: Throw error page if DB doesn't connect
     console.log("Unable to connect to the mongodb instance. Error: ", reason);
@@ -65,7 +97,8 @@ db.once("open", () => console.log("Connected to Mongoose " + Date()));
 const User = require("./models/users");
 const mixReqs = require("./models/mixRequests");
 const SongRequest = require("./models/songRequests");
-const Poll = require("./models/polls")
+const Poll = require("./models/polls");
+const Good = require("./models/goods");
 
 // Twitch auth
 passport.use(
@@ -89,7 +122,10 @@ passport.use(
                 email: profile.email,
                 profile_pic_url: profile.profile_image_url,
                 provider: "twitch",
-                twitch: profile
+                twitch: profile,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                expireAt: moment().utc().add(8, 'hours')
               });
               console.log("New user created");
               user.save();
@@ -138,11 +174,16 @@ app.get('/login', (req, res) => {
 })
 
 // Logout
-app.get("/logout", function (req, res) {
-  req.session = null;
-  req.user = null;
-  req.logout();
-  res.render("bye");
+app.get("/logout", async function (req, res) {
+  try {
+    await User.deleteOne({ twitch_id: req.user.id })
+    req.session = null;
+    req.user = null;
+    req.logout();
+    res.render("bye");
+  } catch (err) {
+    console.error(err)
+  }
 });
 
 // Check to see if user is authenticated with passport 
@@ -156,20 +197,24 @@ function loggedIn(req, res, next) {
 
 app.get("/test", function (req, res) {
   console.log('REQ.SESSION:');
-  console.log(req.session)
-  res.render('test')
+  console.log(req.user)
+  res.send(req.user)
 });
 
 // Dashboard
 app.get("/requests", loggedIn, async (req, res) => {
   try {
     var user = await User.findOne({ twitch_id: req.user.id });
+    if (user === null) {
+      res.redirect('/login')
+    }
     console.log(user.username);
     var feSongRequests = await SongRequest.find();
     var mixRequests = await mixReqs.find();
     if (admins.includes(user.username)) {
       res.render("requests", {
         feUser: user.username,
+        profilePic: req.user["profile_image_url"],
         requests: feSongRequests,
         mixReqs: mixRequests,
         version: version
@@ -281,14 +326,19 @@ app.get("/mix/remove/:id", loggedIn, async (req, res) => {
 app.get("/poll", loggedIn, async (req, res) => {
   try {
     var user = await User.findOne({ twitch_id: req.user.id });
-    console.log(user.username);
-    if (admins.includes(user.username)) {
-      res.render("poll", {
-        version: version,
-      });
+    // console.log(user.username);
+    if (user) {
+      if (admins.includes(user.username)) {
+        res.render("poll", {
+          version: version,
+        });
+      } else {
+        res.redirect("/login");
+      }
     } else {
       res.redirect("/login");
     }
+
   } catch (err) {
     console.error(err);
   }
@@ -380,6 +430,8 @@ app.get("/poll/close/:id", loggedIn, async (req, res) => {
           res.sendStatus(200)
 
           botclient.say(twitchchan[0], 'The poll is now closed')
+          botclient.say(twitchchan[0], `Poll: ${doc.polltext} Winner: ${doc.choices[i].text}`)
+
 
           pusher_client.trigger("pollCh", "pollClose", {
             pollID: doc._id,
@@ -399,13 +451,34 @@ app.get("/poll/close/:id", loggedIn, async (req, res) => {
   }
 });
 
-//TODO: add loggedIn
-app.get("/widget/poll", async (req, res) => {
+app.get("/widget/poll", loggedIn, async (req, res) => {
   try {
     res.render("widget/poll-widget")
-  } catch {
-
+  } catch (err) {
+    console.error(err)
   }
+})
+
+app.get("/good", loggedIn, async (req, res) => {
+  try {
+    var goods = await Good.find({});
+
+    res.render("good", {
+      version: version
+    })
+  } catch (err) {
+    console.error(err)
+  }
+})
+
+app.get("/api/goods", loggedIn, async (req, res) => {
+  try {
+    var goods = await Good.find({});
+    res.send(goods)
+  } catch (err) {
+    console.error(err)
+  }
+
 })
 
 //404
@@ -711,6 +784,34 @@ botclient.on("chat", async (channel, userstate, message, self) => {
   if (message[0] === '!p') {
     var poll = await Poll.findOne({});
     console.log(poll)
+  }
+
+  if (message[0] === '!goodn') {
+    let tUser = userstate["user-id"]
+    let twitchCreds = await TwitchCreds.findOne({})
+    let goodnews = message.slice(1).join(" ")
+    console.log(tUser)
+    console.log(twitchCreds)
+    let url = `https://api.twitch.tv/helix/users?id=${tUser}`
+    let params = {}
+    let options = {
+      headers: {
+        'Client-ID': `${config.twitchClientID}`,
+        'Authorization': `Bearer ${twitchCreds.accessToken}`
+      }
+    }
+    async function handleData(data) {
+      console.log(data.data[0].profile_image_url);
+      let newGood = new Good({
+        user: userstate.username,
+        userPic: data.data[0].profile_image_url,
+        news: goodnews
+      })
+      ComfyDiscord.Say("good-news", `${userstate.username}'s good news: ${goodnews}`);
+      newGood.save();
+    }
+
+    fetchJson.get(url, params, options).then(handleData);
   }
 });
 
