@@ -28,15 +28,11 @@ wintl.pause(.1)
 $(document).ready(function () {
 
   // Init Chart
-  new Chartkick.PieChart("chart-1", [['choice', 1]], { donut: true, colors: pollColors, legend: false });
-
+  new Chartkick.PieChart("chart-1", [], { donut: true, colors: pollColors, legend: false });
   // Fetch active polls
-  fetch(`/api/polls`)
-    .then(response => {
-      return response.json()
-    })
-    .then(data => {
-      console.log(data)
+  $.getJSON("/api/polls", function (data, textStatus, jqXHR) {
+    console.log(data)
+    if (data.length > 0) {
       var poll = data[data.length - 1]
       if (poll.active === true) {
         let chart = Chartkick.charts["chart-1"]
@@ -48,8 +44,8 @@ $(document).ready(function () {
         textElem.setAttribute('class', 'card text-white bg-info ml-3 mt-3')
         choices.setAttribute('class', 'list-group list-group-flush text-dark');
         textElem.innerHTML = `
-          <div class="card-header"><h2>${poll.polltext}</h2></div>
-        `
+    <div class="card-header"><h2>${poll.polltext}</h2></div>
+  `
 
         poll.choices.forEach(function (choice, i) {
           var cI = i + 1
@@ -70,18 +66,14 @@ $(document).ready(function () {
         TweenMax.from(`#poll`, 1, { x: -500, autoAlpha: 0 });
         wintl.pause(.1)
 
-
-
       } else {
         TweenMax.to(`#poll`, 0.1, { x: -500, autoAlpha: 0 });
       }
+    } else {
 
-    })
-    .catch(err => {
-      return
-      console.error(err)
-    })
+    }
 
+  });
 
 });
 
@@ -138,9 +130,9 @@ channel.bind('pollClose', function (data) {
   var winCont = document.getElementById('pollwin')
   winCont.innerHTML = `
   <div class="card text-white bg-success ml-3">
-  <div class="card-header"><h4>The winner is:</h4></div>
+  <div class="card-header"><h2>The winner is:</h2></div>
   <div class="card-body">
-    <h2 class="card-title">${data.winText}</h5>
+    <h1 class="card-title">${data.winText}</h1>
   </div>
 </div>
   `
