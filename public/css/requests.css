@@ -25,6 +25,11 @@ body {
   overflow-y: scroll;
 }
 
+#profilePic {
+  width: 40px;
+  height: 40px;
+}
+
 /*!
  * Start Bootstrap - Simple Sidebar (https://startbootstrap.com/template-overviews/simple-sidebar)
  * Copyright 2013-2019 Start Bootstrap

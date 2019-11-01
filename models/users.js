@@ -29,7 +29,12 @@ const userSchema = new mongoose.Schema ({
 	is_admin: {
 		type: Boolean,
 		default: false
-	}
+	},
+	accessToken: String,
+	refreshToken: String,
+	expireAt: { type: Date, default: undefined }
 })
+
+userSchema.index({ "expireAt": 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model('Users', userSchema)
