@@ -786,7 +786,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     console.log(poll)
   }
 
-  if (message[0] === '!goodn') {
+  if (message[0] === '!goodnews') {
     let tUser = userstate["user-id"]
     let twitchCreds = await TwitchCreds.findOne({})
     let goodnews = message.slice(1).join(" ")
