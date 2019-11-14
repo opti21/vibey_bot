@@ -11,8 +11,8 @@ var pusher = new Pusher('94254303a6a5048bf191', {
 //   forceTLS: true
 // });
 
-//Subscribe to Poll Channel
-var channel = pusher.subscribe('pollCh');
+//Subscribe to Poll Namescape
+var socket = io('/polls-namescape');
 
 var pollColors = ["#003066", "#e7267f", "#9e34eb", "#E100CD", "#00A2BB", "#bc5706", "#d7b005"]
 
@@ -77,7 +77,7 @@ $(document).ready(function () {
 
 });
 
-channel.bind('pollOpen', function (data) {
+socket.on('pollOpen', function (data) {
   console.log('Poll Open')
   let chart = Chartkick.charts["chart-1"]
   let poll = data.poll
@@ -112,7 +112,7 @@ channel.bind('pollOpen', function (data) {
 
 });
 
-channel.bind('pollUpdate', function (data) {
+socket.on('pollUpdate', function (data) {
   console.log(data.doc)
   var chart = Chartkick.charts["chart-1"]
   var newData = []
@@ -125,7 +125,7 @@ channel.bind('pollUpdate', function (data) {
   newData = []
 });
 
-channel.bind('pollClose', function (data) {
+socket.on('pollClose', function (data) {
   console.log('Poll Closed')
   var winCont = document.getElementById('pollwin')
   winCont.innerHTML = `

@@ -1,14 +1,16 @@
 // Pusher Poduction *** UNCOMMENT THIS BEFORE COMMIT ***
-var pusher = new Pusher('94254303a6a5048bf191', {
-  cluster: 'us2',
-  forceTLS: true
-});
+// var pusher = new Pusher('94254303a6a5048bf191', {
+//   cluster: 'us2',
+//   forceTLS: true
+// });
 
 // Pusher DEVELOPMENT
 // var pusher = new Pusher('41f9377a48633b3302ff', {
 //   cluster: 'us2',
 //   forceTLS: true
 // });
+
+
 
 $("#menu-toggle").click(function (e) {
   e.preventDefault();
@@ -243,8 +245,11 @@ $(document).ready(function () {
 
 
 //Subscribe to Poll Channel
-var channel = pusher.subscribe('pollCh');
-channel.bind('pollUpdate', function (data) {
+// var channel = pusher.subscribe('pollCh');
+var socket = io('/polls-namescape');
+
+socket.on('pollUpdate', function (data) {
+  console.log('Poll Updated')
   var total = 0
   data.doc.choices.forEach(choice => {
     total = total + choice.votes;
@@ -263,7 +268,7 @@ channel.bind('pollUpdate', function (data) {
 })
 
 // Poll close
-channel.bind('pollClose', function (data) {
+socket.on('pollClose', function (data) {
   console.log(data.pollID)
   console.log(data.win)
   var footer = document.getElementById(`${data.pollID}footer`)

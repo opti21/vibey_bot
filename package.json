@@ -33,6 +33,7 @@
     "project-version": "^1.2.0",
     "pusher": "^2.2.2",
     "simple-youtube-api": "^5.2.1",
+    "socket.io": "^2.3.0",
     "spotify-uri": "^1.0.0",
     "tmi.js": "^1.5.0",
     "twitch": "^3.5.6",

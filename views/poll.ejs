@@ -4,6 +4,10 @@
 <head>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
 	<title>Vibey Poll</title>
+	<link rel="apple-touch-icon" sizes="180x180" href="img/icon/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="img/icon/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="img/icon/favicon-16x16.png">
+	<link rel="manifest" href="img/icon/site.webmanifest">
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -28,10 +32,14 @@
 				<a href="" class="list-group-item list-group-item-action bg-dark"> <i class="fas fa-cogs mr-1"></i>Settings
 					(soon)</a>
 			</div>
-			<div id="version">
-				<p class="text-muted ml-3 mt-3">v<%= version %></p>
-				<p class="text-muted text-center ml-3 mt-3">Made with ❤️ by opti_21</p>
-				<a href="/logout"><button class="ml-3 mb-3 btn btn-sm btn-danger">Logout</button></a>
+			<div id="version" class="ml-3">
+				<div id="profile">
+					<img id="profilePic" src="<%= profilePic %>" alt="<%= feUser %> profile picture" class="rounded-circle">
+					<%= feUser %>
+				</div>
+				<p class="text-muted mt-3">v<%= version %></p>
+				<p class="text-muted text-center  mt-3">Made with ❤️ by opti_21</p>
+				<a href="/logout"><button class=" mb-3 btn btn-sm btn-danger">Logout</button></a>
 			</div>
 		</div>
 		<!-- /#sidebar-wrapper -->
@@ -94,6 +102,7 @@
 	<script src="https://js.pusher.com/4.4/pusher.min.js"></script>
 	<script src="js/sweetalert2.all.min.js"></script>
 	<script type="text/javascript" src="vendor/DataTables/datatables.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
 	<script src="js/poll.js"></script>
 
 </body>
