@@ -6,6 +6,9 @@
     "type": "git",
     "url": "https://github.com/browemedia/vibey_bot.git"
   },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js --ignore public/",
