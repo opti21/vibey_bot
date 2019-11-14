@@ -46,9 +46,6 @@ async function getTwitchCreds() {
   }
 }
 
-
-
-
 const admins = config.admins;
 const exec = require('child_process').exec;
 
@@ -59,6 +56,7 @@ const exec = require('child_process').exec;
 //Whenever someone connects this gets executed
 const rqs = io.of('/req-namescape')
 const polls = io.of('/polls-namescape')
+
 rqs.on('connection', function (socket) {
   console.log('Connected to requests');
   socket.emit('socketConnect', {});
@@ -275,7 +273,7 @@ app.get("/requests/mix/deleteall", loggedIn, async (req, res) => {
   try {
     await mixReqs.deleteMany({}).exec();
     // pusher_client.trigger("sr-channel", "clear-mix", {});
-    // rqs.emit('clear-mix', {})
+    rqs.emit('clear-mix', {})
     res.status(200).send("Mix cleared");
   } catch (err) {
     res.status(500).send("Error clearing mix!");
