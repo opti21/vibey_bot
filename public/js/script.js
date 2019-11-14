@@ -9,7 +9,12 @@ function makeid(length) {
   return result;
 }
 
-
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 2000,
+})
 
 $(document).ready(function () {
   $('#sr-table').DataTable({
@@ -24,11 +29,19 @@ $("#menu-toggle").click(function (e) {
   $("#wrapper").toggleClass("toggled");
 });
 
-// Pusher Poduction *** UNCOMMENT THIS BEFORE COMMIT ***
-var pusher = new Pusher('94254303a6a5048bf191', {
-  cluster: 'us2',
-  forceTLS: true
+var socket = io('/req-namescape');
+socket.on('socketConnect', function (data) {
+  Toast.fire({
+    type: 'success',
+    title: 'Socket Connected!'
+  })
 });
+
+// Pusher Poduction *** UNCOMMENT THIS BEFORE COMMIT ***
+// var pusher = new Pusher('94254303a6a5048bf191', {
+//   cluster: 'us2',
+//   forceTLS: true
+// });
 
 // // Pusher DEVELOPMENT
 // var pusher = new Pusher('41f9377a48633b3302ff', {
@@ -37,8 +50,7 @@ var pusher = new Pusher('94254303a6a5048bf191', {
 // });
 
 // Realtime song request
-var channel = pusher.subscribe('sr-channel');
-channel.bind('sr-event', function (data) {
+socket.on('sr-event', function (data) {
   try {
     console.log('New Request')
     var srContainer = document.getElementById('srContainer')
@@ -67,7 +79,7 @@ channel.bind('sr-event', function (data) {
         <td><a class="srLink" target="_blank" href="${data.link}">${data.track}</a> <a class="youtube" target="_blank" href="${data.link}"><i class="fab fa-youtube" title="Open on Youtube"></i></a></td>
         <td>${data.reqBy}</td>
         <td>
-          <div class="timeReq" data-time="${data.timeOfReq}"></div>
+          <div class="timeReq" data-time="${data.timeOfReq}"></div> 
         </td>
       `
     }
@@ -103,7 +115,7 @@ function reqTime() {
 }
 
 // realtime song add to mix
-channel.bind('mix-event', function (data) {
+socket.on('mix-event', function (data) {
   try {
     console.log('Song added to mix')
     var mixContainer = document.getElementById('mixContainer')
@@ -152,12 +164,7 @@ $(function () {
   });
 });
 
-const Toast = Swal.mixin({
-  toast: true,
-  position: 'top-end',
-  showConfirmButton: false,
-  timer: 2000,
-})
+
 
 // Add request to mix
 $('#srContainer').on('click', '.mix-add.btn', function () {
@@ -212,7 +219,7 @@ $('#mixContainer').on('click', '.mix.delete', function () {
 })
 
 // Delete individual song from mix
-channel.bind('mix-remove', function (data) {
+socket.on('mix-remove', function (data) {
   var el = document.getElementById(`${data.id}`)
   el.remove()
 });

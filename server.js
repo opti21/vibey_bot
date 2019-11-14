@@ -15,7 +15,8 @@ const Spotify = require("node-spotify-api");
 const YouTube = require("simple-youtube-api");
 const youtube = new YouTube(config.ytAPI);
 const moment = require("moment");
-const Pusher = require("pusher");
+// const Pusher = require("pusher");
+var io = require('socket.io')(server);
 const fetchJson = require('fetch-json');
 const ComfyDiscord = require("comfydiscord");
 ComfyDiscord.Init(config.discord);
@@ -53,7 +54,24 @@ const exec = require('child_process').exec;
 
 
 // Real time data
-var pusher_client = new Pusher(config.pusher);
+// var pusher_client = new Pusher(config.pusher);
+
+//Whenever someone connects this gets executed
+const rqs = io.of('/req-namescape')
+const polls = io.of('/polls-namescape')
+rqs.on('connection', function (socket) {
+  console.log('Connected to requests');
+  socket.emit('socketConnect', {});
+
+  //Whenever someone disconnects this piece of code executed
+  rqs.on('disconnect', function () {
+    console.log('User disconnected from requests');
+  });
+});
+
+
+
+
 
 //Spotify Credentials
 const spotify = new Spotify({
@@ -256,7 +274,8 @@ app.get("/requests/delete/:id", loggedIn, async (req, res) => {
 app.get("/requests/mix/deleteall", loggedIn, async (req, res) => {
   try {
     await mixReqs.deleteMany({}).exec();
-    pusher_client.trigger("sr-channel", "clear-mix", {});
+    // pusher_client.trigger("sr-channel", "clear-mix", {});
+    // rqs.emit('clear-mix', {})
     res.status(200).send("Mix cleared");
   } catch (err) {
     res.status(500).send("Error clearing mix!");
@@ -293,7 +312,7 @@ app.get("/mix/add/:id", loggedIn, async (req, res) => {
     mixAdd.save().then(doc => {
       try {
         res.status(200).send("Added to Mix");
-        pusher_client.trigger("sr-channel", "mix-event", {
+        rqs.emit('mix-event', {
           id: `${doc.id}`,
           reqBy: `${doc.requestedBy}`,
           track: `${doc.track[0].name}`,
@@ -301,7 +320,16 @@ app.get("/mix/add/:id", loggedIn, async (req, res) => {
           uri: `${doc.track[0].uri}`,
           link: `${doc.track[0].link}`,
           source: `${doc.source}`
-        });
+        })
+        // pusher_client.trigger("sr-channel", "mix-event", {
+        //   id: `${doc.id}`,
+        //   reqBy: `${doc.requestedBy}`,
+        //   track: `${doc.track[0].name}`,
+        //   artist: `${doc.track[0].artist}`,
+        //   uri: `${doc.track[0].uri}`,
+        //   link: `${doc.track[0].link}`,
+        //   source: `${doc.source}`
+        // });
       } catch (err) {
         console.error(err);
         res.status(500).send("Error Adding song to mix");
@@ -313,9 +341,12 @@ app.get("/mix/add/:id", loggedIn, async (req, res) => {
 app.get("/mix/remove/:id", loggedIn, async (req, res) => {
   try {
     await mixReqs.deleteOne({ _id: req.params.id }).exec();
-    pusher_client.trigger("sr-channel", "mix-remove", {
+    rqs.emit('mix-remove', {
       id: `${req.params.id}`
-    });
+    })
+    // pusher_client.trigger("sr-channel", "mix-remove", {
+    //   id: `${req.params.id}`
+    // });
     res.status(200).send("Song Removed from mix");
   } catch (err) {
     console.error(err);
@@ -327,14 +358,15 @@ app.get("/poll", loggedIn, async (req, res) => {
   try {
     var user = await User.findOne({ twitch_id: req.user.id });
     // console.log(user.username);
-    if (user) {
-      if (admins.includes(user.username)) {
-        res.render("poll", {
-          version: version,
-        });
-      } else {
-        res.redirect("/login");
-      }
+    if (user === null) {
+      res.redirect('/login')
+    }
+    if (admins.includes(user.username)) {
+      res.render("poll", {
+        version: version,
+        feUser: user.username,
+        profilePic: req.user["profile_image_url"]
+      });
     } else {
       res.redirect("/login");
     }
@@ -395,10 +427,12 @@ app.post("/newpoll", loggedIn, async (req, res) => {
           let choiceArr = [`${choice.text}`, choice.votes]
           choices.push(choiceArr)
         })
-
-        pusher_client.trigger("pollCh", "pollOpen", {
+        polls.emit('pollOpen', {
           poll: doc
-        });
+        })
+        // pusher_client.trigger("pollCh", "pollOpen", {
+        //   poll: doc
+        // });
         choices = []
         num = 1;
       })
@@ -432,12 +466,16 @@ app.get("/poll/close/:id", loggedIn, async (req, res) => {
           botclient.say(twitchchan[0], 'The poll is now closed')
           botclient.say(twitchchan[0], `Poll: ${doc.polltext} Winner: ${doc.choices[i].text}`)
 
-
-          pusher_client.trigger("pollCh", "pollClose", {
+          polls.emit('pollClose', {
             pollID: doc._id,
             win: win,
             winText: poll.choices[i].text
-          });
+          })
+          // pusher_client.trigger("pollCh", "pollClose", {
+          //   pollID: doc._id,
+          //   win: win,
+          //   winText: poll.choices[i].text
+          // });
 
         } catch (err) {
           console.error(err)
@@ -563,7 +601,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                   `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist}`
                 );
                 // Real time data push to front end
-                pusher_client.trigger("sr-channel", "sr-event", {
+                rqs.emit('sr-event', {
                   id: `${doc.id}`,
                   reqBy: `${doc.requestedBy}`,
                   track: `${doc.track[0].name}`,
@@ -572,7 +610,17 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                   link: `${doc.track[0].link}`,
                   source: `${doc.source}`,
                   timeOfReq: `${doc.timeOfReq}`
-                });
+                })
+                // pusher_client.trigger("sr-channel", "sr-event", {
+                //   id: `${doc.id}`,
+                //   reqBy: `${doc.requestedBy}`,
+                //   track: `${doc.track[0].name}`,
+                //   artist: `${doc.track[0].artist}`,
+                //   uri: `${doc.track[0].uri}`,
+                //   link: `${doc.track[0].link}`,
+                //   source: `${doc.source}`,
+                //   timeOfReq: `${doc.timeOfReq}`
+                // });
               })
               .catch(err => {
                 console.error(err);
@@ -599,14 +647,22 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                 `@${doc.requestedBy} requested ${doc.track[0].name} ${doc.track[0].link}`
               );
               // Real time data push to front end
-              pusher_client.trigger("sr-channel", "sr-event", {
+              rqs.emit('sr-event', {
                 id: `${doc.id}`,
                 reqBy: `${doc.requestedBy}`,
                 track: `${doc.track[0].name}`,
                 link: `${doc.track[0].link}`,
                 source: `${doc.source}`,
                 timeOfReq: `${doc.timeOfReq}`
-              });
+              })
+              // pusher_client.trigger("sr-channel", "sr-event", {
+              //   id: `${doc.id}`,
+              //   reqBy: `${doc.requestedBy}`,
+              //   track: `${doc.track[0].name}`,
+              //   link: `${doc.track[0].link}`,
+              //   source: `${doc.source}`,
+              //   timeOfReq: `${doc.timeOfReq}`
+              // });
             })
             .catch(err => {
               console.error(err);
@@ -648,14 +704,22 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                       `@${doc.requestedBy} requested ${doc.track[0].name} https://youtu.be/${results[0].id}`
                     );
                     // Real time data push to front end
-                    pusher_client.trigger("sr-channel", "sr-event", {
+                    rqs.emit('sr-event', {
                       id: `${doc.id}`,
                       reqBy: `${doc.requestedBy}`,
                       track: `${doc.track[0].name}`,
                       link: `${doc.track[0].link}`,
                       source: `${doc.source}`,
                       timeOfReq: `${doc.timeOfReq}`
-                    });
+                    })
+                    // pusher_client.trigger("sr-channel", "sr-event", {
+                    //   id: `${doc.id}`,
+                    //   reqBy: `${doc.requestedBy}`,
+                    //   track: `${doc.track[0].name}`,
+                    //   link: `${doc.track[0].link}`,
+                    //   source: `${doc.source}`,
+                    //   timeOfReq: `${doc.timeOfReq}`
+                    // });
                   })
                   .catch(err => {
                     console.error(err);
@@ -708,7 +772,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                   `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist} - ${doc.track[0].link}`
                 );
                 // Real time data push to front end
-                pusher_client.trigger("sr-channel", "sr-event", {
+                rqs.emit('sr-event', {
                   id: `${doc.id}`,
                   reqBy: `${doc.requestedBy}`,
                   track: `${doc.track[0].name}`,
@@ -717,7 +781,17 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                   link: `${doc.track[0].link}`,
                   source: `${doc.source}`,
                   timeOfReq: `${doc.timeOfReq}`
-                });
+                })
+                // pusher_client.trigger("sr-channel", "sr-event", {
+                //   id: `${doc.id}`,
+                //   reqBy: `${doc.requestedBy}`,
+                //   track: `${doc.track[0].name}`,
+                //   artist: `${doc.track[0].artist}`,
+                //   uri: `${doc.track[0].uri}`,
+                //   link: `${doc.track[0].link}`,
+                //   source: `${doc.source}`,
+                //   timeOfReq: `${doc.timeOfReq}`
+                // });
               });
           }
 
@@ -760,10 +834,12 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       { $addToSet: { voters: tUser }, $set: { "choices.$.votes": i } }, { useFindAndModify: false, new: true }, (err, doc) => {
         console.log(doc.choices[cIndex].votes)
         console.log(doc)
-
-        pusher_client.trigger("pollCh", "pollUpdate", {
+        polls.emit('pollUpdate', {
           doc: doc
         });
+        // pusher_client.trigger("pollCh", "pollUpdate", {
+        //   doc: doc
+        // });
       })
     // }
 
@@ -786,7 +862,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     console.log(poll)
   }
 
-  if (message[0] === '!goodnews') {
+  if (message[0] === '!goodnews' || message[0] === '!goodn') {
     let tUser = userstate["user-id"]
     let twitchCreds = await TwitchCreds.findOne({})
     let goodnews = message.slice(1).join(" ")
