@@ -90,10 +90,7 @@
 										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
 												title="Open on Youtube"></i></a>
 										<% } if(request.source === 'text'){ %>
-										<a class="srLink" href="<%= request.track[0].link %>"
-											target="_blank"><%= request.track[0].name %></a>
-										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
-												title="Open on Youtube"></i></a>
+										<%= request.track[0].name %>
 										<% } %>
 									</td>
 									<td><%= request.requestedBy %></td>
