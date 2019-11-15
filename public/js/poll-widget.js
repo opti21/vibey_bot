@@ -142,3 +142,4 @@ socket.on('pollClose', function (data) {
     document.getElementById('polltext').innerHTML = '';
   }
 });
+

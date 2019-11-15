@@ -725,31 +725,6 @@ botclient.on("chat", async (channel, userstate, message, self) => {
               })
               .catch(console.error);
 
-            // var newText = new SongRequest({
-            //   track: {
-            //     name: request,
-            //     link: ytSearch
-            //   },
-            //   requestedBy: userstate.username,
-            //   timeOfReq: moment.utc().format(),
-            //   source: 'text'
-            // })
-            // newText.save().then(doc => {
-            //   botclient.say(
-            //     channel,
-            //     `@${doc.requestedBy} requested ${doc.track[0].name}`
-            //   )
-            //   // Real time data push to front end
-            //   pusher_client.trigger("sr-channel", "sr-event", {
-            //     id: `${doc.id}`,
-            //     reqBy: `${doc.requestedBy}`,
-            //     track: `${doc.track[0].name}`,
-            //     link: `${doc.track[0].link}`,
-            //     source: `${doc.source}`,
-            //     timeOfReq: `${doc.timeOfReq}`
-            //   });
-            // })
-            //   .catch(console.error);
           } else {
             var newSpotSR = new SongRequest({
               track: {
@@ -796,6 +771,33 @@ botclient.on("chat", async (channel, userstate, message, self) => {
         });
       }
     }
+  }
+
+  if (message[0] === '!tr') {
+    let request = message.slice(1).join(" ");
+    var newText = new SongRequest({
+      track: {
+        name: request
+      },
+      requestedBy: userstate.username,
+      timeOfReq: moment.utc().format(),
+      source: 'text'
+    })
+    newText.save().then(doc => {
+      botclient.say(
+        channel,
+        `@${doc.requestedBy} requested ${doc.track[0].name}`
+      )
+      // Real time data push to front end
+      rqs.emit("sr-event", {
+        id: `${doc.id}`,
+        reqBy: `${doc.requestedBy}`,
+        track: `${doc.track[0].name}`,
+        source: `${doc.source}`,
+        timeOfReq: `${doc.timeOfReq}`
+      });
+    })
+      .catch(console.error);
   }
   // Choice selection for polls
   if (message[0] === '!c') {
