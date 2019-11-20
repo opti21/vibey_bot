@@ -243,6 +243,70 @@ $(document).ready(function () {
   });
 });
 
+$("#songpoll").click(function () {
+  console.log('test')
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', `/songpoll`);
+  xhr.onload = function () {
+    if (xhr.status === 200) {
+      console.log(JSON.parse(xhr.response))
+      Toast.fire({
+        type: 'success',
+        title: 'Poll Opened'
+      })
+      console.log('Poll Opened')
+      var poll = JSON.parse(xhr.response)
+
+      var pollCont = document.getElementById('openPolls');
+      var pollElem = document.createElement('div');
+      var choices = document.createElement('ul');
+      var footer = document.createElement('div');
+      pollElem.setAttribute('id', `${poll._id}`)
+      pollElem.setAttribute('class', 'card bg-dark mb-3');
+      choices.setAttribute('class', 'list-group list-group-flush text-dark')
+
+      pollElem.innerHTML = `
+          <div class="currText card-header">
+				  	<i id="${poll._id}status" class="spinner fas fa-circle-notch" style="color:limegreen"></i> ${poll.polltext}
+				  </div>
+        `
+      poll.choices.forEach(choice => {
+        console.log(choice)
+        var choiceElem = document.createElement('li')
+        choiceElem.setAttribute('id', `${poll._id + choice.id}`)
+        choiceElem.setAttribute('class', 'list-group-item')
+        choiceElem.innerHTML = `
+          ${choice.text}
+            <div class="progress">
+              <div id="${poll._id + choice.id}bar" class="progress-bar" role="progressbar" style="width: 0%">0(0%)</div>
+            </div>
+          `
+        choices.append(choiceElem);
+      })
+
+      footer.innerHTML = `
+          <div id="${poll._id}footer" class="card-footer text-muted">
+            <button class="btn btn-danger closePoll" pollid="${poll._id}">Close Poll</button>
+          </div>
+          `
+
+      pollElem.append(choices)
+      pollElem.append(footer)
+      pollCont.append(pollElem)
+      TweenMax.to(`#${poll._id}status`, 3, { rotation: "360", ease: Linear.easeNone, repeat: -1 });
+
+    } else {
+      Swal.fire(
+        'Uh Oh!',
+        `There was an error opening the poll. Error: ${xhr.responseText}`,
+        'error'
+      )
+    }
+  }
+  xhr.send();
+
+})
+
 
 //Subscribe to Poll Channel
 // var channel = pusher.subscribe('pollCh');
@@ -291,14 +355,14 @@ $(document).ready(function () {
   var addButton = $('.add_button'); //Add button selector
   var rmvBtn = $('.remove_button');
   var wrapper = $('.field_wrapper'); //Input field wrapper
-  var x = 2; //Initial field counter is 1
+  var fields = 2; //Initial field counter is 1
   var choice = 3;
 
   //Once add button is clicked
   $(addButton).click(function () {
-    if (x < maxField) {
+    if (fields < maxField) {
       $(wrapper).append(`<input type="text" class="form-control mb-2" name="choice${choice}" placeholder="Choice ${choice}" tabindex="${choice}">`); //Add field html
-      x++; //Increment field counter
+      fields++; //Increment field counter
       choice++;
     }
   });
@@ -306,7 +370,7 @@ $(document).ready(function () {
   $(rmvBtn).click(function () {
     if (x > 2) {
       $(wrapper).children().last().remove();; //Remove field html
-      x--; //Decrement field counter
+      fields--; //Decrement field counter
       choice--;
     }
   })
