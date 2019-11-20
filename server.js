@@ -15,10 +15,12 @@ const Spotify = require("node-spotify-api");
 const YouTube = require("simple-youtube-api");
 const youtube = new YouTube(config.ytAPI);
 const moment = require("moment");
-// const Pusher = require("pusher");
 var io = require('socket.io')(server);
 const fetchJson = require('fetch-json');
 const ComfyDiscord = require("comfydiscord");
+const admins = config.admins;
+const exec = require('child_process').exec;
+
 ComfyDiscord.Init(config.discord);
 
 const TwitchCreds = require("./models/twitchCreds");
@@ -46,14 +48,8 @@ async function getTwitchCreds() {
   }
 }
 
-const admins = config.admins;
-const exec = require('child_process').exec;
-
 
 // Real time data
-// var pusher_client = new Pusher(config.pusher);
-
-//Whenever someone connects this gets executed
 const rqs = io.of('/req-namescape')
 const polls = io.of('/polls-namescape')
 
@@ -66,10 +62,6 @@ rqs.on('connection', function (socket) {
     console.log('User disconnected from requests');
   });
 });
-
-
-
-
 
 //Spotify Credentials
 const spotify = new Spotify({
@@ -272,7 +264,6 @@ app.get("/requests/delete/:id", loggedIn, async (req, res) => {
 app.get("/requests/mix/deleteall", loggedIn, async (req, res) => {
   try {
     await mixReqs.deleteMany({}).exec();
-    // pusher_client.trigger("sr-channel", "clear-mix", {});
     rqs.emit('clear-mix', {})
     res.status(200).send("Mix cleared");
   } catch (err) {
@@ -319,15 +310,6 @@ app.get("/mix/add/:id", loggedIn, async (req, res) => {
           link: `${doc.track[0].link}`,
           source: `${doc.source}`
         })
-        // pusher_client.trigger("sr-channel", "mix-event", {
-        //   id: `${doc.id}`,
-        //   reqBy: `${doc.requestedBy}`,
-        //   track: `${doc.track[0].name}`,
-        //   artist: `${doc.track[0].artist}`,
-        //   uri: `${doc.track[0].uri}`,
-        //   link: `${doc.track[0].link}`,
-        //   source: `${doc.source}`
-        // });
       } catch (err) {
         console.error(err);
         res.status(500).send("Error Adding song to mix");
@@ -342,9 +324,6 @@ app.get("/mix/remove/:id", loggedIn, async (req, res) => {
     rqs.emit('mix-remove', {
       id: `${req.params.id}`
     })
-    // pusher_client.trigger("sr-channel", "mix-remove", {
-    //   id: `${req.params.id}`
-    // });
     res.status(200).send("Song Removed from mix");
   } catch (err) {
     console.error(err);
@@ -428,9 +407,66 @@ app.post("/newpoll", loggedIn, async (req, res) => {
         polls.emit('pollOpen', {
           poll: doc
         })
-        // pusher_client.trigger("pollCh", "pollOpen", {
-        //   poll: doc
-        // });
+
+        choices = []
+        num = 1;
+      })
+    } else {
+      console.log(poll)
+      res.status(418).send('Poll is already running')
+    }
+
+  } catch (err) {
+    console.error(err)
+  }
+})
+
+// Song Poll
+app.get("/songpoll", loggedIn, async (req, res) => {
+  try {
+    var poll = await Poll.find({ "active": true })
+    var mix = await mixReqs.find({})
+    if (poll.length === 0) {
+      var pollText = 'Which song?'
+      var choices = mix
+      var choiceArray = []
+      var votes = []
+      choices.forEach(choiceAppend);
+
+      function choiceAppend(element, index, array) {
+        var choice = {
+          id: makeid(10),
+          text: choices[index].track[0].name,
+          votes: 0
+        }
+        choiceArray.push(choice);
+      }
+
+      console.log(choiceArray)
+
+      var newPoll = new Poll({
+        active: true,
+        polltext: pollText,
+        choices: choiceArray,
+        votes: votes
+      })
+      await newPoll.save().then(doc => {
+        res.send(doc)
+        var num = 1
+        var choices = []
+        botclient.say(twitchchan[0], 'A new poll has started! Vote with !c i.e.(!c 2)')
+        botclient.say(twitchchan[0], `The poll question is: ${pollText}`)
+
+        doc.choices.forEach(choice => {
+          botclient.say(twitchchan[0], `!c ${num} = ${choice.text}`)
+          num++;
+          let choiceArr = [`${choice.text}`, choice.votes]
+          choices.push(choiceArr)
+        })
+        polls.emit('pollOpen', {
+          poll: doc
+        })
+
         choices = []
         num = 1;
       })
@@ -469,11 +505,6 @@ app.get("/poll/close/:id", loggedIn, async (req, res) => {
             win: win,
             winText: poll.choices[i].text
           })
-          // pusher_client.trigger("pollCh", "pollClose", {
-          //   pollID: doc._id,
-          //   win: win,
-          //   winText: poll.choices[i].text
-          // });
 
         } catch (err) {
           console.error(err)
@@ -552,14 +583,18 @@ botclient.connect();
 // Bot says hello on connect
 botclient.on('connected', (address, port) => {
   // botclient.say(twitchchan[0], `Hey Chat! Send me those vibes`)
-  var cmd = `osascript -e 'display notification "${address} on port ${port}" with title "Connected to Twitch!" sound name "Submarine"'`;
+  console.log('connected to twitch chat client')
+  if (process.env.NODE_ENV === 'development') {
+    var cmd = `osascript -e 'display notification "${address} on port ${port}" with title "Connected to Twitch!" sound name "Submarine"'`;
 
-  exec(cmd, function (error, stdout, stderr) {
-    // command output is in stdout
-    if (error) {
-      console.error(error)
-    }
-  });
+    exec(cmd, function (error, stdout, stderr) {
+      // command output is in stdout
+      if (error) {
+        console.error(error)
+      }
+    });
+  }
+
 });
 
 // Regex
@@ -609,16 +644,6 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                   source: `${doc.source}`,
                   timeOfReq: `${doc.timeOfReq}`
                 })
-                // pusher_client.trigger("sr-channel", "sr-event", {
-                //   id: `${doc.id}`,
-                //   reqBy: `${doc.requestedBy}`,
-                //   track: `${doc.track[0].name}`,
-                //   artist: `${doc.track[0].artist}`,
-                //   uri: `${doc.track[0].uri}`,
-                //   link: `${doc.track[0].link}`,
-                //   source: `${doc.source}`,
-                //   timeOfReq: `${doc.timeOfReq}`
-                // });
               })
               .catch(err => {
                 console.error(err);
@@ -653,14 +678,6 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                 source: `${doc.source}`,
                 timeOfReq: `${doc.timeOfReq}`
               })
-              // pusher_client.trigger("sr-channel", "sr-event", {
-              //   id: `${doc.id}`,
-              //   reqBy: `${doc.requestedBy}`,
-              //   track: `${doc.track[0].name}`,
-              //   link: `${doc.track[0].link}`,
-              //   source: `${doc.source}`,
-              //   timeOfReq: `${doc.timeOfReq}`
-              // });
             })
             .catch(err => {
               console.error(err);
@@ -710,14 +727,6 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                       source: `${doc.source}`,
                       timeOfReq: `${doc.timeOfReq}`
                     })
-                    // pusher_client.trigger("sr-channel", "sr-event", {
-                    //   id: `${doc.id}`,
-                    //   reqBy: `${doc.requestedBy}`,
-                    //   track: `${doc.track[0].name}`,
-                    //   link: `${doc.track[0].link}`,
-                    //   source: `${doc.source}`,
-                    //   timeOfReq: `${doc.timeOfReq}`
-                    // });
                   })
                   .catch(err => {
                     console.error(err);
@@ -755,16 +764,6 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                   source: `${doc.source}`,
                   timeOfReq: `${doc.timeOfReq}`
                 })
-                // pusher_client.trigger("sr-channel", "sr-event", {
-                //   id: `${doc.id}`,
-                //   reqBy: `${doc.requestedBy}`,
-                //   track: `${doc.track[0].name}`,
-                //   artist: `${doc.track[0].artist}`,
-                //   uri: `${doc.track[0].uri}`,
-                //   link: `${doc.track[0].link}`,
-                //   source: `${doc.source}`,
-                //   timeOfReq: `${doc.timeOfReq}`
-                // });
               });
           }
 
@@ -837,9 +836,6 @@ botclient.on("chat", async (channel, userstate, message, self) => {
         polls.emit('pollUpdate', {
           doc: doc
         });
-        // pusher_client.trigger("pollCh", "pollUpdate", {
-        //   doc: doc
-        // });
       })
     // }
 
