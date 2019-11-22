@@ -171,9 +171,8 @@ app.get(
 );
 
 // Front page
-app.get("/", (req, res, next) => {
+app.get("/", (req, res) => {
   res.render("index");
-  next();
 });
 
 // Login
