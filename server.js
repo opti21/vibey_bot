@@ -20,6 +20,7 @@ const fetchJson = require('fetch-json');
 const ComfyDiscord = require("comfydiscord");
 const admins = config.admins;
 const exec = require('child_process').exec;
+const he = require('he');
 
 ComfyDiscord.Init(config.discord);
 
@@ -884,7 +885,31 @@ botclient.on("chat", async (channel, userstate, message, self) => {
 
     fetchJson.get(url, params, options).then(handleData);
   }
+
+  if (message[0] === '!science' && admins.includes(userstate.username)) {
+      let handleData = (data) => {
+        let diff = capitalize(data.results[0].difficulty)
+        let q = data.results[0].question
+        answer = data.results[0].correct_answer
+        botclient.say(twitchchan[0], he.decode(`@veryhandsomebilly SCIENCE QUESTION Difficulty: ${diff} Question: ${q}`));
+        // console.log('Difficulty: ' + diff + 'Question: ' + q)
+      }
+      fetchJson.get('https://opentdb.com/api.php?amount=1&category=17').then(handleData);
+    }
+
+  if (message[0] === '!answer' && admins.includes(userstate.username)) {
+   botclient.say(twitchchan[0], he.decode(`${answer}`)) 
+    // console.log(answer)
+  }
+     
 });
+
+const capitalize = (s) => {
+  if (typeof s !== 'string') return ''
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+var answer = ''
 
 server.listen(3000);
 
