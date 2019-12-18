@@ -24,6 +24,9 @@ const srSchema = new mongoose.Schema({
   },
   dateFulfilled: {
     type: String
+  },
+  lyrics: {
+   type: String
   }
 });
 

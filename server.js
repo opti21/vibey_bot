@@ -1,6 +1,6 @@
 const config = require("./config/config");
-const version = require('project-version');
-console.log('Version: ' + version)
+const version = require("project-version");
+console.log("Version: " + version);
 
 const express = require("express");
 const app = express();
@@ -14,13 +14,17 @@ const spotifyUri = require("spotify-uri");
 const Spotify = require("node-spotify-api");
 const YouTube = require("simple-youtube-api");
 const youtube = new YouTube(config.ytAPI);
-const moment = require("moment");
-var io = require('socket.io')(server);
-const fetchJson = require('fetch-json');
+const moment = require("moment-timezone");
+const io = require("socket.io")(server);
+const fetchJson = require("fetch-json");
 const ComfyDiscord = require("comfydiscord");
 const admins = config.admins;
-const exec = require('child_process').exec;
-const he = require('he');
+const exec = require("child_process").exec;
+const he = require("he");
+const sgMail = require("@sendgrid/mail");
+
+// SendGrid Emails
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 ComfyDiscord.Init(config.discord);
 
@@ -28,39 +32,62 @@ const TwitchCreds = require("./models/twitchCreds");
 
 getTwitchCreds();
 async function getTwitchCreds() {
-  const twitchCreds = await TwitchCreds.findOne({})
-  console.log(twitchCreds)
+  const twitchCreds = await TwitchCreds.findOne({});
+  console.log(twitchCreds);
   if (twitchCreds === null) {
-    const twitchUserURL = `https://id.twitch.tv/oauth2/token?client_id=${config.twitchClientID}&client_secret=${config.twitchSecret}&scope=user_read&grant_type=client_credentials`
-    console.log(twitchUserURL)
-    const twitchResource = {}
-    const handleData = (data) => {
-      console.log(data)
+    const twitchUserURL = `https://id.twitch.tv/oauth2/token?client_id=${config.twitchClientID}&client_secret=${config.twitchSecret}&scope=user_read&grant_type=client_credentials`;
+    console.log(twitchUserURL);
+    const twitchResource = {};
+    const handleData = data => {
+      console.log(data);
       const newTwitch = new TwitchCreds({
         accessToken: data.access_token,
-        expireAt: moment().utc().add(data.expires_in, 'seconds')
-      })
-      newTwitch.save().then(console.log('New Twitch Creds created')).catch(console.error);
-
-    }
-    fetchJson.post(twitchUserURL).then(handleData).catch(console.error);
+        expireAt: moment()
+          .utc()
+          .add(data.expires_in, "seconds")
+      });
+      newTwitch
+        .save()
+        .then(console.log("New Twitch Creds created"))
+        .catch(console.error);
+    };
+    fetchJson
+      .post(twitchUserURL)
+      .then(handleData)
+      .catch(console.error);
   } else {
-    console.log('Twitch Creds already exist')
+    console.log("Twitch Creds already exist");
   }
 }
 
+// Error texts
+function errTxt(err) {
+  let msg = {
+    to: "***REMOVED***@mms.cricketwireless.net",
+    from: "test@example.com",
+    subject: "**VIBEY ERROR** Uh Oh",
+    text: `${err}`
+  };
+  try {
+    sgMail.send(msg);
+  } catch (err) {
+    console.error("EMAIL_ERROR: ", +err);
+  }
+}
+//Test Message
+// errTxt("REALLY BAD ERROR");
 
 // Real time data
-const rqs = io.of('/req-namescape')
-const polls = io.of('/polls-namescape')
+const rqs = io.of("/req-namescape");
+const polls = io.of("/polls-namescape");
 
-rqs.on('connection', function (socket) {
-  console.log('Connected to requests');
-  socket.emit('socketConnect', {});
+rqs.on("connection", function(socket) {
+  console.log("Connected to requests");
+  socket.emit("socketConnect", {});
 
   //Whenever someone disconnects this piece of code executed
-  rqs.on('disconnect', function () {
-    console.log('User disconnected from requests');
+  rqs.on("disconnect", function() {
+    console.log("User disconnected from requests");
   });
 });
 
@@ -80,7 +107,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(
   cookieSession({
-    name: 'session',
+    name: "session",
     secret: `${config.sessionSecret}`,
     saveUninitialized: false,
     resave: false
@@ -92,14 +119,22 @@ app.use(passport.session());
 // Databae
 const mongoose = require("mongoose");
 mongoose
-  .connect(config.databaseURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .catch(function (reason) {
+  .connect(config.databaseURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true
+  })
+  .catch(function(reason) {
     // TODO: Throw error page if DB doesn't connect
     console.log("Unable to connect to the mongodb instance. Error: ", reason);
+    errTxt(reason);
   });
 
 const db = mongoose.connection;
-db.on("error", error => console.error(error));
+db.on("error", error => {
+  console.error(error);
+  errTxt(error);
+});
 db.once("open", () => console.log("Connected to Mongoose " + Date()));
 
 //Models
@@ -118,11 +153,11 @@ passport.use(
       callbackURL: `${config.appURL}/auth/twitch/callback`,
       scope: "user:read:email"
     },
-    async function (accessToken, refreshToken, profile, done) {
+    async function(accessToken, refreshToken, profile, done) {
       try {
         User.findOne({ twitch_id: profile.id })
           .exec()
-          .then(function (UserSearch) {
+          .then(function(UserSearch) {
             if (UserSearch === null) {
               let user = new User({
                 twitch_id: profile.id,
@@ -134,7 +169,9 @@ passport.use(
                 twitch: profile,
                 accessToken: accessToken,
                 refreshToken: refreshToken,
-                expireAt: moment().utc().add(8, 'hours')
+                expireAt: moment()
+                  .utc()
+                  .add(8, "hours")
               });
               console.log("New user created");
               user.save();
@@ -147,16 +184,17 @@ passport.use(
           });
       } catch (err) {
         console.error(err);
+        errTxt(err);
       }
     }
   )
 );
 
-passport.serializeUser(function (user, done) {
+passport.serializeUser(function(user, done) {
   done(null, user);
 });
 
-passport.deserializeUser(function (obj, done) {
+passport.deserializeUser(function(obj, done) {
   done(null, obj);
 });
 
@@ -164,7 +202,7 @@ app.get("/auth/twitch", passport.authenticate("twitch"));
 app.get(
   "/auth/twitch/callback",
   passport.authenticate("twitch", { failureRedirect: "/login" }),
-  function (req, res) {
+  function(req, res) {
     // Successful authentication, redirect home.
     // res.redirect("/requests");
     res.redirect("/requests");
@@ -177,36 +215,37 @@ app.get("/", (req, res) => {
 });
 
 // Login
-app.get('/login', (req, res) => {
-  res.render('login')
-})
+app.get("/login", (req, res) => {
+  res.render("login");
+});
 
 // Logout
-app.get("/logout", async function (req, res) {
+app.get("/logout", async function(req, res) {
   try {
-    await User.deleteOne({ twitch_id: req.user.id })
+    await User.deleteOne({ twitch_id: req.user.id });
     req.session = null;
     req.user = null;
     req.logout();
     res.render("bye");
   } catch (err) {
-    console.error(err)
+    console.error(err);
+    errTxt(err);
   }
 });
 
-// Check to see if user is authenticated with passport 
+// Check to see if user is authenticated with passport
 function loggedIn(req, res, next) {
   if (!req.user) {
-    res.redirect('/login')
+    res.redirect("/login");
   } else {
     next();
   }
 }
 
-app.get("/test", function (req, res) {
-  console.log('REQ.SESSION:');
-  console.log(req.user)
-  res.send(req.user)
+app.get("/test", function(req, res) {
+  console.log("REQ.SESSION:");
+  console.log(req.user);
+  res.send(req.user);
 });
 
 // Dashboard
@@ -214,7 +253,7 @@ app.get("/requests", loggedIn, async (req, res) => {
   try {
     var user = await User.findOne({ twitch_id: req.user.id });
     if (user === null) {
-      res.redirect('/login')
+      res.redirect("/login");
     }
     console.log(user.username);
     var feSongRequests = await SongRequest.find();
@@ -232,6 +271,7 @@ app.get("/requests", loggedIn, async (req, res) => {
     }
   } catch (err) {
     console.error(err);
+    errTxt(err);
   }
 });
 
@@ -250,7 +290,6 @@ app.get("/widget/v2", async (req, res) => {
   });
 });
 
-
 app.get("/requests/delete/:id", loggedIn, async (req, res) => {
   try {
     await SongRequest.deleteOne({ _id: req.params.id }).exec();
@@ -258,17 +297,19 @@ app.get("/requests/delete/:id", loggedIn, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send("Error deleting song request");
+    errTxt(err);
   }
 });
 
 app.get("/requests/mix/deleteall", loggedIn, async (req, res) => {
   try {
     await mixReqs.deleteMany({}).exec();
-    rqs.emit('clear-mix', {})
+    rqs.emit("clear-mix", {});
     res.status(200).send("Mix cleared");
   } catch (err) {
     res.status(500).send("Error clearing mix!");
     console.error(err);
+    errTxt(err);
   }
 });
 
@@ -279,55 +320,63 @@ app.get("/requests/deleteall", loggedIn, (req, res) => {
   } catch (err) {
     res.status(500).send("Error clearing queue!");
     console.error(err);
+    errTxt(err);
   }
 });
 
 app.get("/mix/add/:id", loggedIn, async (req, res) => {
   await SongRequest.findById(req.params.id, (err, request) => {
-    request.fulfilled = true;
-    request.dateFulfilled = moment().utc();
-    request.save().then(console.log("Request updated"));
-    var mixAdd = new mixReqs({
-      track: {
-        name: request.track[0].name,
-        artist: request.track[0].artist,
-        link: request.track[0].link,
-        uri: request.track[0].uri
-      },
-      requestedBy: request.requestedBy,
-      timeOfReq: request.timeOfReq,
-      source: request.source
-    });
-    mixAdd.save().then(doc => {
-      try {
-        res.status(200).send("Added to Mix");
-        rqs.emit('mix-event', {
-          id: `${doc.id}`,
-          reqBy: `${doc.requestedBy}`,
-          track: `${doc.track[0].name}`,
-          artist: `${doc.track[0].artist}`,
-          uri: `${doc.track[0].uri}`,
-          link: `${doc.track[0].link}`,
-          source: `${doc.source}`
-        })
-      } catch (err) {
-        console.error(err);
-        res.status(500).send("Error Adding song to mix");
-      }
-    });
+    if (err) {
+      errTxt(err);
+      return;
+    } else {
+      request.fulfilled = true;
+      request.dateFulfilled = moment().utc();
+      request.save().then(console.log("Request updated"));
+      var mixAdd = new mixReqs({
+        track: {
+          name: request.track[0].name,
+          artist: request.track[0].artist,
+          link: request.track[0].link,
+          uri: request.track[0].uri
+        },
+        requestedBy: request.requestedBy,
+        timeOfReq: request.timeOfReq,
+        source: request.source
+      });
+      mixAdd.save().then(doc => {
+        try {
+          res.status(200).send("Added to Mix");
+          rqs.emit("mix-event", {
+            id: `${doc.id}`,
+            reqBy: `${doc.requestedBy}`,
+            track: `${doc.track[0].name}`,
+            artist: `${doc.track[0].artist}`,
+            uri: `${doc.track[0].uri}`,
+            link: `${doc.track[0].link}`,
+            source: `${doc.source}`
+          });
+        } catch (err) {
+          console.error(err);
+          res.status(500).send("Error Adding song to mix");
+          errTxt(err);
+        }
+      });
+    }
   });
 });
 
 app.get("/mix/remove/:id", loggedIn, async (req, res) => {
   try {
     await mixReqs.deleteOne({ _id: req.params.id }).exec();
-    rqs.emit('mix-remove', {
+    rqs.emit("mix-remove", {
       id: `${req.params.id}`
-    })
+    });
     res.status(200).send("Song Removed from mix");
   } catch (err) {
     console.error(err);
     res.status(500).send("Error removing song from mix");
+    errTxt(err);
   }
 });
 
@@ -336,7 +385,7 @@ app.get("/poll", loggedIn, async (req, res) => {
     var user = await User.findOne({ twitch_id: req.user.id });
     // console.log(user.username);
     if (user === null) {
-      res.redirect('/login')
+      res.redirect("/login");
     }
     if (admins.includes(user.username)) {
       res.render("poll", {
@@ -347,31 +396,31 @@ app.get("/poll", loggedIn, async (req, res) => {
     } else {
       res.redirect("/login");
     }
-
   } catch (err) {
     console.error(err);
+    errTxt(err);
   }
 });
 
 app.get("/api/polls", loggedIn, async (req, res) => {
   try {
-    var polls = await Poll.find()
-    res.send(polls)
+    var polls = await Poll.find();
+    res.send(polls);
   } catch (err) {
-    console.error(err)
+    console.error(err);
+    errTxt(err);
   }
-})
-
+});
 
 app.post("/newpoll", loggedIn, async (req, res) => {
   try {
     var user = await User.findOne({ twitch_id: req.user.id });
-    var poll = await Poll.find({ "active": true })
+    var poll = await Poll.find({ active: true });
     if (poll.length === 0) {
-      var pollText = req.body[0].value
-      var choices = req.body.slice(1)
-      var choiceArray = []
-      var votes = []
+      var pollText = req.body[0].value;
+      var choices = req.body.slice(1);
+      var choiceArray = [];
+      var votes = [];
       choices.forEach(choiceAppend);
 
       function choiceAppend(element, index, array) {
@@ -379,58 +428,61 @@ app.post("/newpoll", loggedIn, async (req, res) => {
           id: makeid(10),
           text: choices[index].value,
           votes: 0
-        }
+        };
         choiceArray.push(choice);
       }
 
-      console.log(choiceArray)
+      console.log(choiceArray);
 
       var newPoll = new Poll({
         active: true,
         polltext: pollText,
         choices: choiceArray,
         votes: votes
-      })
+      });
       await newPoll.save().then(doc => {
-        res.send(doc)
-        var num = 1
-        var choices = []
-        botclient.say(twitchchan[0], 'A new poll has started! Vote with !c i.e.(!c 2)')
-        botclient.say(twitchchan[0], `The poll question is: ${pollText}`)
+        res.send(doc);
+        var num = 1;
+        var choices = [];
+        botclient.say(
+          twitchchan[0],
+          "A new poll has started! Vote with !c i.e.(!c 2)"
+        );
+        botclient.say(twitchchan[0], `The poll question is: ${pollText}`);
 
         doc.choices.forEach(choice => {
-          botclient.say(twitchchan[0], `!c ${num} = ${choice.text}`)
+          botclient.say(twitchchan[0], `!c ${num} = ${choice.text}`);
           num++;
-          let choiceArr = [`${choice.text}`, choice.votes]
-          choices.push(choiceArr)
-        })
-        polls.emit('pollOpen', {
+          let choiceArr = [`${choice.text}`, choice.votes];
+          choices.push(choiceArr);
+        });
+        polls.emit("pollOpen", {
           poll: doc
-        })
+        });
 
-        choices = []
+        choices = [];
         num = 1;
-      })
+      });
     } else {
-      console.log(poll)
-      res.status(418).send('Poll is already running')
+      console.log(poll);
+      res.status(418).send("Poll is already running");
     }
-
   } catch (err) {
-    console.error(err)
+    console.error(err);
+    errTxt(err);
   }
-})
+});
 
 // Song Poll
 app.get("/songpoll", loggedIn, async (req, res) => {
   try {
-    var poll = await Poll.find({ "active": true })
-    var mix = await mixReqs.find({})
+    var poll = await Poll.find({ active: true });
+    var mix = await mixReqs.find({});
     if (poll.length === 0) {
-      var pollText = 'Which song?'
-      var choices = mix
-      var choiceArray = []
-      var votes = []
+      var pollText = "Which song?";
+      var choices = mix;
+      var choiceArray = [];
+      var votes = [];
       choices.forEach(choiceAppend);
 
       function choiceAppend(element, index, array) {
@@ -438,120 +490,114 @@ app.get("/songpoll", loggedIn, async (req, res) => {
           id: makeid(10),
           text: choices[index].track[0].name,
           votes: 0
-        }
+        };
         choiceArray.push(choice);
       }
 
-      console.log(choiceArray)
+      console.log(choiceArray);
 
       var newPoll = new Poll({
         active: true,
         polltext: pollText,
         choices: choiceArray,
         votes: votes
-      })
+      });
       await newPoll.save().then(doc => {
-        res.send(doc)
-        var num = 1
-        var choices = []
-        botclient.say(twitchchan[0], 'A new poll has started! Vote with !c i.e.(!c 2)')
-        botclient.say(twitchchan[0], `The poll question is: ${pollText}`)
+        res.send(doc);
+        var num = 1;
+        var choices = [];
+        botclient.say(
+          twitchchan[0],
+          "A new poll has started! Vote with !c i.e.(!c 2)"
+        );
+        botclient.say(twitchchan[0], `The poll question is: ${pollText}`);
 
         doc.choices.forEach(choice => {
-          botclient.say(twitchchan[0], `!c ${num} = ${choice.text}`)
+          botclient.say(twitchchan[0], `!c ${num} = ${choice.text}`);
           num++;
-          let choiceArr = [`${choice.text}`, choice.votes]
-          choices.push(choiceArr)
-        })
-        polls.emit('pollOpen', {
+          let choiceArr = [`${choice.text}`, choice.votes];
+          choices.push(choiceArr);
+        });
+        polls.emit("pollOpen", {
           poll: doc
-        })
+        });
 
-        choices = []
+        choices = [];
         num = 1;
-      })
+      });
     } else {
-      console.log(poll)
-      res.status(418).send('Poll is already running')
+      console.log(poll);
+      res.status(418).send("Poll is already running");
     }
-
   } catch (err) {
-    console.error(err)
+    console.error(err);
+    errTxt(err);
   }
-})
+});
 
 app.get("/poll/close/:id", loggedIn, async (req, res) => {
   try {
     var user = await User.findOne({ twitch_id: req.user.id });
-    var poll = await Poll.findOne({ "_id": req.params.id });
-    var choiceArr = []
+    var poll = await Poll.findOne({ _id: req.params.id });
+    var choiceArr = [];
     poll.choices.forEach(choice => {
-      choiceArr.push(choice.votes)
-    })
-    console.log(choiceArr)
+      choiceArr.push(choice.votes);
+    });
+    console.log(choiceArr);
     let i = choiceArr.indexOf(Math.max(...choiceArr));
-    let win = poll._id + poll.choices[i].id
-    await Poll.findOneAndUpdate({ "_id": req.params.id },
-      { $set: { "active": false }, "winner": win }, { useFindAndModify: false, new: true }, (err, doc) => {
-        console.log(doc.active)
+    let win = poll._id + poll.choices[i].id;
+    await Poll.findOneAndUpdate(
+      { _id: req.params.id },
+      { $set: { active: false }, winner: win },
+      { useFindAndModify: false, new: true },
+      (err, doc) => {
+        console.log(doc.active);
+        if (err) {
+          errTxt(err);
+          return;
+        }
         try {
-          res.sendStatus(200)
+          res.sendStatus(200);
 
-          botclient.say(twitchchan[0], 'The poll is now closed')
-          botclient.say(twitchchan[0], `Poll: ${doc.polltext} Winner: ${doc.choices[i].text}`)
+          botclient.say(twitchchan[0], "The poll is now closed");
+          botclient.say(
+            twitchchan[0],
+            `Poll: ${doc.polltext} Winner: ${doc.choices[i].text}`
+          );
 
-          polls.emit('pollClose', {
+          polls.emit("pollClose", {
             pollID: doc._id,
             win: win,
             winText: poll.choices[i].text
-          })
-
+          });
         } catch (err) {
-          console.error(err)
+          console.error(err);
+          errTxt(err);
         }
-
-      });
-
+      }
+    );
   } catch (err) {
     res.status(500).send("Error closing Poll");
     console.error(err);
+    errTxt(err);
   }
 });
 
 app.get("/widget/poll", async (req, res) => {
   try {
-    res.render("widget/poll-widget")
+    res.render("widget/poll-widget");
   } catch (err) {
-    console.error(err)
+    console.error(err);
+    errTxt(err);
   }
-})
+});
 
-app.get("/good", loggedIn, async (req, res) => {
-  try {
-    var goods = await Good.find({});
-
-    res.render("good", {
-      version: version
-    })
-  } catch (err) {
-    console.error(err)
-  }
-})
-
-app.get("/api/goods", loggedIn, async (req, res) => {
-  try {
-    var goods = await Good.find({});
-    res.send(goods)
-  } catch (err) {
-    console.error(err)
-  }
-
-})
-
+/* *** DON'T PLACE ANY PAGES ***
+ ***  AFTER THE 404 PAGE   *** */
 //404
-app.get('*', (req, res) => {
-  res.render('404')
-})
+app.get("*", (req, res) => {
+  res.render("404");
+});
 
 // Twitch Client
 const tmi = require("tmi.js");
@@ -581,20 +627,20 @@ const botclient = new tmi.client(tmiOptions);
 botclient.connect();
 
 // Bot says hello on connect
-botclient.on('connected', (address, port) => {
+botclient.on("connected", (address, port) => {
   // botclient.say(twitchchan[0], `Hey Chat! Send me those vibes`)
-  console.log('connected to twitch chat client')
-  if (process.env.NODE_ENV === 'development') {
+  console.log("connected to twitch chat client");
+  if (process.env.NODE_ENV === "development") {
     var cmd = `osascript -e 'display notification "${address} on port ${port}" with title "Connected to Twitch!" sound name "Submarine"'`;
 
-    exec(cmd, function (error, stdout, stderr) {
+    exec(cmd, function(error, stdout, stderr) {
       // command output is in stdout
       if (error) {
-        console.error(error)
+        console.error(error);
+        errTxt(error);
       }
     });
   }
-
 });
 
 // Regex
@@ -614,7 +660,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
         var spURI = spotifyUri.formatURI(message[1]);
         spotify
           .request(`https://api.spotify.com/v1/tracks/${spID.id}`)
-          .then(function (data) {
+          .then(function(data) {
             var newSpotSR = new SongRequest({
               track: {
                 name: data.name,
@@ -634,7 +680,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                   `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist}`
                 );
                 // Real time data push to front end
-                rqs.emit('sr-event', {
+                rqs.emit("sr-event", {
                   id: `${doc.id}`,
                   reqBy: `${doc.requestedBy}`,
                   track: `${doc.track[0].name}`,
@@ -643,14 +689,16 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                   link: `${doc.track[0].link}`,
                   source: `${doc.source}`,
                   timeOfReq: `${doc.timeOfReq}`
-                })
+                });
               })
               .catch(err => {
                 console.error(err);
+                errTxt(err);
               });
           })
-          .catch(function (err) {
+          .catch(function(err) {
             console.error("Error occurred: " + err);
+            errTxt(err);
           });
       }
       // Youtube Link
@@ -670,17 +718,18 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                 `@${doc.requestedBy} requested ${doc.track[0].name} ${doc.track[0].link}`
               );
               // Real time data push to front end
-              rqs.emit('sr-event', {
+              rqs.emit("sr-event", {
                 id: `${doc.id}`,
                 reqBy: `${doc.requestedBy}`,
                 track: `${doc.track[0].name}`,
                 link: `${doc.track[0].link}`,
                 source: `${doc.source}`,
                 timeOfReq: `${doc.timeOfReq}`
-              })
+              });
             })
             .catch(err => {
               console.error(err);
+              errTxt(err);
             });
         });
       }
@@ -695,66 +744,66 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       // Searches Spotify & Youtube when only text is provided
       if (!ytRegex.test(message[1])) {
         var request = message.slice(1).join(" ");
-        var ytQuery = message.slice(1).join("+")
-        var ytSearch = `https://www.youtube.com/results?search_query=${ytQuery}`
-        spotify.search({ type: 'track', query: `${request}`, limit: 1 }, function (err, data) {
-          if (data === null) {
-            youtube
-              .search(request, 1)
-              .then(results => {
-                var newYTSR = new SongRequest({
-                  track: {
-                    name: results[0].title,
-                    link: `https://youtu.be/${results[0].id}`
-                  },
-                  requestedBy: userstate.username,
-                  timeOfReq: moment.utc().format(),
-                  source: "youtube"
-                });
-                newYTSR
-                  .save()
-                  .then(doc => {
-                    botclient.say(
-                      channel,
-                      `@${doc.requestedBy} requested ${doc.track[0].name} https://youtu.be/${results[0].id}`
-                    );
-                    // Real time data push to front end
-                    rqs.emit('sr-event', {
-                      id: `${doc.id}`,
-                      reqBy: `${doc.requestedBy}`,
-                      track: `${doc.track[0].name}`,
-                      link: `${doc.track[0].link}`,
-                      source: `${doc.source}`,
-                      timeOfReq: `${doc.timeOfReq}`
-                    })
-                  })
-                  .catch(err => {
-                    console.error(err);
+        var ytQuery = message.slice(1).join("+");
+        var ytSearch = `https://www.youtube.com/results?search_query=${ytQuery}`;
+        spotify.search(
+          { type: "track", query: `${request}`, limit: 1 },
+          function(err, data) {
+            if (data === null) {
+              youtube
+                .search(request, 1)
+                .then(results => {
+                  var newYTSR = new SongRequest({
+                    track: {
+                      name: results[0].title,
+                      link: `https://youtu.be/${results[0].id}`
+                    },
+                    requestedBy: userstate.username,
+                    timeOfReq: moment.utc().format(),
+                    source: "youtube"
                   });
-              })
-              .catch(console.error);
-
-          } else {
-            var newSpotSR = new SongRequest({
-              track: {
-                name: data.tracks.items[0].name,
-                artist: data.tracks.items[0].artists[0].name,
-                link: data.tracks.items[0].external_urls.spotify,
-                uri: data.tracks.items[0].uri
-              },
-              requestedBy: userstate.username,
-              timeOfReq: moment.utc().format(),
-              source: "spotify"
-            });
-            newSpotSR
-              .save()
-              .then(doc => {
+                  newYTSR
+                    .save()
+                    .then(doc => {
+                      botclient.say(
+                        channel,
+                        `@${doc.requestedBy} requested ${doc.track[0].name} https://youtu.be/${results[0].id}`
+                      );
+                      // Real time data push to front end
+                      rqs.emit("sr-event", {
+                        id: `${doc.id}`,
+                        reqBy: `${doc.requestedBy}`,
+                        track: `${doc.track[0].name}`,
+                        link: `${doc.track[0].link}`,
+                        source: `${doc.source}`,
+                        timeOfReq: `${doc.timeOfReq}`
+                      });
+                    })
+                    .catch(err => {
+                      console.error(err);
+                      errTxt(err);
+                    });
+                })
+                .catch(console.error);
+            } else {
+              var newSpotSR = new SongRequest({
+                track: {
+                  name: data.tracks.items[0].name,
+                  artist: data.tracks.items[0].artists[0].name,
+                  link: data.tracks.items[0].external_urls.spotify,
+                  uri: data.tracks.items[0].uri
+                },
+                requestedBy: userstate.username,
+                timeOfReq: moment.utc().format(),
+                source: "spotify"
+              });
+              newSpotSR.save().then(doc => {
                 botclient.say(
                   channel,
                   `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist} - ${doc.track[0].link}`
                 );
                 // Real time data push to front end
-                rqs.emit('sr-event', {
+                rqs.emit("sr-event", {
                   id: `${doc.id}`,
                   reqBy: `${doc.requestedBy}`,
                   track: `${doc.track[0].name}`,
@@ -763,16 +812,16 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                   link: `${doc.track[0].link}`,
                   source: `${doc.source}`,
                   timeOfReq: `${doc.timeOfReq}`
-                })
+                });
               });
+            }
           }
-
-        });
+        );
       }
     }
   }
 
-  if (message[0] === '!tr') {
+  if (message[0] === "!tr") {
     let request = message.slice(1).join(" ");
     var newText = new SongRequest({
       track: {
@@ -780,40 +829,36 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       },
       requestedBy: userstate.username,
       timeOfReq: moment.utc().format(),
-      source: 'text'
-    })
-    newText.save().then(doc => {
-      botclient.say(
-        channel,
-        `@${doc.requestedBy} requested ${doc.track[0].name}`
-      )
-      // Real time data push to front end
-      rqs.emit("sr-event", {
-        id: `${doc.id}`,
-        reqBy: `${doc.requestedBy}`,
-        track: `${doc.track[0].name}`,
-        source: `${doc.source}`,
-        timeOfReq: `${doc.timeOfReq}`
-      });
-    })
+      source: "text"
+    });
+    newText
+      .save()
+      .then(doc => {
+        botclient.say(
+          channel,
+          `@${doc.requestedBy} requested ${doc.track[0].name}`
+        );
+        // Real time data push to front end
+        rqs.emit("sr-event", {
+          id: `${doc.id}`,
+          reqBy: `${doc.requestedBy}`,
+          track: `${doc.track[0].name}`,
+          source: `${doc.source}`,
+          timeOfReq: `${doc.timeOfReq}`
+        });
+      })
       .catch(console.error);
   }
   // Choice selection for polls
-  if (message[0] === '!c') {
-    var poll = await Poll.findOne({ "active": true });
+  if (message[0] === "!c") {
+    var poll = await Poll.findOne({ active: true });
     if (!poll) {
-      botclient.say(
-        channel,
-        `Unfortunately there is no poll right now :(`
-      );
-      return
+      botclient.say(channel, `Unfortunately there is no poll right now :(`);
+      return;
     }
     if (message[1] === undefined) {
-      botclient.say(
-        channel,
-        `No choice selected !vote to see how to vote`
-      );
-      return
+      botclient.say(channel, `No choice selected !vote to see how to vote`);
+      return;
     }
     // if (poll.voters.includes(userstate.username)) {
     //   botclient.say(
@@ -829,96 +874,148 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     var i = currV + 1;
     var tUser = userstate.username;
 
-    await Poll.findOneAndUpdate({ "_id": poll.id, "choices.id": cID },
-      { $addToSet: { voters: tUser }, $set: { "choices.$.votes": i } }, { useFindAndModify: false, new: true }, (err, doc) => {
-        console.log(doc.choices[cIndex].votes)
-        console.log(doc)
-        polls.emit('pollUpdate', {
+    await Poll.findOneAndUpdate(
+      { _id: poll.id, "choices.id": cID },
+      { $addToSet: { voters: tUser }, $set: { "choices.$.votes": i } },
+      { useFindAndModify: false, new: true },
+      (err, doc) => {
+        console.log(doc.choices[cIndex].votes);
+        console.log(doc);
+        polls.emit("pollUpdate", {
           doc: doc
         });
-      })
+      }
+    );
     // }
-
   }
 
-  if (message[0] === '!deleteall') {
+  if (message[0] === "!deleteall") {
     if (admins.includes(userstate.username)) {
       await Poll.deleteMany({}).then((err, doc) => {
         if (err) {
           console.error(err);
-          return
+          errTxt(err);
+          return;
         }
         botclient.say(twitchchan[0], `Polls deleted!`);
-      })
+      });
     }
   }
 
-  if (message[0] === '!p') {
+  if (message[0] === "!p") {
     var poll = await Poll.findOne({});
-    console.log(poll)
+    console.log(poll);
   }
 
-  if (message[0] === '!goodnews' || message[0] === '!goodn') {
-    let tUser = userstate["user-id"]
-    let twitchCreds = await TwitchCreds.findOne({})
-    let goodnews = message.slice(1).join(" ")
-    console.log(tUser)
-    console.log(twitchCreds)
-    let url = `https://api.twitch.tv/helix/users?id=${tUser}`
-    let params = {}
+  if (message[0] === "!goodnews" || message[0] === "!goodn") {
+    let tUser = userstate["user-id"];
+    let twitchCreds = await TwitchCreds.findOne({});
+    let goodnews = message.slice(1).join(" ");
+    console.log(tUser);
+    console.log(twitchCreds);
+    let url = `https://api.twitch.tv/helix/users?id=${tUser}`;
+    let params = {};
     let options = {
       headers: {
-        'Client-ID': `${config.twitchClientID}`,
-        'Authorization': `Bearer ${twitchCreds.accessToken}`
+        "Client-ID": `${config.twitchClientID}`,
+        Authorization: `Bearer ${twitchCreds.accessToken}`
       }
-    }
+    };
     async function handleData(data) {
       console.log(data.data[0].profile_image_url);
       let newGood = new Good({
         user: userstate.username,
         userPic: data.data[0].profile_image_url,
         news: goodnews
-      })
-      ComfyDiscord.Say("good-news", `${userstate.username}'s good news: ${goodnews}`);
+      });
+      ComfyDiscord.Say(
+        "good-news",
+        `${userstate.username}'s good news: ${goodnews}`
+      );
       newGood.save();
     }
 
     fetchJson.get(url, params, options).then(handleData);
   }
 
-  if (message[0] === '!science' && admins.includes(userstate.username)) {
-      let handleData = (data) => {
-        let diff = capitalize(data.results[0].difficulty)
-        let q = data.results[0].question
-        answer = data.results[0].correct_answer
-        botclient.say(twitchchan[0], he.decode(`@veryhandsomebilly SCIENCE QUESTION Difficulty: ${diff} Question: ${q}`));
-        // console.log('Difficulty: ' + diff + 'Question: ' + q)
-      }
-      fetchJson.get('https://opentdb.com/api.php?amount=1&category=17').then(handleData);
-    }
+  if (message[0] === "!science" && admins.includes(userstate.username)) {
+    let handleData = data => {
+      let diff = capitalize(data.results[0].difficulty);
+      let q = data.results[0].question;
+      answer = data.results[0].correct_answer;
+      botclient.say(
+        twitchchan[0],
+        he.decode(
+          `@veryhandsomebilly SCIENCE QUESTION Difficulty: ${diff} Question: ${q}`
+        )
+      );
+      // console.log('Difficulty: ' + diff + 'Question: ' + q)
+    };
+    fetchJson
+      .get("https://opentdb.com/api.php?amount=1&category=17")
+      .then(handleData);
+  }
 
-  if (message[0] === '!answer' && admins.includes(userstate.username)) {
-   botclient.say(twitchchan[0], he.decode(`${answer}`)) 
+  if (message[0] === "!answer" && admins.includes(userstate.username)) {
+    botclient.say(twitchchan[0], he.decode(`${answer}`));
     // console.log(answer)
   }
-     
+
+  // Time Command
+  if (message[0] === "!time") {
+    let day = moment.tz(moment(), "Pacific/Auckland").format("dddd");
+    let dNum = moment.tz(moment(), "Pacific/Auckland").format("Do");
+    let month = moment.tz(moment(), "Pacific/Auckland").format("MMMM");
+    let time = moment.tz(moment(), "Pacific/Auckland").format("hh:mmA");
+    botclient.say(
+      twitchchan[0],
+      `In New Zealand it is currently ${day} the ${dNum} of ${month} and the time is ${time}`
+    );
+  }
+
+  if (message[0] === "!wolfram") {
+    let query = he.encode(`${message.slice(1).join(" ")}`);
+    let handleData = data => {
+      console.log(data);
+      botclient.say(twitchchan[0], he.decode(`${data.bodyText}`));
+    };
+    fetchJson
+      .get(
+        `http://api.wolframalpha.com/v1/result?appid=${config.wolfram}&i=${query}&units=metric`
+      )
+      .then(handleData);
+  }
+
+  if (message[0] === "!wolframi") {
+    let query = he.encode(`${message.slice(1).join(" ")}`);
+    let handleData = data => {
+      console.log(data);
+      botclient.say(twitchchan[0], he.decode(`${data.bodyText}`));
+    };
+    fetchJson
+      .get(
+        `http://api.wolframalpha.com/v1/result?appid=${config.wolfram}&i=${query}&units=imperial`
+      )
+      .then(handleData);
+  }
 });
 
-const capitalize = (s) => {
-  if (typeof s !== 'string') return ''
-  return s.charAt(0).toUpperCase() + s.slice(1)
-}
+const capitalize = s => {
+  if (typeof s !== "string") return "";
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
 
-var answer = ''
+var answer = "";
 
 server.listen(3000);
 
 function makeid(length) {
-  var result = '';
-  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var result = "";
+  var characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   var charactersLength = characters.length;
   for (var i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  };
+  }
   return result;
-}   
+}
