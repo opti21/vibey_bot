@@ -998,6 +998,24 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       )
       .then(handleData);
   }
+
+  if (message[0] === "!horoscope") {
+    let sign = message[1];
+    let handleData = data => {
+      console.log(data);
+      if (data.sunsign === "undefined") {
+        botclient.say(
+          twitchchan[0],
+          "No sign received Example: !horoscope Libra"
+        );
+      } else {
+        botclient.say(twitchchan[0], he.decode(`${data.horoscope}`));
+      }
+    };
+    fetchJson
+      .get(`http://horoscope-api.herokuapp.com/horoscope/today/${sign}`)
+      .then(handleData);
+  }
 });
 
 const capitalize = s => {
@@ -1019,3 +1037,4 @@ function makeid(length) {
   }
   return result;
 }
+
