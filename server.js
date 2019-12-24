@@ -652,12 +652,6 @@ var ytRegex = /(?:https?:\/\/)?(?:(?:(?:www\.?)?youtube\.com(?:\/(?:(?:watch\?.*
 botclient.on("chat", async (channel, userstate, message, self) => {
   if (self) return;
   var message = message.trim().split(" ");
-  switch (message[0]) {
-    case "!switch":
-      botclient.say(channel, "Switch test");
-      break;
-
-    default:
   if (message[0] === "!sr" || message[0] === "!songrequest") {
     if (URLRegex.test(message[1])) {
       // Spotify link
@@ -1036,19 +1030,15 @@ botclient.on("chat", async (channel, userstate, message, self) => {
   }
 
   if (message[0] === "!reply" && admins.includes(userstate.username)) {
-    if (admins.includes())
-      if (chatRespond === true) {
-        botclient.say(twitchchan[0], he.decode(`RESPONSES TURNED OFF`));
-        chatRespond = !chatRespond;
-        console.log(chatRespond);
-      } else {
-        botclient.say(twitchchan[0], he.decode(`RESPONSES TURNED ON`));
-        console.log(chatRespond);
-        chatRespond = !chatRespond;
-      }
-  }
-  if (message[0] === "!test") {
-    console.log(chatRespond);
+    if (chatRespond === true) {
+      botclient.say(twitchchan[0], he.decode(`RESPONSES TURNED OFF`));
+      chatRespond = !chatRespond;
+      console.log(chatRespond);
+    } else {
+      botclient.say(twitchchan[0], he.decode(`RESPONSES TURNED ON`));
+      console.log(chatRespond);
+      chatRespond = !chatRespond;
+    }
   }
 });
 // Bot replies
