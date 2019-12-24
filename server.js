@@ -652,6 +652,12 @@ var ytRegex = /(?:https?:\/\/)?(?:(?:(?:www\.?)?youtube\.com(?:\/(?:(?:watch\?.*
 botclient.on("chat", async (channel, userstate, message, self) => {
   if (self) return;
   var message = message.trim().split(" ");
+  switch (message[0]) {
+    case "!switch":
+      botclient.say(channel, "Switch test");
+      break;
+
+    default:
   if (message[0] === "!sr" || message[0] === "!songrequest") {
     if (URLRegex.test(message[1])) {
       // Spotify link
@@ -675,10 +681,12 @@ botclient.on("chat", async (channel, userstate, message, self) => {
             newSpotSR
               .save()
               .then(doc => {
-                botclient.say(
-                  channel,
-                  `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist}`
-                );
+                if (chatRespond) {
+                  botclient.say(
+                    channel,
+                    `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist}`
+                  );
+                }
                 // Real time data push to front end
                 rqs.emit("sr-event", {
                   id: `${doc.id}`,
@@ -713,10 +721,12 @@ botclient.on("chat", async (channel, userstate, message, self) => {
           newYTSR
             .save()
             .then(doc => {
-              botclient.say(
-                channel,
-                `@${doc.requestedBy} requested ${doc.track[0].name} ${doc.track[0].link}`
-              );
+              if (chatRespond) {
+                botclient.say(
+                  channel,
+                  `@${doc.requestedBy} requested ${doc.track[0].name} ${doc.track[0].link}`
+                );
+              }
               // Real time data push to front end
               rqs.emit("sr-event", {
                 id: `${doc.id}`,
@@ -765,10 +775,13 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                   newYTSR
                     .save()
                     .then(doc => {
-                      botclient.say(
-                        channel,
-                        `@${doc.requestedBy} requested ${doc.track[0].name} https://youtu.be/${results[0].id}`
-                      );
+                      if (chatRespond) {
+                        botclient.say(
+                          channel,
+                          `@${doc.requestedBy} requested ${doc.track[0].name} https://youtu.be/${results[0].id}`
+                        );
+                      }
+
                       // Real time data push to front end
                       rqs.emit("sr-event", {
                         id: `${doc.id}`,
@@ -798,10 +811,13 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                 source: "spotify"
               });
               newSpotSR.save().then(doc => {
-                botclient.say(
-                  channel,
-                  `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist} - ${doc.track[0].link}`
-                );
+                if (chatRespond) {
+                  botclient.say(
+                    channel,
+                    `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist} - ${doc.track[0].link}`
+                  );
+                }
+
                 // Real time data push to front end
                 rqs.emit("sr-event", {
                   id: `${doc.id}`,
@@ -903,8 +919,10 @@ botclient.on("chat", async (channel, userstate, message, self) => {
   }
 
   if (message[0] === "!p") {
-    var poll = await Poll.findOne({});
-    console.log(poll);
+    if (admins.includes(userstate.username)) {
+      var poll = await Poll.findOne({});
+      console.log(poll);
+    }
   }
 
   if (message[0] === "!goodnews" || message[0] === "!goodn") {
@@ -1016,7 +1034,25 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       .get(`http://horoscope-api.herokuapp.com/horoscope/today/${sign}`)
       .then(handleData);
   }
+
+  if (message[0] === "!reply" && admins.includes(userstate.username)) {
+    if (admins.includes())
+      if (chatRespond === true) {
+        botclient.say(twitchchan[0], he.decode(`RESPONSES TURNED OFF`));
+        chatRespond = !chatRespond;
+        console.log(chatRespond);
+      } else {
+        botclient.say(twitchchan[0], he.decode(`RESPONSES TURNED ON`));
+        console.log(chatRespond);
+        chatRespond = !chatRespond;
+      }
+  }
+  if (message[0] === "!test") {
+    console.log(chatRespond);
+  }
 });
+// Bot replies
+var chatRespond = true;
 
 const capitalize = s => {
   if (typeof s !== "string") return "";
@@ -1037,4 +1073,3 @@ function makeid(length) {
   }
   return result;
 }
-
