@@ -63,7 +63,7 @@ async function getTwitchCreds() {
 // Error texts
 function errTxt(err) {
   let msg = {
-    to: "***REMOVED***@mms.cricketwireless.net",
+    to: `${config.errorNum}@mms.cricketwireless.net`,
     from: "test@example.com",
     subject: "**VIBEY ERROR** Uh Oh",
     text: `${err}`
@@ -1049,6 +1049,7 @@ const capitalize = s => {
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
+// Answer for !science
 var answer = "";
 
 server.listen(3000);
