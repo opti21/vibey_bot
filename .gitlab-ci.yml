@@ -36,6 +36,6 @@ production:
     - ssh-add <(echo "$SSH_PRIVATE_KEY" | base64 -d)
     - mkdir -p ~/.ssh
     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
-    - ssh vibey_bot@209.141.36.245 "cd /var/www/vibey_bot/code/vibey_gitlab && git checkout master && git pull origin master && exit && pm2 restart 0"
+    - ssh vibey_bot@209.141.36.245 "cd /var/www/vibey_bot/code/vibey_bot && git checkout master && git pull origin master && pm2 restart 0 && exit"
   only:
     - master
