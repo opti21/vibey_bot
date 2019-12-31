@@ -31,7 +31,11 @@ v2_build:
 
 is_this_working:
   stage: test
-  script: npm test
+  script:
+    - npm test
+  artifacts:
+    paths:
+      - node_modules/
   only:
     - master
 
