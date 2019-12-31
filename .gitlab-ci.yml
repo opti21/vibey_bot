@@ -1,6 +1,7 @@
 image: node:latest
 stages:
-  - build
+  - v1_build
+  - v2_build
   - test
   - production
 
@@ -8,17 +9,31 @@ cache:
   paths:
     - node_modules/
 
-install_depencies:
-  stage: build
+v1_build:
+  stage: v1_build
   script:
     - npm install
   artifacts:
     paths:
       - node_modules/
+  only:
+    - master
+  
+v2_build:
+  stage: v2_build
+  script:
+    - yarn install
+  artifacts:
+    paths:
+      - node_modules/
+  only:
+    - v2
 
 is_this_working:
   stage: test
   script: npm test
+  only:
+    - master
 
 production:
   type: deploy
