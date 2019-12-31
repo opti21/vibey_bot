@@ -6,3 +6,4 @@ todos.md
 twitch.rest
 Dockerfile
 *.swp
+.DS_Store
