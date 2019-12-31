@@ -10,7 +10,7 @@ cache:
     - node_modules/
 
 install_depencies:
-  stage: v1_build
+  stage: install_depencies
   script:
     - npm install
   artifacts:
