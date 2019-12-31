@@ -31,9 +31,7 @@ v2_build:
 
 is_this_working:
   stage: test
-  script:
-    - npm i mocha
-    - npm test
+    - npx mocha
   artifacts:
     paths:
       - node_modules/
