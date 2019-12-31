@@ -1,6 +1,6 @@
 image: node:latest
 stages:
-  - install_depencies
+  - build
   - v2_build
   - test
   - production
@@ -9,8 +9,8 @@ cache:
   paths:
     - node_modules/
 
-install_depencies:
-  stage: install_depencies
+install_dependencies:
+  stage: build
   script:
     - npm install
   artifacts:
