@@ -85,6 +85,7 @@ const polls = io.of('/polls-namescape');
 
 rqs.on('connection', function (socket) {
   console.log('Connected to requests');
+  // Trigger front end notification
   socket.emit('socketConnect', {});
 
   //Whenever someone disconnects this piece of code executed
