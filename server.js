@@ -1,6 +1,7 @@
 require('dotenv').config();
 const config = require('./config/config');
 const version = require('project-version');
+const port = process.env.PORT || 3000;
 console.log('Version: ' + version);
 
 const express = require('express');
@@ -1092,7 +1093,7 @@ const capitalize = s => {
 // Answer for !science
 var answer = '';
 
-server.listen(3000);
+server.listen(port);
 
 function makeid(length) {
   var result = '';
