@@ -6,7 +6,6 @@ console.log('Version: ' + version);
 const express = require('express');
 const app = express();
 const server = require('http').Server(app);
-const logger = require('morgan');
 const passport = require('passport');
 const twitchStrategy = require('passport-twitch-new').Strategy;
 const bodyParser = require('body-parser');
@@ -104,7 +103,6 @@ app.set('trust proxy', 1);
 app.set('views', './views');
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
-app.use(logger('dev'));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
