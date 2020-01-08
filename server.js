@@ -636,9 +636,6 @@ const twitchuser = process.env.TWITCH_USER;
 const twitchpass = process.env.TWITCH_PASS;
 const twitchChan = config.twitchChan;
 
-console.log('TMI INFO: clientID: ' + twitchclientid + ' TWITCH_USER: '
-  + twitchuser + ' TWITCH_PASS: ' + twitchpass + ' TWITCH_CHAN: ' + twitchChan)
-
 const tmiOptions = {
   options: {
     debug: true,
