@@ -1,16 +1,6 @@
 require('dotenv').config();
 
-let config;
-switch (process.env.NODE_ENV) {
-  case 'production':
-    config = require('./config/config')
-    break;
-
-  case 'dev':
-    config = require('./config/dev_config')
-    break;
-}
-
+const config = require('./config/config')
 const version = require('project-version');
 console.log('Version: ' + version);
 
@@ -32,6 +22,7 @@ const YouTube = require('simple-youtube-api');
 const youtube = new YouTube(process.env.YT_API);
 const moment = require('moment-timezone');
 const io = require('socket.io')(server);
+global.io = io;
 const fetchJson = require('fetch-json');
 const ComfyDiscord = require('comfydiscord');
 const admins = config.admins;
@@ -109,27 +100,12 @@ rqs.on('connection', function (socket) {
   });
 });
 
-// Route Files
-const indexRoute = require('./routes/index')
-const authRoute = require('./routes/auth')
-const reqsRoute = require('./routes/requests')
-const mixRoute = require('./routes/mix')
-const widgetRoute = require('./routes/widget')
-const apiRoute = require('./routes/api')
-
 app.set('trust proxy', 1);
 app.set('views', './views');
 app.set('view engine', 'ejs');
-app.use('/', indexRoute);
-app.use('/auth', authRoute);
-app.use('/requests', reqsRoute);
-app.use('/mix', mixRoute);
-app.use('/widget', widgetRoute);
-app.use('/api', apiRoute);
 
 app.use(express.static('public'));
 app.use(logger('dev'));
-
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(
@@ -142,6 +118,23 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Route Files
+const indexRoute = require('./routes/index')
+const authRoute = require('./routes/auth')
+const reqsRoute = require('./routes/requests')
+const mixRoute = require('./routes/mix')
+const widgetRoute = require('./routes/widget')
+const apiRoute = require('./routes/api')
+const settingsRoute = require('./routes/settings')
+
+app.use('/', indexRoute);
+app.use('/auth', authRoute);
+app.use('/requests', reqsRoute);
+app.use('/mix', mixRoute);
+app.use('/widget', widgetRoute);
+app.use('/api', apiRoute);
+app.use('/settings', settingsRoute);
 
 // Databae
 const mongoose = require('mongoose');
@@ -234,6 +227,9 @@ passport.use(
               console.log(UserSearch.twitch_id);
               return done(null, profile);
             }
+          }).catch(err => {
+            console.error(err)
+            errTxt(err);
           });
       } catch (err) {
         console.error(err);
@@ -251,31 +247,6 @@ passport.deserializeUser(function (obj, done) {
   done(null, obj);
 });
 
-// Check to see if user is authenticated with passport
-function loggedIn(req, res, next) {
-  if (!req.user) {
-    res.redirect('/login');
-  } else {
-    next();
-  }
-}
-
-app.get('/widget/poll', async (req, res) => {
-  try {
-    res.render('widget/poll-widget');
-  } catch (err) {
-    console.error(err);
-    errTxt(err);
-  }
-});
-
-app.get('/settings', async (req, res) => {
-  let user = await User.findOne({ twitch_id: req.user.id });
-
-  res.render('settings', {
-    version: version
-  })
-})
 
 /* *** DON'T PLACE ANY PAGES ***
  ***  AFTER THE 404 PAGE   *** */

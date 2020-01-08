@@ -16,4 +16,14 @@ router.get('/v2', async (req, res) => {
     });
 });
 
+router.get('/poll', async (req, res) => {
+    try {
+        res.render('widget/poll-widget');
+    } catch (err) {
+        console.error(err);
+        errTxt(err);
+    }
+});
+
+
 module.exports = router

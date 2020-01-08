@@ -1,5 +1,9 @@
 const router = require('express').Router();
+const version = require('project-version');
 const User = require('../models/users');
+const config = require('../config/config')
+const admins = config.admins;
+
 function loggedIn(req, res, next) {
 	if (!req.user) {
 		res.redirect('/login');

@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Poll = require('../models/polls');
+
 function loggedIn(req, res, next) {
 	if (!req.user) {
 		res.redirect('/login');

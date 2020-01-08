@@ -1,6 +1,9 @@
 const router = require('express').Router();
 const SongRequest = require('../models/songRequests');
 const mixReqs = require('../models/mixRequests');
+const moment = require('moment-timezone');
+const rqs = io.of('/req-namescape');
+
 function loggedIn(req, res, next) {
     if (!req.user) {
         res.redirect('/login');
@@ -61,6 +64,18 @@ router.get('/remove/:id', loggedIn, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).send('Error removing song from mix');
+        errTxt(err);
+    }
+});
+
+router.get('/deleteall', loggedIn, async (req, res) => {
+    try {
+        await mixReqs.deleteMany({}).exec();
+        rqs.emit('clear-mix', {});
+        res.status(200).send('Mix cleared');
+    } catch (err) {
+        res.status(500).send('Error clearing mix!');
+        console.error(err);
         errTxt(err);
     }
 });

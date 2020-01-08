@@ -1,7 +1,14 @@
+require('dotenv').config();
 const router = require('express').Router();
+const config = require('../config/config')
 const User = require('../models/users');
-const SongRequest = require('./models/songRequests');
-const mixReqs = require('./models/mixRequests');
+const SongRequest = require('../models/songRequests');
+const mixReqs = require('../models/mixRequests');
+const admins = config.admins;
+const version = require('project-version');
+const rqs = io.of('/req-namescape');
+
+
 function loggedIn(req, res, next) {
     if (!req.user) {
         res.redirect('/login');
@@ -36,7 +43,7 @@ router.get('/', loggedIn, async (req, res) => {
     }
 });
 
-app.get('/requests/delete/:id', loggedIn, async (req, res) => {
+router.get('/delete/:id', loggedIn, async (req, res) => {
     try {
         await SongRequest.deleteOne({ _id: req.params.id }).exec();
         res.status(200).send('Request deleted');
@@ -47,19 +54,7 @@ app.get('/requests/delete/:id', loggedIn, async (req, res) => {
     }
 });
 
-app.get('/requests/mix/deleteall', loggedIn, async (req, res) => {
-    try {
-        await mixReqs.deleteMany({}).exec();
-        rqs.emit('clear-mix', {});
-        res.status(200).send('Mix cleared');
-    } catch (err) {
-        res.status(500).send('Error clearing mix!');
-        console.error(err);
-        errTxt(err);
-    }
-});
-
-app.get('/requests/deleteall', loggedIn, (req, res) => {
+router.get('/deleteall', loggedIn, (req, res) => {
     try {
         SongRequest.deleteMany({}).exec();
         res.status(200).send('Queue cleared');
@@ -69,3 +64,5 @@ app.get('/requests/deleteall', loggedIn, (req, res) => {
         errTxt(err);
     }
 });
+
+module.exports = router;

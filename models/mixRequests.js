@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 
-const mixSchema = new mongoose.Schema ({
+const mixSchema = new mongoose.Schema({
 	track: [{
 		name: String,
 		artist: String,
@@ -14,6 +14,9 @@ const mixSchema = new mongoose.Schema ({
 		type: Date
 	},
 	source: {
+		type: String
+	},
+	channel: {
 		type: String
 	}
 })
