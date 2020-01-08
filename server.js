@@ -651,7 +651,7 @@ const tmiOptions = {
     username: twitchuser,
     password: twitchpass
   },
-  channels: twitchchan
+  channels: twitchChan
 };
 
 const botclient = new tmi.client(tmiOptions);
