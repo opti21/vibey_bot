@@ -1,5 +1,6 @@
 .env
 node_modules
+config/dev_config.js
 ideas.md
 todos.md
 twitch.rest

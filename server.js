@@ -654,7 +654,9 @@ const tmiOptions = {
 const botclient = new tmi.client(tmiOptions);
 
 // Connect the twitch chat client to the server..
-botclient.connect();
+botclient.connect().catch(err => {
+  console.error('TMI CONNECT ERROR: ' + err)
+});
 
 // Bot says hello on connect
 botclient.on('connected', (address, port) => {
