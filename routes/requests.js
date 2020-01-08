@@ -1,8 +1,14 @@
 const router = require('express').Router();
-const loggedIn = require('./loggedIn')
-const User = require('./models/users');
+const User = require('../models/users');
 const SongRequest = require('./models/songRequests');
 const mixReqs = require('./models/mixRequests');
+function loggedIn(req, res, next) {
+    if (!req.user) {
+        res.redirect('/login');
+    } else {
+        next();
+    }
+}
 
 router.get('/', loggedIn, async (req, res) => {
     try {

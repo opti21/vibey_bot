@@ -10,8 +10,6 @@
 //   forceTLS: true
 // });
 
-
-
 $("#menu-toggle").click(function (e) {
   e.preventDefault();
   $("#wrapper").toggleClass("toggled");
@@ -220,7 +218,7 @@ $(document).ready(function () {
     }).then((result) => {
       if (result.value) {
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', `/poll/close/${pollID}`);
+        xhr.open('GET', `api/polls/close/${pollID}`);
         xhr.onload = function () {
           if (xhr.status === 200) {
             Toast.fire({
@@ -246,7 +244,7 @@ $(document).ready(function () {
 $("#songpoll").click(function () {
   console.log('test')
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', `/songpoll`);
+  xhr.open('GET', `/api/createSongpoll`);
   xhr.onload = function () {
     if (xhr.status === 200) {
       console.log(JSON.parse(xhr.response))

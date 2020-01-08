@@ -29,12 +29,14 @@
 						class="fas fa-poll mr-2"></i>Poll</a>
 				<!-- <a href="/good" class="list-group-item list-group-item-action bg-dark"> <i class="fas fa-poll mr-2"></i>Good
 					News</a> -->
-				<a href="" class="list-group-item list-group-item-action bg-dark"> <i class="fas fa-cogs mr-1"></i>Settings
+				<a href="" class="list-group-item list-group-item-action bg-dark"> <i
+						class="fas fa-cogs mr-1"></i>Settings
 					(soon)</a>
 			</div>
 			<div id="version" class="ml-3">
 				<div id="profile">
-					<img id="profilePic" src="<%= profilePic %>" alt="<%= feUser %> profile picture" class="rounded-circle">
+					<img id="profilePic" src="<%= profilePic %>" alt="<%= feUser %> profile picture"
+						class="rounded-circle">
 					<%= feUser %>
 				</div>
 				<p class="text-muted mt-3">v<%= version %></p>
@@ -55,27 +57,28 @@
 				<div class="row">
 					<div class="col left">
 						<h2>New Poll</h2>
-						<form id="poll-form" action="/newpoll" method="post">
+						<form id="poll-form" action="/api/polls/newpoll" method="post">
 							<div class="form-group">
 								<label for="poll-text">Poll Text:</label>
-								<input type="text" class="form-control" id="poll-text" name="polltext" placeholder="Poll text"
-									tabindex="1" required>
+								<input type="text" class="form-control" id="poll-text" name="polltext"
+									placeholder="Poll text" tabindex="1" required>
 							</div>
 							<div class="form-group field_wrapper">
 								<label for="choice1" class="mb-4">Choices</label>
 								<button type="button" class="btn btn-sm btn-success add_button">Add Choice</button>
 								<button type="button" class="btn btn-sm btn-danger remove_button">Remove Choice</button>
-								<input type="text" class="form-control mb-2" placeholder="Choice 1" id="choice1" name="choice"
-									tabindex="2" required>
-								<input type="text" class="form-control mb-2" placeholder="Choice 2" id="choice2" name="choice"
-									tabindex="3" required>
+								<input type="text" class="form-control mb-2" placeholder="Choice 1" id="choice1"
+									name="choice" tabindex="2" required>
+								<input type="text" class="form-control mb-2" placeholder="Choice 2" id="choice2"
+									name="choice" tabindex="3" required>
 							</div>
 							<div class="text-right">
 								<button class="btn btn-success" type="submit">Start Poll</button>
 							</div>
 						</form>
 						<div class="mt-2 text-right">
-							<button id="songpoll" class="btn btn-info" type="button">Start Poll with Current Mix</button>
+							<button id="songpoll" class="btn btn-info" type="button">Start Poll with Current
+								Mix</button>
 						</div>
 
 					</div>

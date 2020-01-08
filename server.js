@@ -1,11 +1,21 @@
 require('dotenv').config();
-const config = require('./config/config');
+
+let config;
+switch (process.env.NODE_ENV) {
+  case 'production':
+    config = require('./config/config')
+    break;
+
+  case 'dev':
+    config = require('./config/dev_config')
+    break;
+}
+
 const version = require('project-version');
 console.log('Version: ' + version);
 
 const express = require('express');
 const app = express();
-const routes = require('./routes')
 const server = require('http').Server(app);
 const logger = require('morgan');
 const passport = require('passport');
@@ -99,10 +109,24 @@ rqs.on('connection', function (socket) {
   });
 });
 
+// Route Files
+const indexRoute = require('./routes/index')
+const authRoute = require('./routes/auth')
+const reqsRoute = require('./routes/requests')
+const mixRoute = require('./routes/mix')
+const widgetRoute = require('./routes/widget')
+const apiRoute = require('./routes/api')
+
 app.set('trust proxy', 1);
 app.set('views', './views');
 app.set('view engine', 'ejs');
-app.use('/', routes)
+app.use('/', indexRoute);
+app.use('/auth', authRoute);
+app.use('/requests', reqsRoute);
+app.use('/mix', mixRoute);
+app.use('/widget', widgetRoute);
+app.use('/api', apiRoute);
+
 app.use(express.static('public'));
 app.use(logger('dev'));
 
@@ -227,36 +251,6 @@ passport.deserializeUser(function (obj, done) {
   done(null, obj);
 });
 
-app.get('/auth/twitch', passport.authenticate('twitch'));
-app.get(
-  '/auth/twitch/callback',
-  passport.authenticate('twitch', { failureRedirect: '/login' }),
-  function (req, res) {
-    // Successful authentication, redirect home.
-    // res.redirect("/requests");
-    res.redirect('/requests');
-  }
-);
-
-// Login
-app.get('/login', (req, res) => {
-  res.render('login');
-});
-
-// Logout
-app.get('/logout', async function (req, res) {
-  try {
-    await User.deleteOne({ twitch_id: req.user.id });
-    req.session = null;
-    req.user = null;
-    req.logout();
-    res.render('bye');
-  } catch (err) {
-    console.error(err);
-    errTxt(err);
-  }
-});
-
 // Check to see if user is authenticated with passport
 function loggedIn(req, res, next) {
   if (!req.user) {
@@ -265,287 +259,6 @@ function loggedIn(req, res, next) {
     next();
   }
 }
-
-app.get('/test', function (req, res) {
-  console.log('REQ.SESSION:');
-  console.log(req.user);
-  res.send(req.user);
-});
-
-
-// Stream Widget
-app.get('/widget', async (req, res) => {
-  var mixRequests = await mixReqs.find();
-  res.render('widget/widget', {
-    mixReqs: mixRequests
-  });
-});
-
-app.get('/widget/v2', async (req, res) => {
-  var mixRequests = await mixReqs.find();
-  res.render('widget/widgetV2', {
-    mixReqs: mixRequests
-  });
-});
-
-app.get('/mix/add/:id', loggedIn, async (req, res) => {
-  await SongRequest.findById(req.params.id, (err, request) => {
-    if (err) {
-      errTxt(err);
-      return;
-    } else {
-      request.fulfilled = true;
-      request.dateFulfilled = moment().utc();
-      request.save().then(console.log('Request updated'));
-      var mixAdd = new mixReqs({
-        track: {
-          name: request.track[0].name,
-          artist: request.track[0].artist,
-          link: request.track[0].link,
-          uri: request.track[0].uri
-        },
-        requestedBy: request.requestedBy,
-        timeOfReq: request.timeOfReq,
-        source: request.source
-      });
-      mixAdd.save().then(doc => {
-        try {
-          res.status(200).send('Added to Mix');
-          rqs.emit('mix-event', {
-            id: `${doc.id}`,
-            reqBy: `${doc.requestedBy}`,
-            track: `${doc.track[0].name}`,
-            artist: `${doc.track[0].artist}`,
-            uri: `${doc.track[0].uri}`,
-            link: `${doc.track[0].link}`,
-            source: `${doc.source}`
-          });
-        } catch (err) {
-          console.error(err);
-          res.status(500).send('Error Adding song to mix');
-          errTxt(err);
-        }
-      });
-    }
-  });
-});
-
-app.get('/mix/remove/:id', loggedIn, async (req, res) => {
-  try {
-    await mixReqs.deleteOne({ _id: req.params.id }).exec();
-    rqs.emit('mix-remove', {
-      id: `${req.params.id}`
-    });
-    res.status(200).send('Song Removed from mix');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error removing song from mix');
-    errTxt(err);
-  }
-});
-
-app.get('/poll', loggedIn, async (req, res) => {
-  try {
-    var user = await User.findOne({ twitch_id: req.user.id });
-    // console.log(user.username);
-    if (user === null) {
-      res.redirect('/login');
-    }
-    if (admins.includes(user.username)) {
-      res.render('poll', {
-        version: version,
-        feUser: user.username,
-        profilePic: req.user['profile_image_url']
-      });
-    } else {
-      res.redirect('/login');
-    }
-  } catch (err) {
-    console.error(err);
-    errTxt(err);
-  }
-});
-
-app.get('/api/polls', loggedIn, async (req, res) => {
-  try {
-    var polls = await Poll.find();
-    res.send(polls);
-  } catch (err) {
-    console.error(err);
-    errTxt(err);
-  }
-});
-
-app.post('/newpoll', loggedIn, async (req, res) => {
-  try {
-    var user = await User.findOne({ twitch_id: req.user.id });
-    var poll = await Poll.find({ active: true });
-    if (poll.length === 0) {
-      var pollText = req.body[0].value;
-      var choices = req.body.slice(1);
-      var choiceArray = [];
-      var votes = [];
-      choices.forEach(choiceAppend);
-
-      function choiceAppend(element, index, array) {
-        var choice = {
-          id: makeid(10),
-          text: choices[index].value,
-          votes: 0
-        };
-        choiceArray.push(choice);
-      }
-
-      console.log(choiceArray);
-
-      var newPoll = new Poll({
-        active: true,
-        polltext: pollText,
-        choices: choiceArray,
-        votes: votes
-      });
-      await newPoll.save().then(doc => {
-        res.send(doc);
-        var num = 1;
-        var choices = [];
-        botclient.say(
-          twitchchan[0],
-          'A new poll has started! Vote with !c i.e.(!c 2)'
-        );
-        botclient.say(twitchchan[0], `The poll question is: ${pollText}`);
-
-        doc.choices.forEach(choice => {
-          botclient.say(twitchchan[0], `!c ${num} = ${choice.text}`);
-          num++;
-          let choiceArr = [`${choice.text}`, choice.votes];
-          choices.push(choiceArr);
-        });
-        polls.emit('pollOpen', {
-          poll: doc
-        });
-
-        choices = [];
-        num = 1;
-      });
-    } else {
-      console.log(poll);
-      res.status(418).send('Poll is already running');
-    }
-  } catch (err) {
-    console.error(err);
-    errTxt(err);
-  }
-});
-
-// Song Poll
-app.get('/songpoll', loggedIn, async (req, res) => {
-  try {
-    var poll = await Poll.find({ active: true });
-    var mix = await mixReqs.find({});
-    if (poll.length === 0) {
-      var pollText = 'Which song?';
-      var choices = mix;
-      var choiceArray = [];
-      var votes = [];
-      choices.forEach(choiceAppend);
-
-      function choiceAppend(element, index, array) {
-        var choice = {
-          id: makeid(10),
-          text: choices[index].track[0].name,
-          votes: 0
-        };
-        choiceArray.push(choice);
-      }
-
-      console.log(choiceArray);
-
-      var newPoll = new Poll({
-        active: true,
-        polltext: pollText,
-        choices: choiceArray,
-        votes: votes
-      });
-      await newPoll.save().then(doc => {
-        res.send(doc);
-        var num = 1;
-        var choices = [];
-        botclient.say(
-          twitchchan[0],
-          'A new poll has started! Vote with !c i.e.(!c 2)'
-        );
-        botclient.say(twitchchan[0], `The poll question is: ${pollText}`);
-
-        doc.choices.forEach(choice => {
-          botclient.say(twitchchan[0], `!c ${num} = ${choice.text}`);
-          num++;
-          let choiceArr = [`${choice.text}`, choice.votes];
-          choices.push(choiceArr);
-        });
-        polls.emit('pollOpen', {
-          poll: doc
-        });
-
-        choices = [];
-        num = 1;
-      });
-    } else {
-      console.log(poll);
-      res.status(418).send('Poll is already running');
-    }
-  } catch (err) {
-    console.error(err);
-    errTxt(err);
-  }
-});
-
-app.get('/poll/close/:id', loggedIn, async (req, res) => {
-  try {
-    var user = await User.findOne({ twitch_id: req.user.id });
-    var poll = await Poll.findOne({ _id: req.params.id });
-    var choiceArr = [];
-    poll.choices.forEach(choice => {
-      choiceArr.push(choice.votes);
-    });
-    console.log(choiceArr);
-    let i = choiceArr.indexOf(Math.max(...choiceArr));
-    let win = poll._id + poll.choices[i].id;
-    await Poll.findOneAndUpdate(
-      { _id: req.params.id },
-      { $set: { active: false }, winner: win },
-      { useFindAndModify: false, new: true },
-      (err, doc) => {
-        console.log(doc.active);
-        if (err) {
-          errTxt(err);
-          return;
-        }
-        try {
-          res.sendStatus(200);
-
-          botclient.say(twitchchan[0], 'The poll is now closed');
-          botclient.say(
-            twitchchan[0],
-            `Poll: ${doc.polltext} Winner: ${doc.choices[i].text}`
-          );
-
-          polls.emit('pollClose', {
-            pollID: doc._id,
-            win: win,
-            winText: poll.choices[i].text
-          });
-        } catch (err) {
-          console.error(err);
-          errTxt(err);
-        }
-      }
-    );
-  } catch (err) {
-    res.status(500).send('Error closing Poll');
-    console.error(err);
-    errTxt(err);
-  }
-});
 
 app.get('/widget/poll', async (req, res) => {
   try {
