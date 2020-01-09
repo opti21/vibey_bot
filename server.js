@@ -160,6 +160,26 @@ switch (process.env.NODE_ENV) {
       });
     break;
 
+  case 'staging':
+    mongoose
+      .connect(
+        `mongodb+srv://vibey_bot:${process.env.DB_PASS}@cluster0-gtgmw.mongodb.net/vibeystaging?retryWrites=true&w=majority`,
+        {
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+          useCreateIndex: true
+        }
+      )
+      .catch(function (err) {
+        // TODO: Throw error page if DB doesn't connect
+        console.error(
+          'Unable to connect to the mongodb instance. Error: ',
+          err
+        );
+        errTxt(err);
+      });
+    break;
+
   case 'dev':
     mongoose
       .connect(`mongodb://localhost:27017/vibeybot`, {
@@ -281,6 +301,7 @@ const botclient = new tmi.client(tmiOptions);
 
 // Connect the twitch chat client to the server..
 botclient.connect();
+global.botclient = botclient
 
 // Bot says hello on connect
 botclient.on('connected', (address, port) => {

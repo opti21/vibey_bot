@@ -1,5 +1,10 @@
 const router = require('express').Router();
+const mixReqs = require('../models/mixRequests');
 const Poll = require('../models/polls');
+const User = require('../models/users');
+const config = require('../config/config')
+const twitchchan = config.twitchChan;
+const pollsIO = io.of('/polls-namescape');
 
 function loggedIn(req, res, next) {
 	if (!req.user) {
@@ -12,8 +17,9 @@ function loggedIn(req, res, next) {
 router.get('/polls', loggedIn, async (req, res) => {
 	try {
 		var polls = await Poll.find();
-		res.send(polls);
+		res.send(polls).status(200);
 	} catch (err) {
+		res.send('error').send(500)
 		console.error(err);
 		errTxt(err);
 	}
@@ -63,7 +69,7 @@ router.post('/polls/newpoll', loggedIn, async (req, res) => {
 					let choiceArr = [`${choice.text}`, choice.votes];
 					choices.push(choiceArr);
 				});
-				polls.emit('pollOpen', {
+				pollsIO.emit('pollOpen', {
 					poll: doc
 				});
 
@@ -81,7 +87,7 @@ router.post('/polls/newpoll', loggedIn, async (req, res) => {
 });
 
 // Song Poll
-router.get('/polls/createSongpoll', loggedIn, async (req, res) => {
+router.get('/createSongpoll', loggedIn, async (req, res) => {
 	try {
 		var poll = await Poll.find({ active: true });
 		var mix = await mixReqs.find({});
@@ -125,7 +131,7 @@ router.get('/polls/createSongpoll', loggedIn, async (req, res) => {
 					let choiceArr = [`${choice.text}`, choice.votes];
 					choices.push(choiceArr);
 				});
-				polls.emit('pollOpen', {
+				pollsIO.emit('pollOpen', {
 					poll: doc
 				});
 
@@ -172,7 +178,7 @@ router.get('/polls/close/:id', loggedIn, async (req, res) => {
 						`Poll: ${doc.polltext} Winner: ${doc.choices[i].text}`
 					);
 
-					polls.emit('pollClose', {
+					pollsIO.emit('pollClose', {
 						pollID: doc._id,
 						win: win,
 						winText: poll.choices[i].text
@@ -191,3 +197,14 @@ router.get('/polls/close/:id', loggedIn, async (req, res) => {
 });
 
 module.exports = router
+
+function makeid(length) {
+	var result = '';
+	var characters =
+		'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	var charactersLength = characters.length;
+	for (var i = 0; i < length; i++) {
+		result += characters.charAt(Math.floor(Math.random() * charactersLength));
+	}
+	return result;
+}

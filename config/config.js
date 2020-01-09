@@ -5,6 +5,10 @@ switch (process.env.NODE_ENV) {
         channel = 'veryhandsomebilly'
         break
 
+    case 'staging':
+        channel = 'opti_21'
+        break
+
     case 'dev':
         channel = 'opti_21'
 }
