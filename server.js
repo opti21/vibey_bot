@@ -733,7 +733,8 @@ const capitalize = s => {
 // Answer for !science
 var answer = '';
 
-server.listen(3000);
+const port = process.env.PORT || 3000
+server.listen(port);
 
 function makeid(length) {
   var result = '';
