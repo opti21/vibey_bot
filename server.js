@@ -2,7 +2,6 @@ require('dotenv').config();
 
 const config = require('./config/config')
 const version = require('project-version');
-const port = process.env.PORT || 3000;
 console.log('Version: ' + version);
 
 const express = require('express');
