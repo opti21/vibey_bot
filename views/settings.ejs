@@ -11,49 +11,31 @@
 	<link rel="stylesheet" href="css/bootstrap.min.css">
 	<link rel="stylesheet" type="text/css" href="vendor/DataTables/datatables.min.css" />
 	<link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+	<link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
 </head>
 
 <body>
 	<div class="d-flex bg-dark" id="wrapper">
 
 		<!-- Sidebar -->
-		<div class="bg-dark" id="sidebar-wrapper">
-			<div class="sidebar-heading">Vibey Menu</div>
-			<div class="list-group list-group-flush">
-				<a href="/requests" class="list-group-item list-group-item-action bg-dark text-white"><i
-						class="fas fa-music mr-2"></i>Requests<span class="sr-only">(current)</span></a>
-				<a href="/poll" class="list-group-item list-group-item-action bg-dark text-white"> <i
-						class="fas fa-poll mr-2"></i>Poll</a>
-				<a href="/good" class="list-group-item list-group-item-action bg-dark active"> <i
-						class="far fa-newspaper mr-2"></i>Good News</a>
-				<a href="" class="list-group-item list-group-item-action bg-dark text-muted"> <i
-						class="fas fa-cogs mr-1"></i>Settings (soon)</a>
-			</div>
-			<div id="version">
-				<p class="text-muted ml-3 mt-3">v<%= version %></p>
-				<p class="text-muted text-center ml-3 mt-3">Made with ❤️ by opti_21</p>
-				<a href="/logout"><button class="ml-3 mb-3 btn btn-sm btn-danger">Logout</button></a>
-			</div>
-		</div>
+		<%- include ./partials/sidebar.ejs %>
 		<!-- /#sidebar-wrapper -->
 
 		<!-- Page Content -->
 		<div id="page-content-wrapper">
-
 			<div class="container-fluid">
 				<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
 					<button class="btn btn-dark mr-3" id="menu-toggle"><i class="fas fa-bars"></i></button>
 					<span class="navbar-brand mb-0 h1"><i class="far fa-hand-peace"></i> Vibey Bot</span>
 				</nav>
-				<h1>Good News</h1>
-				<div id="goodnews" width="100%" height="100%">
-					<div style="width: 300px;" class="card bg-info mb-3">
-						<div class="card-header">opti_21</div>
-						<div class="card-body">
-							Test tes te seksjdlanrkjbasdkjbsakdbflkabrkbaskhtkajerk
-						</div>
+				<h1>Settings</h1>
+				<div class="rounded-lg border p-3" style="width: 90%; height: 90%;">
+					<div class="custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" id="customSwitch1">
+						<label class="custom-control-label" for="customSwitch1">Allow Single Votes</label>
 					</div>
 				</div>
+
 			</div>
 		</div>
 	</div>
@@ -75,6 +57,15 @@
 	<script type="text/javascript" src="vendor/DataTables/datatables.min.js"></script>
 	<!-- <script src="js/script.min.js"></script> -->
 	<script src="js/good.js"></script>
+	<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+	<script>
+		$(function () {
+			$('#toggle-two').bootstrapToggle({
+				on: 'Enabled',
+				off: 'Disabled'
+			});
+		})
+	</script>
 
 </body>
 

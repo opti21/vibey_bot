@@ -1,17 +1,3 @@
-// Pusher Poduction *** UNCOMMENT THIS BEFORE COMMIT ***
-// var pusher = new Pusher('94254303a6a5048bf191', {
-//   cluster: 'us2',
-//   forceTLS: true
-// });
-
-// Pusher DEVELOPMENT
-// var pusher = new Pusher('41f9377a48633b3302ff', {
-//   cluster: 'us2',
-//   forceTLS: true
-// });
-
-
-
 $("#menu-toggle").click(function (e) {
   e.preventDefault();
   $("#wrapper").toggleClass("toggled");
@@ -25,6 +11,7 @@ const Toast = Swal.mixin({
 })
 
 $(document).ready(function () {
+  $('#poll-nav').addClass('active');
   // Fetch active polls
   fetch(`/api/polls`)
     .then(response => {
@@ -220,7 +207,7 @@ $(document).ready(function () {
     }).then((result) => {
       if (result.value) {
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', `/poll/close/${pollID}`);
+        xhr.open('GET', `api/polls/close/${pollID}`);
         xhr.onload = function () {
           if (xhr.status === 200) {
             Toast.fire({
@@ -246,7 +233,7 @@ $(document).ready(function () {
 $("#songpoll").click(function () {
   console.log('test')
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', `/songpoll`);
+  xhr.open('GET', `/api/createSongpoll`);
   xhr.onload = function () {
     if (xhr.status === 200) {
       console.log(JSON.parse(xhr.response))

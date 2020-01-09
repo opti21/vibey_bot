@@ -21,28 +21,7 @@
 	<div class="d-flex bg-dark" id="wrapper">
 
 		<!-- Sidebar -->
-		<div class="bg-dark" id="sidebar-wrapper">
-			<div class="sidebar-heading">Vibey Menu</div>
-			<div class="list-group list-group-flush">
-				<a href="/requests" class="list-group-item list-group-item-action bg-dark text-white active"><i
-						class="fas fa-music mr-2"></i>Requests<span class="sr-only">(current)</span></a>
-				<a href="/poll" class="list-group-item list-group-item-action bg-dark text-white"> <i
-						class="fas fa-poll mr-2"></i>Poll</a>
-				<!-- <a href="/good" class="list-group-item list-group-item-action bg-dark"> <i
-						class="far fa-newspaper mr-2"></i>Good News</a> -->
-				<a href="" class="list-group-item list-group-item-action bg-dark text-muted"> <i
-						class="fas fa-cogs mr-1"></i>Settings (soon)</a>
-			</div>
-			<div id="version" class="ml-3">
-				<div id="profile">
-					<img id="profilePic" src="<%= profilePic %>" alt="<%= feUser %> profile picture" class="rounded-circle">
-					<%= feUser %>
-				</div>
-				<p class="text-muted mt-3">v<%= version %></p>
-				<p class="text-muted text-center mt-3">Made with ❤️ by opti_21</p>
-				<a href="/logout"><button class="mb-3 btn btn-sm btn-danger">Logout</button></a>
-			</div>
-		</div>
+		<%- include ./partials/sidebar.ejs %>
 		<!-- /#sidebar-wrapper -->
 
 		<!-- Page Content -->
@@ -72,23 +51,26 @@
 								<% requests.forEach(request => { %>
 								<tr width="100%" id="<%= request.id %>">
 									<td>
-										<button class="btn btn-success btn-md mr-3 p-1 mix-add" data-srID="<%= request.id %>"> Mix +
+										<button class="btn btn-success btn-md mr-3 p-1 mix-add"
+											data-srID="<%= request.id %>"> Mix +
 										</button>
 										<button class="delete btn btn-danger btn-sm" data-srID="<%= request.id %>"
-											data-srName="<%= request.track[0].name %>"> <i class="fas fa-minus-circle"></i>
+											data-srName="<%= request.track[0].name %>"> <i
+												class="fas fa-minus-circle"></i>
 										</button>
 									</td>
 									<td>
 										<% if(request.source === 'spotify'){ %>
-										<a class="srLink" href="<%= request.track[0].link %>" target="_blank"><%= request.track[0].name %> -
+										<a class="srLink" href="<%= request.track[0].link %>"
+											target="_blank"><%= request.track[0].name %> -
 											<%= request.track[0].artist %></a>
 										<a class="spotify" href="<%= request.track[0].uri %>"><i class="fab fa-spotify"
 												title="Open in Spotify"></i></a>
 										<% } if(request.source === 'youtube'){ %>
 										<a class="srLink" href="<%= request.track[0].link %>"
 											target="_blank"><%= request.track[0].name %></a>
-										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
-												title="Open on Youtube"></i></a>
+										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i
+												class="fab fa-youtube" title="Open on Youtube"></i></a>
 										<% } if(request.source === 'text'){ %>
 										<%= request.track[0].name %>
 										<% } %>
@@ -121,20 +103,21 @@
 								<tr width="100%" id="<%= request.id %>">
 									<td>
 										<% if(request.source === 'spotify'){ %>
-										<a class="srLink" href="<%= request.track[0].link %>" target="_blank"><%= request.track[0].name %> -
+										<a class="srLink" href="<%= request.track[0].link %>"
+											target="_blank"><%= request.track[0].name %> -
 											<%= request.track[0].artist %></a>
 										<a class="spotify" href="<%= request.track[0].uri %>"><i class="fab fa-spotify"
 												title="Open in Spotify"></i></a>
 										<% } if(request.source === 'youtube'){ %>
 										<a class="srLink" href="<%= request.track[0].link %>"
 											target="_blank"><%= request.track[0].name %></a>
-										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
-												title="Open on Youtube"></i></a>
+										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i
+												class="fab fa-youtube" title="Open on Youtube"></i></a>
 										<% } if(request.source === 'text'){ %>
 										<a class="srLink" href="<%= request.track[0].link %>"
 											target="_blank"><%= request.track[0].name %></a>
-										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
-												title="Open on Youtube"></i></a>
+										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i
+												class="fab fa-youtube" title="Open on Youtube"></i></a>
 										<% } %>
 									</td>
 									<td><%= request.requestedBy %></td>
@@ -168,7 +151,7 @@
 	<script src="js/sweetalert2.all.min.js"></script>
 	<script type="text/javascript" src="vendor/DataTables/datatables.min.js"></script>
 	<!-- <script src="js/script.min.js"></script> -->
-	<script src="js/script.js"></script>
+	<script src="js/requests.js"></script>
 
 </body>
 

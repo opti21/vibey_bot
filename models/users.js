@@ -1,21 +1,32 @@
 const mongoose = require('mongoose')
 
-const userSchema = new mongoose.Schema ({
+const settingSchema = new mongoose.Schema({
+	moderators: {
+		type: Array,
+		default: []
+	},
+	allow_single_votes: {
+		type: Boolean,
+		default: false
+	}
+})
+
+const userSchema = new mongoose.Schema({
 	twitch_id: {
 		type: Number,
 		required: true
 	},
-    username: {
-	  type: String,
-	  required: true
+	username: {
+		type: String,
+		required: true
 	},
 	display_name: {
 		type: String,
 		required: true
 	},
-    email: {
-    	type: String,
-      required: true
+	email: {
+		type: String,
+		required: true
 	},
 	profile_pic_url: {
 		type: String
@@ -32,7 +43,8 @@ const userSchema = new mongoose.Schema ({
 	},
 	accessToken: String,
 	refreshToken: String,
-	expireAt: { type: Date, default: undefined }
+	expireAt: { type: Date, default: undefined },
+	settings: [settingSchema]
 })
 
 userSchema.index({ "expireAt": 1 }, { expireAfterSeconds: 0 });

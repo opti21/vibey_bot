@@ -1,13 +1,4 @@
-// Generate random IDs for table elements
-function makeid(length) {
-  var result = '';
-  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  var charactersLength = characters.length;
-  for (var i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
-}
+
 
 const Toast = Swal.mixin({
   toast: true,
@@ -22,6 +13,8 @@ $(document).ready(function () {
     "ordering": false,
     "paging": false,
   });
+
+  $('#requests-nav').addClass('active');
 });
 
 $("#menu-toggle").click(function (e) {
@@ -36,18 +29,6 @@ socket.on('socketConnect', function (data) {
     title: 'Socket Connected!'
   })
 });
-
-// Pusher Poduction *** UNCOMMENT THIS BEFORE COMMIT ***
-// var pusher = new Pusher('94254303a6a5048bf191', {
-//   cluster: 'us2',
-//   forceTLS: true
-// });
-
-// // Pusher DEVELOPMENT
-// var pusher = new Pusher('41f9377a48633b3302ff', {
-//   cluster: 'us2',
-//   forceTLS: true
-// });
 
 // Realtime song request
 socket.on('sr-event', function (data) {
@@ -280,7 +261,7 @@ $('#clear-mix').on('click', '.delete-mix', function () {
   }).then((result) => {
     if (result.value) {
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', `/requests/mix/deleteall`);
+      xhr.open('GET', `/mix/deleteall`);
       xhr.onload = function () {
         if (xhr.status === 200) {
           Swal.fire({
@@ -363,3 +344,14 @@ $('#srContainer').on('click', '.delete.btn', function () {
     }
   })
 });
+
+// Generate random IDs for table elements
+function makeid(length) {
+  var result = '';
+  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for (var i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}

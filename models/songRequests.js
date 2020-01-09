@@ -26,7 +26,10 @@ const srSchema = new mongoose.Schema({
     type: String
   },
   lyrics: {
-   type: String
+    type: String
+  },
+  channel: {
+    type: String
   }
 });
 
