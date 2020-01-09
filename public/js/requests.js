@@ -15,12 +15,21 @@ $(document).ready(function () {
   });
 
   $('#requests-nav').addClass('active');
+
+  $("#menu-toggle").click(function (e) {
+    e.preventDefault();
+    $("#wrapper").toggleClass("toggled");
+    let menuToggle = localStorage.getItem('menuOpen')
+    localStorage.setItem('menuOpen', !menuToggle)
+  });
+
+  if (!localStorage.getItem('menuOpen')) {
+    $('#wrapper').addClass('toggled');
+    localStorage.setItem('menuOpen', false)
+  }
 });
 
-$("#menu-toggle").click(function (e) {
-  e.preventDefault();
-  $("#wrapper").toggleClass("toggled");
-});
+
 
 var socket = io('/req-namescape');
 socket.on('socketConnect', function (data) {

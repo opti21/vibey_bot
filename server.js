@@ -212,6 +212,7 @@ const mixReqs = require('./models/mixRequests');
 const SongRequest = require('./models/songRequests');
 const Poll = require('./models/polls');
 const Good = require('./models/goods');
+const ChatUser = require('./models/chatUser');
 
 // Twitch auth
 passport.use(
@@ -733,6 +734,15 @@ botclient.on('chat', async (channel, userstate, message, self) => {
 // Bot replies
 var chatRespond = true;
 
+// Answer for !science
+var answer = '';
+
+// See whos new
+botclient.on('join', (channel, username, self) => {
+  if (self) return;
+  console.log(username)
+})
+
 const capitalize = s => {
   if (typeof s !== 'string') return '';
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -741,6 +751,7 @@ const capitalize = s => {
 // Answer for !science
 var answer = '';
 
+const port = process.env.PORT || 3000
 server.listen(port);
 
 function makeid(length) {
