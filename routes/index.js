@@ -58,6 +58,18 @@ router.get('/poll', loggedIn, async (req, res) => {
 	}
 });
 
+router.get('/hi', loggedIn, async (req, res) => {
+	try {
+		if (admins.includes(user.username)) {
+			res.render('hi')
+		} else {
+			res.redirect('/login');
+		}
+	} catch {
+
+	}
+})
+
 // Test
 router.get('/test', function (req, res) {
 	console.log('REQ.SESSION:');
