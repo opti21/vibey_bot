@@ -806,7 +806,7 @@ botclient.on('join', async (channel, username, self) => {
   try {
     let existingUser = await ChatUser.find({ username: username })
     if (existingUser) {
-      console.log('User has already connected to the chat')
+      console.log(`${username} has already connected to the chat`)
       return
     } else {
       let newChatUser = new ChatUser({
