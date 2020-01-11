@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const version = require('project-version');
 const User = require('../models/users');
+const ChatUser = require('../models/chatUser');
 const config = require('../config/config')
 const admins = config.admins;
 
@@ -60,8 +61,16 @@ router.get('/poll', loggedIn, async (req, res) => {
 
 router.get('/hi', loggedIn, async (req, res) => {
 	try {
+		let user = await User.findOne({ twitch_id: req.user.id });
+		let chatUsers = await ChatUser.find({ saidHi: false })
+
 		if (admins.includes(user.username)) {
-			res.render('hi')
+			res.render('hi', {
+				version: version,
+				feUser: user.username,
+				profilePic: req.user['profile_image_url'],
+				chatUsers: chatUsers
+			})
 		} else {
 			res.redirect('/login');
 		}

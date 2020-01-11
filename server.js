@@ -89,6 +89,7 @@ function errTxt(err) {
 // Real time data
 const rqs = io.of('/req-namescape');
 const polls = io.of('/polls-namescape');
+const hellos = io.of('/hellos-namescape')
 
 rqs.on('connection', function (socket) {
   console.log('Connected to requests');
@@ -736,22 +737,104 @@ var chatRespond = true;
 // Answer for !science
 var answer = '';
 
-// See whos new
+// setInterval(() => {
+//   randomNameGen();
+// }, 5000);
+
+// function randomNameGen() {
+//   let randomUser = makeid(10)
+//   try {
+//     var newChatUser = new ChatUser({
+//       username: randomUser,
+//       channel: 'test',
+//       expireAt: moment()
+//         .utc()
+//         .add(1, 'minute')
+//     })
+//     newChatUser.save()
+//       .then(doc => {
+//         hellos.emit('newUser', {
+//           user: doc
+//         })
+//         console.log(doc)
+//       }
+//       )
+//       .catch(err => { console.error(err) });
+//   } catch (err) {
+//     console.error(err)
+//   }
+// }
+
+hellos.on('connection', socket => {
+  console.log('Connected to hellos');
+  socket.emit('hellosConnect', {})
+
+  socket.on('saidHi', async data => {
+    await ChatUser.findById(`${data.id}`, (err, user) => {
+      try {
+        if (user) {
+          user.saidHi = !user.saidHi
+          user.save(err => {
+            if (err) {
+              console.error(err)
+              return
+            }
+          })
+          console.log(`Said hi`)
+
+        } else {
+          return
+        }
+      } catch (err) {
+        console.error(err)
+      }
+      if (err) {
+        console.error(err)
+        return
+      }
+    })
+  })
+
+  hellos.on('disconnect', () => {
+    console.log('User disconnected from requests');
+  });
+})
+
+// Say hi!
 botclient.on('join', (channel, username, self) => {
   if (self) return;
   console.log(username)
+  try {
+    var newChatUser = new ChatUser({
+      username: username,
+      channel: channel,
+      expireAt: moment()
+        .utc()
+        .add(1, 'minute')
+    })
+    newChatUser.save()
+      .then(doc => {
+        hellos.emit('newUser', {
+          user: doc
+        })
+        console.log(doc)
+      }
+      )
+      .catch(err => { console.error(err) });
+  } catch (err) {
+    console.error(err)
+  }
+
 })
 
+const port = process.env.PORT || 3000
+server.listen(port);
+
+// Utils
 const capitalize = s => {
   if (typeof s !== 'string') return '';
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
-
-// Answer for !science
-var answer = '';
-
-const port = process.env.PORT || 3000
-server.listen(port);
 
 function makeid(length) {
   var result = '';

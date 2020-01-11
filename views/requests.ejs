@@ -51,26 +51,23 @@
 								<% requests.forEach(request => { %>
 								<tr width="100%" id="<%= request.id %>">
 									<td>
-										<button class="btn btn-success btn-md mr-3 p-1 mix-add"
-											data-srID="<%= request.id %>"> Mix +
+										<button class="btn btn-success btn-md mr-3 p-1 mix-add" data-srID="<%= request.id %>"> Mix +
 										</button>
 										<button class="delete btn btn-danger btn-sm" data-srID="<%= request.id %>"
-											data-srName="<%= request.track[0].name %>"> <i
-												class="fas fa-minus-circle"></i>
+											data-srName="<%= request.track[0].name %>"> <i class="fas fa-minus-circle"></i>
 										</button>
 									</td>
 									<td>
 										<% if(request.source === 'spotify'){ %>
-										<a class="srLink" href="<%= request.track[0].link %>"
-											target="_blank"><%= request.track[0].name %> -
+										<a class="srLink" href="<%= request.track[0].link %>" target="_blank"><%= request.track[0].name %> -
 											<%= request.track[0].artist %></a>
 										<a class="spotify" href="<%= request.track[0].uri %>"><i class="fab fa-spotify"
 												title="Open in Spotify"></i></a>
 										<% } if(request.source === 'youtube'){ %>
 										<a class="srLink" href="<%= request.track[0].link %>"
 											target="_blank"><%= request.track[0].name %></a>
-										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i
-												class="fab fa-youtube" title="Open on Youtube"></i></a>
+										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
+												title="Open on Youtube"></i></a>
 										<% } if(request.source === 'text'){ %>
 										<%= request.track[0].name %>
 										<% } %>
@@ -103,21 +100,20 @@
 								<tr width="100%" id="<%= request.id %>">
 									<td>
 										<% if(request.source === 'spotify'){ %>
-										<a class="srLink" href="<%= request.track[0].link %>"
-											target="_blank"><%= request.track[0].name %> -
+										<a class="srLink" href="<%= request.track[0].link %>" target="_blank"><%= request.track[0].name %> -
 											<%= request.track[0].artist %></a>
 										<a class="spotify" href="<%= request.track[0].uri %>"><i class="fab fa-spotify"
 												title="Open in Spotify"></i></a>
 										<% } if(request.source === 'youtube'){ %>
 										<a class="srLink" href="<%= request.track[0].link %>"
 											target="_blank"><%= request.track[0].name %></a>
-										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i
-												class="fab fa-youtube" title="Open on Youtube"></i></a>
+										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
+												title="Open on Youtube"></i></a>
 										<% } if(request.source === 'text'){ %>
 										<a class="srLink" href="<%= request.track[0].link %>"
 											target="_blank"><%= request.track[0].name %></a>
-										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i
-												class="fab fa-youtube" title="Open on Youtube"></i></a>
+										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
+												title="Open on Youtube"></i></a>
 										<% } %>
 									</td>
 									<td><%= request.requestedBy %></td>
