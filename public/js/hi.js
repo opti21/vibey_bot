@@ -49,6 +49,7 @@ $(".hi").hover(over, out);
 function over() {
   TweenMax.to(this, 0.3, { css: { color: "#ffffff", backgroundColor: "green" } })
 }
+function out() {
   TweenMax.to(this, 0.3, { css: { color: "#343a40", backgroundColor: "white" } })
 }
 
