@@ -810,7 +810,7 @@ botclient.on('join', (channel, username, self) => {
       channel: channel,
       expireAt: moment()
         .utc()
-        .add(1, 'minute')
+        .add(8, 'hours')
     })
     newChatUser.save()
       .then(doc => {
