@@ -6,7 +6,7 @@ switch (process.env.NODE_ENV) {
         break
 
     case 'staging':
-        channel = 'opti_21'
+        channel = 'veryhandsomebilly'
         break
 
     case 'dev':
