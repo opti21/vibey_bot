@@ -801,26 +801,30 @@ hellos.on('connection', socket => {
 })
 
 // Say hi!
-botclient.on('join', (channel, username, self) => {
+botclient.on('join', async (channel, username, self) => {
   if (self) return;
-  console.log(username)
   try {
-    var newChatUser = new ChatUser({
-      username: username,
-      channel: channel,
-      expireAt: moment()
-        .utc()
-        .add(1, 'minute')
-    })
-    newChatUser.save()
-      .then(doc => {
-        hellos.emit('newUser', {
-          user: doc
+    let existingUser = await ChatUser.find({ username: username })
+    if (existingUser) {
+      console.log(`${username} has already connected to the chat`)
+      return
+    } else {
+      let newChatUser = new ChatUser({
+        username: username,
+        channel: channel,
+        expireAt: moment()
+          .utc()
+          .add(8, 'hours')
+      })
+      newChatUser.save()
+        .then(doc => {
+          hellos.emit('newUser', {
+            user: doc
+          })
+          console.log(doc)
         })
-        console.log(doc)
-      }
-      )
-      .catch(err => { console.error(err) });
+        .catch(err => { console.error(err) });
+    }
   } catch (err) {
     console.error(err)
   }

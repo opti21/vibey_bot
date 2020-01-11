@@ -32,6 +32,8 @@ socket.on('newUser', data => {
       <div id="${_id}" >${username}</div>
   `
   hiContainer.append(hiElem)
+
+  // init hover animations on new users
   $(".hi").hover(over, out);
   function over() {
     TweenMax.to(this, 0.3, { css: { color: "#ffffff", backgroundColor: "green" } })
@@ -41,6 +43,15 @@ socket.on('newUser', data => {
   }
 
 })
+
+// Init hovers
+$(".hi").hover(over, out);
+function over() {
+  TweenMax.to(this, 0.3, { css: { color: "#ffffff", backgroundColor: "green" } })
+}
+function out() {
+  TweenMax.to(this, 0.3, { css: { color: "#343a40", backgroundColor: "white" } })
+}
 
 $(document).on('click', '.hi', (e) => {
   e.preventDefault()
