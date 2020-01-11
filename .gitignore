@@ -6,3 +6,6 @@ todos.md
 twitch.rest
 Dockerfile
 *.swp
+.DS_Store
+.DS_Store
+.vscode/settings.json

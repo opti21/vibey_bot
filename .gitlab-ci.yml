@@ -1,6 +1,7 @@
 image: node:latest
 stages:
   - build
+  - v2_build
   - test
   - production
 
@@ -8,21 +9,45 @@ cache:
   paths:
     - node_modules/
 
-install_depencies:
+install_dependencies:
   stage: build
+  tags:
+    - docker
   script:
-    - npm install
+    - yarn install
   artifacts:
     paths:
       - node_modules/
+  only:
+    - master
+  
+v2_build:
+  stage: v2_build
+  script:
+    - yarn install
+  artifacts:
+    paths:
+      - node_modules/
+  only:
+    - v2
 
 is_this_working:
   stage: test
-  script: npm test
+  tags:
+    - docker
+  script:
+    - npx mocha
+  artifacts:
+    paths:
+      - node_modules/
+  only:
+    - master
 
 production:
   type: deploy
   stage: production
+  tags:
+    - docker
   image: ubuntu:latest
   environment:
     name: deployment

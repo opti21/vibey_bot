@@ -2,12 +2,12 @@ require('dotenv').config();
 
 const config = require('./config/config')
 const version = require('project-version');
+const port = process.env.PORT || 3000;
 console.log('Version: ' + version);
 
 const express = require('express');
 const app = express();
 const server = require('http').Server(app);
-const logger = require('morgan');
 const passport = require('passport');
 const twitchStrategy = require('passport-twitch-new').Strategy;
 const bodyParser = require('body-parser');
@@ -29,6 +29,7 @@ const admins = config.admins;
 const exec = require('child_process').exec;
 const he = require('he');
 const sgMail = require('@sendgrid/mail');
+const fs = require('fs');
 
 // SendGrid Emails
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -93,6 +94,7 @@ const hellos = io.of('/hellos-namescape')
 
 rqs.on('connection', function (socket) {
   console.log('Connected to requests');
+  // Trigger front end notification
   socket.emit('socketConnect', {});
 
   //Whenever someone disconnects this piece of code executed
@@ -106,7 +108,6 @@ app.set('views', './views');
 app.set('view engine', 'ejs');
 
 app.use(express.static('public'));
-app.use(logger('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(
@@ -282,7 +283,7 @@ const tmi = require('tmi.js');
 const twitchclientid = process.env.TWITCH_CLIENTID;
 const twitchuser = process.env.TWITCH_USER;
 const twitchpass = process.env.TWITCH_PASS;
-const twitchchan = config.twitchChan;
+const twitchChan = config.twitchChan;
 
 const tmiOptions = {
   options: {
@@ -296,7 +297,7 @@ const tmiOptions = {
     username: twitchuser,
     password: twitchpass
   },
-  channels: twitchchan
+  channels: twitchChan
 };
 
 const botclient = new tmi.client(tmiOptions);
@@ -307,7 +308,7 @@ global.botclient = botclient
 
 // Bot says hello on connect
 botclient.on('connected', (address, port) => {
-  // botclient.say(twitchchan[0], `Hey Chat! Send me those vibes`)
+  // botclient.say(twitchChan[0], `Hey Chat! Send me those vibes`)
   console.log('connected to twitch chat client');
   if (process.env.NODE_ENV === 'development') {
     var cmd = `osascript -e 'display notification "${address} on port ${port}" with title "Connected to Twitch!" sound name "Submarine"'`;
@@ -549,6 +550,13 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       botclient.say(channel, `No choice selected !vote to see how to vote`);
       return;
     }
+    let vars = JSON.parse(fs.readFileSync('vars.json'))
+    let single_votes = vars.single_votes
+    if (single_votes) {
+      console.log('Single votes true')
+    } else {
+      console.log('Single votes false')
+    }
     // if (poll.voters.includes(userstate.username)) {
     //   botclient.say(
     //     channel,
@@ -586,7 +594,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
           errTxt(err);
           return;
         }
-        botclient.say(twitchchan[0], `Polls deleted!`);
+        botclient.say(twitchChan[0], `Polls deleted!`);
       });
     }
   }
@@ -635,7 +643,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       let q = data.results[0].question;
       answer = data.results[0].correct_answer;
       botclient.say(
-        twitchchan[0],
+        twitchChan[0],
         he.decode(
           `@veryhandsomebilly SCIENCE QUESTION Difficulty: ${diff} Question: ${q}`
         )
@@ -648,7 +656,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   }
 
   if (message[0] === '!answer' && admins.includes(userstate.username)) {
-    botclient.say(twitchchan[0], he.decode(`${answer}`));
+    botclient.say(twitchChan[0], he.decode(`${answer}`));
     // console.log(answer)
   }
 
@@ -659,7 +667,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     let month = moment.tz(moment(), 'Pacific/Auckland').format('MMMM');
     let time = moment.tz(moment(), 'Pacific/Auckland').format('hh:mmA');
     botclient.say(
-      twitchchan[0],
+      twitchChan[0],
       `In New Zealand it is currently ${day} the ${dNum} of ${month} and the time is ${time}`
     );
   }
@@ -668,7 +676,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     let query = he.encode(`${message.slice(1).join(' ')}`);
     let handleData = data => {
       console.log(data);
-      botclient.say(twitchchan[0], he.decode(`${data.bodyText}`));
+      botclient.say(twitchChan[0], he.decode(`${data.bodyText}`));
     };
     fetchJson
       .get(
@@ -681,7 +689,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     let query = he.encode(`${message.slice(1).join(' ')}`);
     let handleData = data => {
       console.log(data);
-      botclient.say(twitchchan[0], he.decode(`${data.bodyText}`));
+      botclient.say(twitchChan[0], he.decode(`${data.bodyText}`));
     };
     fetchJson
       .get(
@@ -696,11 +704,11 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       console.log(data);
       if (data.sunsign === 'undefined') {
         botclient.say(
-          twitchchan[0],
+          twitchChan[0],
           'No sign received Example: !horoscope Libra'
         );
       } else {
-        botclient.say(twitchchan[0], he.decode(`${data.horoscope}`));
+        botclient.say(twitchChan[0], he.decode(`${data.horoscope}`));
       }
     };
     fetchJson
@@ -710,18 +718,18 @@ botclient.on('chat', async (channel, userstate, message, self) => {
 
   if (message[0] === '!reply' && admins.includes(userstate.username)) {
     if (chatRespond === true) {
-      botclient.say(twitchchan[0], he.decode(`RESPONSES TURNED OFF`));
+      botclient.say(twitchChan[0], he.decode(`RESPONSES TURNED OFF`));
       chatRespond = !chatRespond;
       console.log(chatRespond);
     } else {
-      botclient.say(twitchchan[0], he.decode(`RESPONSES TURNED ON`));
+      botclient.say(twitchChan[0], he.decode(`RESPONSES TURNED ON`));
       console.log(chatRespond);
       chatRespond = !chatRespond;
     }
   }
 
   if (message[0] === '!test' && admins.includes(userstate.username)) {
-    botclient.say(twitchchan[0], he.decode(`THIS IS A TEST`));
+    botclient.say(twitchChan[0], he.decode(`THIS IS A TEST`));
   }
 });
 // Bot replies
