@@ -11,7 +11,11 @@ const pollSchema = new mongoose.Schema({
 		type: Array,
 		default: []
 	},
-	winner: String
+	winner: String,
+	allow_multiple_votes: {
+		type: Boolean,
+		required: true
+	}
 })
 
 module.exports = mongoose.model('polls', pollSchema)
