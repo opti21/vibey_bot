@@ -71,7 +71,7 @@ async function getTwitchCreds() {
 
 // Error texts
 function errTxt(err) {
-  let msg = {
+  var msg = {
     to: `${process.env.ERR_PHONE}@mms.cricketwireless.net`,
     from: 'test@example.com',
     subject: '**VIBEY ERROR** Uh Oh',
@@ -208,7 +208,6 @@ db.once('open', () => console.log('Connected to Mongoose ' + Date()));
 
 //Models
 const User = require('./models/users');
-const mixReqs = require('./models/mixRequests');
 const SongRequest = require('./models/songRequests');
 const Poll = require('./models/polls');
 const Good = require('./models/goods');
@@ -229,7 +228,7 @@ passport.use(
           .exec()
           .then(function (UserSearch) {
             if (UserSearch === null) {
-              let user = new User({
+              var user = new User({
                 twitch_id: profile.id,
                 username: profile.login,
                 display_name: profile.display_name,
@@ -323,20 +322,20 @@ botclient.on('connected', (address, port) => {
 });
 
 // Regex
-var URLRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
-var spRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:track\/|\?uri=spotify:track:)((\w|-){22})/;
-var ytRegex = /(?:https?:\/\/)?(?:(?:(?:www\.?)?youtube\.com(?:\/(?:(?:watch\?.*?(v=[^&\s]+).*)|(?:v(\/.*))|(channel\/.+)|(?:user\/(.+))|(?:results\?(search_query=.+))))?)|(?:youtu\.be(\/.*)?))/;
+const URLRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
+const spRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:track\/|\?uri=spotify:track:)((\w|-){22})/;
+const ytRegex = /(?:https?:\/\/)?(?:(?:(?:www\.?)?youtube\.com(?:\/(?:(?:watch\?.*?(v=[^&\s]+).*)|(?:v(\/.*))|(channel\/.+)|(?:user\/(.+))|(?:results\?(search_query=.+))))?)|(?:youtu\.be(\/.*)?))/;
 
 // Song Requests
 botclient.on('chat', async (channel, userstate, message, self) => {
   if (self) return;
-  var message = message.trim().split(' ');
-  if (message[0] === '!sr' || message[0] === '!songrequest') {
-    if (URLRegex.test(message[1])) {
+  var parsedM = message.trim().split(' ');
+  if (parsedM[0] === '!sr' || parsedM[0] === '!songrequest') {
+    if (URLRegex.test(parsedM[1])) {
       // Spotify link
-      if (spRegex.test(message[1])) {
-        var spID = spotifyUri.parse(message[1]);
-        var spURI = spotifyUri.formatURI(message[1]);
+      if (spRegex.test(parsedM[1])) {
+        var spID = spotifyUri.parse(parsedM[1]);
+        var spURI = spotifyUri.formatURI(parsedM[1]);
         spotify
           .request(`https://api.spotify.com/v1/tracks/${spID.id}`)
           .then(function (data) {
@@ -344,7 +343,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
               track: {
                 name: data.name,
                 artist: data.artists[0].name,
-                link: message[1],
+                link: parsedM[1],
                 uri: spURI
               },
               requestedBy: userstate.username,
@@ -383,10 +382,10 @@ botclient.on('chat', async (channel, userstate, message, self) => {
           });
       }
       // Youtube Link
-      if (ytRegex.test(message[1])) {
-        youtube.getVideo(message[1]).then(video => {
+      if (ytRegex.test(parsedM[1])) {
+        youtube.getVideo(parsedM[1]).then(video => {
           var newYTSR = new SongRequest({
-            track: { name: video.title, link: message[1] },
+            track: { name: video.title, link: parsedM[1] },
             requestedBy: userstate.username,
             timeOfReq: moment.utc().format(),
             source: 'youtube'
@@ -418,16 +417,16 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       }
     }
     // Check for text content
-    if (message[1] === undefined) {
+    if (parsedM[1] === undefined) {
       botclient.say(
         channel,
-        `No input recieved. !requests to see how to submit requests`
+        `No input received. !requests to see how to submit requests`
       );
     } else {
       // Searches Spotify & Youtube when only text is provided
-      if (!ytRegex.test(message[1])) {
-        var request = message.slice(1).join(' ');
-        var ytQuery = message.slice(1).join('+');
+      if (!ytRegex.test(parsedM[1])) {
+        var request = parsedM.slice(1).join(' ');
+        var ytQuery = parsedM.slice(1).join('+');
         var ytSearch = `https://www.youtube.com/results?search_query=${ytQuery}`;
         spotify.search(
           { type: 'track', query: `${request}`, limit: 1 },
@@ -510,8 +509,8 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     }
   }
 
-  if (message[0] === '!tr') {
-    let request = message.slice(1).join(' ');
+  if (parsedM[0] === '!tr') {
+    var request = parsedM.slice(1).join(' ');
     var newText = new SongRequest({
       track: {
         name: request
@@ -539,81 +538,98 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       .catch(console.error);
   }
   // Choice selection for polls
-  if (message[0] === '!c') {
+  if (parsedM[0] === '!c') {
     var poll = await Poll.findOne({ active: true });
     if (!poll) {
       botclient.say(channel, `Unfortunately there is no poll right now :(`);
       return;
     }
-    if (message[1] === undefined) {
+    if (parsedM[1] === undefined) {
       botclient.say(channel, `No choice selected !vote to see how to vote`);
       return;
     }
-    let vars = JSON.parse(fs.readFileSync('vars.json'))
-    let single_votes = vars.single_votes
-    if (single_votes) {
-      console.log('Single votes true')
-    } else {
-      console.log('Single votes false')
-    }
-    // if (poll.voters.includes(userstate.username)) {
-    //   botclient.say(
-    //     channel,
-    //     `@${userstate.username} you've already voted`
-    //   );
-    //   return
-    // } else {
-    var choice = parseInt(message[1], 10);
-    var cIndex = choice - 1;
-    var cID = poll.choices[cIndex].id;
-    var currV = poll.choices[cIndex].votes;
-    var i = currV + 1;
-    var tUser = userstate.username;
+    // Check if multiple votes are allowed
+    // and if the user has already voted
+    if (poll.voters.includes(userstate.username)) {
+      if (poll.allow_multiple_votes == true) {
+        var choice = parseInt(parsedM[1], 10);
+        var cIndex = choice - 1;
+        var cID = poll.choices[cIndex].id;
+        var currV = poll.choices[cIndex].votes;
+        var i = currV + 1;
+        var tUser = userstate.username;
 
-    await Poll.findOneAndUpdate(
-      { _id: poll.id, 'choices.id': cID },
-      { $addToSet: { voters: tUser }, $set: { 'choices.$.votes': i } },
-      { useFindAndModify: false, new: true },
-      (err, doc) => {
-        console.log(doc.choices[cIndex].votes);
-        console.log(doc);
-        polls.emit('pollUpdate', {
-          doc: doc
-        });
+        await Poll.findOneAndUpdate(
+          { _id: poll.id, 'choices.id': cID },
+          { $addToSet: { voters: tUser }, $set: { 'choices.$.votes': i } },
+          { useFindAndModify: false, new: true },
+          (err, doc) => {
+            console.log(doc.choices[cIndex].votes);
+            console.log(doc);
+            polls.emit('pollUpdate', {
+              doc: doc
+            });
+          }
+        );
+      } else {
+        botclient.say(
+          channel,
+          `@${userstate.username} you've already voted`
+        );
+        return
       }
-    );
-    // }
+    } else {
+      var choice = parseInt(parsedM[1], 10);
+      var cIndex = choice - 1;
+      var cID = poll.choices[cIndex].id;
+      var currV = poll.choices[cIndex].votes;
+      var i = currV + 1;
+      var tUser = userstate.username;
+
+      await Poll.findOneAndUpdate(
+        { _id: poll.id, 'choices.id': cID },
+        { $addToSet: { voters: tUser }, $set: { 'choices.$.votes': i } },
+        { useFindAndModify: false, new: true },
+        (err, doc) => {
+          console.log(doc.choices[cIndex].votes);
+          console.log(doc);
+          polls.emit('pollUpdate', {
+            doc: doc
+          });
+        }
+      );
+    }
   }
 
-  if (message[0] === '!deleteall') {
+  if (parsedM[0] === '!devareall') {
     if (admins.includes(userstate.username)) {
-      await Poll.deleteMany({}).then((err, doc) => {
+      await Poll.devareMany({}).then((err, doc) => {
         if (err) {
           console.error(err);
           errTxt(err);
           return;
         }
-        botclient.say(twitchChan[0], `Polls deleted!`);
+        botclient.say(twitchChan[0], `Polls devared!`);
       });
     }
   }
 
-  if (message[0] === '!p') {
+  if (parsedM[0] === '!p') {
     if (admins.includes(userstate.username)) {
       var poll = await Poll.findOne({});
       console.log(poll);
     }
   }
 
-  if (message[0] === '!goodnews' || message[0] === '!goodn') {
-    let tUser = userstate['user-id'];
-    let twitchCreds = await TwitchCreds.findOne({});
-    let goodnews = message.slice(1).join(' ');
+  if (parsedM[0] === '!goodnews' || parsedM[0] === '!goodn') {
+    var tUser = userstate['user-id'];
+    var twitchCreds = await TwitchCreds.findOne({});
+    var goodnews = parsedM.slice(1).join(' ');
     console.log(tUser);
     console.log(twitchCreds);
-    let url = `https://api.twitch.tv/helix/users?id=${tUser}`;
-    let params = {};
-    let options = {
+    var url = `https://api.twitch.tv/helix/users?id=${tUser}`;
+    var params = {};
+    var options = {
       headers: {
         'Client-ID': `${process.env.TWITCH_CLIENTID}`,
         Authorization: `Bearer ${twitchCreds.accessToken}`
@@ -621,7 +637,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     };
     async function handleData(data) {
       console.log(data.data[0].profile_image_url);
-      let newGood = new Good({
+      var newGood = new Good({
         user: userstate.username,
         userPic: data.data[0].profile_image_url,
         news: goodnews
@@ -636,10 +652,10 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     fetchJson.get(url, params, options).then(handleData);
   }
 
-  if (message[0] === '!science' && admins.includes(userstate.username)) {
-    let handleData = data => {
-      let diff = capitalize(data.results[0].difficulty);
-      let q = data.results[0].question;
+  if (parsedM[0] === '!science' && admins.includes(userstate.username)) {
+    var handleData = data => {
+      var diff = capitalize(data.results[0].difficulty);
+      var q = data.results[0].question;
       answer = data.results[0].correct_answer;
       botclient.say(
         twitchChan[0],
@@ -654,26 +670,26 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       .then(handleData);
   }
 
-  if (message[0] === '!answer' && admins.includes(userstate.username)) {
+  if (parsedM[0] === '!answer' && admins.includes(userstate.username)) {
     botclient.say(twitchChan[0], he.decode(`${answer}`));
     // console.log(answer)
   }
 
   // Time Command
-  if (message[0] === '!time') {
-    let day = moment.tz(moment(), 'Pacific/Auckland').format('dddd');
-    let dNum = moment.tz(moment(), 'Pacific/Auckland').format('Do');
-    let month = moment.tz(moment(), 'Pacific/Auckland').format('MMMM');
-    let time = moment.tz(moment(), 'Pacific/Auckland').format('hh:mmA');
+  if (parsedM[0] === '!time') {
+    var day = moment.tz(moment(), 'Pacific/Auckland').format('dddd');
+    var dNum = moment.tz(moment(), 'Pacific/Auckland').format('Do');
+    var month = moment.tz(moment(), 'Pacific/Auckland').format('MMMM');
+    var time = moment.tz(moment(), 'Pacific/Auckland').format('hh:mmA');
     botclient.say(
       twitchChan[0],
       `In New Zealand it is currently ${day} the ${dNum} of ${month} and the time is ${time}`
     );
   }
 
-  if (message[0] === '!wolfram') {
-    let query = he.encode(`${message.slice(1).join(' ')}`);
-    let handleData = data => {
+  if (parsedM[0] === '!wolfram') {
+    var query = he.encode(`${parsedM.slice(1).join(' ')}`);
+    var handleData = data => {
       console.log(data);
       botclient.say(twitchChan[0], he.decode(`${data.bodyText}`));
     };
@@ -684,9 +700,9 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       .then(handleData);
   }
 
-  if (message[0] === '!wolframi') {
-    let query = he.encode(`${message.slice(1).join(' ')}`);
-    let handleData = data => {
+  if (parsedM[0] === '!wolframi') {
+    var query = he.encode(`${parsedM.slice(1).join(' ')}`);
+    var handleData = data => {
       console.log(data);
       botclient.say(twitchChan[0], he.decode(`${data.bodyText}`));
     };
@@ -697,9 +713,9 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       .then(handleData);
   }
 
-  if (message[0] === '!horoscope') {
-    let sign = message[1];
-    let handleData = data => {
+  if (parsedM[0] === '!horoscope') {
+    var sign = parsedM[1];
+    var handleData = data => {
       console.log(data);
       if (data.sunsign === 'undefined') {
         botclient.say(
@@ -715,7 +731,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       .then(handleData);
   }
 
-  if (message[0] === '!reply' && admins.includes(userstate.username)) {
+  if (parsedM[0] === '!reply' && admins.includes(userstate.username)) {
     if (chatRespond === true) {
       botclient.say(twitchChan[0], he.decode(`RESPONSES TURNED OFF`));
       chatRespond = !chatRespond;
@@ -727,7 +743,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     }
   }
 
-  if (message[0] === '!test' && admins.includes(userstate.username)) {
+  if (parsedM[0] === '!test' && admins.includes(userstate.username)) {
     botclient.say(twitchChan[0], he.decode(`THIS IS A TEST`));
   }
 });
@@ -742,7 +758,7 @@ var answer = '';
 // }, 5000);
 
 // function randomNameGen() {
-//   let randomUser = makeid(10)
+//   var randomUser = makeid(10)
 //   try {
 //     var newChatUser = new ChatUser({
 //       username: randomUser,
@@ -804,12 +820,12 @@ hellos.on('connection', socket => {
 botclient.on('join', async (channel, username, self) => {
   if (self) return;
   try {
-    let existingUser = await ChatUser.find({ username: username })
-    if (existingUser) {
+    var existingUser = await ChatUser.find({ username: username })
+    if (existingUser.length > 0) {
       console.log(`${username} has already connected to the chat`)
       return
     } else {
-      let newChatUser = new ChatUser({
+      var newChatUser = new ChatUser({
         username: username,
         channel: channel,
         expireAt: moment()
