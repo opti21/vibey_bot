@@ -125,7 +125,13 @@ $(document).ready(function () {
     e.preventDefault();
     var form = $(this);
     var action = form.attr("action");
-    var data = form.serializeArray();
+    var formData = form.serializeArray();
+    var multipleVotes = $('#multipleVotes').prop('checked')
+    console.log('MV OPTION ' + multipleVotes)
+    var data = {
+      "multipleVotes": multipleVotes,
+      "formData": formData
+    }
     console.log(data)
     $.ajax({
       url: action,
@@ -151,8 +157,8 @@ $(document).ready(function () {
 
         pollElem.innerHTML = `
           <div class="currText card-header">
-				  	<i id="${poll._id}status" class="spinner fas fa-circle-notch" style="color:limegreen"></i> ${poll.polltext}
-				  </div>
+    		  	<i id="${poll._id}status" class="spinner fas fa-circle-notch" style="color:limegreen"></i> ${poll.polltext}
+    		  </div>
         `
         poll.choices.forEach(choice => {
           console.log(choice)
@@ -187,7 +193,11 @@ $(document).ready(function () {
             title: 'A Poll is already Running'
           })
         } else {
-          console.error
+          console.error('Error: ' + jqXhr.status + errorThrown)
+          swal.fire({
+            type: 'error',
+            title: `Error: ${jqXhr.status} ${errorThrown}`
+          })
         }
       }
     });
@@ -233,7 +243,9 @@ $(document).ready(function () {
 $("#songpoll").click(function () {
   console.log('test')
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', `/api/createSongpoll`);
+  let multipleVotes = $('#multipleVotes').prop('checked')
+  console.log('MULTIPLE VOTES: ' + multipleVotes)
+  xhr.open('GET', `/api/createSongpoll?multiplevotes=${multipleVotes}`);
   xhr.onload = function () {
     if (xhr.status === 200) {
       console.log(JSON.parse(xhr.response))
@@ -355,7 +367,7 @@ $(document).ready(function () {
   });
 
   $(rmvBtn).click(function () {
-    if (x > 2) {
+    if (fields > 2) {
       $(wrapper).children().last().remove();; //Remove field html
       fields--; //Decrement field counter
       choice--;

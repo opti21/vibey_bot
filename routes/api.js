@@ -16,7 +16,7 @@ function loggedIn(req, res, next) {
 
 router.get('/polls', loggedIn, async (req, res) => {
 	try {
-		var polls = await Poll.find();
+		let polls = await Poll.find();
 		res.send(polls).status(200);
 	} catch (err) {
 		res.send('error').send(500)
@@ -27,17 +27,18 @@ router.get('/polls', loggedIn, async (req, res) => {
 
 router.post('/polls/newpoll', loggedIn, async (req, res) => {
 	try {
-		var user = await User.findOne({ twitch_id: req.user.id });
-		var poll = await Poll.find({ active: true });
+		let user = await User.findOne({ twitch_id: req.user.id });
+		let poll = await Poll.find({ active: true });
 		if (poll.length === 0) {
-			var pollText = req.body[0].value;
-			var choices = req.body.slice(1);
-			var choiceArray = [];
-			var votes = [];
+			let pollText = req.body['formData'][0].value;
+			let choices = req.body['formData'].slice(1);
+			let multipleVotes = req.body['multipleVotes'];
+			let choiceArray = [];
+			let votes = [];
 			choices.forEach(choiceAppend);
 
 			function choiceAppend(element, index, array) {
-				var choice = {
+				let choice = {
 					id: makeid(10),
 					text: choices[index].value,
 					votes: 0
@@ -47,16 +48,17 @@ router.post('/polls/newpoll', loggedIn, async (req, res) => {
 
 			console.log(choiceArray);
 
-			var newPoll = new Poll({
+			let newPoll = new Poll({
 				active: true,
 				polltext: pollText,
 				choices: choiceArray,
-				votes: votes
+				votes: votes,
+				allow_multiple_votes: multipleVotes
 			});
 			await newPoll.save().then(doc => {
 				res.send(doc);
-				var num = 1;
-				var choices = [];
+				let num = 1;
+				let choices = [];
 				botclient.say(
 					twitchchan[0],
 					'A new poll has started! Vote with !c i.e.(!c 2)'
@@ -81,6 +83,7 @@ router.post('/polls/newpoll', loggedIn, async (req, res) => {
 			res.status(418).send('Poll is already running');
 		}
 	} catch (err) {
+		res.status(500).send('Error creating poll document')
 		console.error(err);
 		errTxt(err);
 	}
@@ -89,17 +92,18 @@ router.post('/polls/newpoll', loggedIn, async (req, res) => {
 // Song Poll
 router.get('/createSongpoll', loggedIn, async (req, res) => {
 	try {
-		var poll = await Poll.find({ active: true });
-		var mix = await mixReqs.find({});
+		let poll = await Poll.find({ active: true });
+		let mix = await mixReqs.find({});
 		if (poll.length === 0) {
-			var pollText = 'Which song?';
-			var choices = mix;
-			var choiceArray = [];
-			var votes = [];
+			let pollText = 'Which song?';
+			let choices = mix;
+			let choiceArray = [];
+			let votes = [];
+			let multipleVotes = req.query.multiplevotes
 			choices.forEach(choiceAppend);
 
 			function choiceAppend(element, index, array) {
-				var choice = {
+				let choice = {
 					id: makeid(10),
 					text: choices[index].track[0].name,
 					votes: 0
@@ -109,16 +113,17 @@ router.get('/createSongpoll', loggedIn, async (req, res) => {
 
 			console.log(choiceArray);
 
-			var newPoll = new Poll({
+			let newPoll = new Poll({
 				active: true,
 				polltext: pollText,
 				choices: choiceArray,
-				votes: votes
+				votes: votes,
+				allow_multiple_votes: multipleVotes
 			});
 			await newPoll.save().then(doc => {
 				res.send(doc);
-				var num = 1;
-				var choices = [];
+				let num = 1;
+				let choices = [];
 				botclient.say(
 					twitchchan[0],
 					'A new poll has started! Vote with !c i.e.(!c 2)'
@@ -150,9 +155,9 @@ router.get('/createSongpoll', loggedIn, async (req, res) => {
 
 router.get('/polls/close/:id', loggedIn, async (req, res) => {
 	try {
-		var user = await User.findOne({ twitch_id: req.user.id });
-		var poll = await Poll.findOne({ _id: req.params.id });
-		var choiceArr = [];
+		let user = await User.findOne({ twitch_id: req.user.id });
+		let poll = await Poll.findOne({ _id: req.params.id });
+		let choiceArr = [];
 		poll.choices.forEach(choice => {
 			choiceArr.push(choice.votes);
 		});
@@ -199,11 +204,11 @@ router.get('/polls/close/:id', loggedIn, async (req, res) => {
 module.exports = router
 
 function makeid(length) {
-	var result = '';
-	var characters =
+	let result = '';
+	let characters =
 		'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-	var charactersLength = characters.length;
-	for (var i = 0; i < length; i++) {
+	let charactersLength = characters.length;
+	for (let i = 0; i < length; i++) {
 		result += characters.charAt(Math.floor(Math.random() * charactersLength));
 	}
 	return result;
