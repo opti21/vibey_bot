@@ -61,12 +61,12 @@ router.post('/polls/newpoll', loggedIn, async (req, res) => {
 				let choices = [];
 				botclient.say(
 					twitchchan[0],
-					'A new poll has started! Vote with !c i.e.(!c 2)'
+					'A new poll has started! Vote with the # of the choice you would like to win!'
 				);
 				botclient.say(twitchchan[0], `The poll question is: ${pollText}`);
 
 				doc.choices.forEach(choice => {
-					botclient.say(twitchchan[0], `!c ${num} = ${choice.text}`);
+					botclient.say(twitchchan[0], `${num} = ${choice.text}`);
 					num++;
 					let choiceArr = [`${choice.text}`, choice.votes];
 					choices.push(choiceArr);
