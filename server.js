@@ -538,21 +538,21 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       .catch(console.error);
   }
   // Choice selection for polls
-  if (parsedM[0] === '!c') {
+  let numRegex = /^[0-9]+$/;
+  // Check to see if message is only numbers
+  if (numRegex.test(message) == true) {
     var poll = await Poll.findOne({ active: true });
     if (!poll) {
-      botclient.say(channel, `Unfortunately there is no poll right now :(`);
+      // if no poll say nothing because bot will spam
       return;
     }
-    if (parsedM[1] === undefined) {
-      botclient.say(channel, `No choice selected !vote to see how to vote`);
-      return;
-    }
-    // Check if multiple votes are allowed
-    // and if the user has already voted
+    // Check if the user has already voted
     if (poll.voters.includes(userstate.username)) {
+      // Check if multiple votes are allowed
       if (poll.allow_multiple_votes == true) {
-        var choice = parseInt(parsedM[1], 10);
+        var numIndex = message.search(/\d/)
+        var int = message[numIndex]
+        var choice = parseInt(int, 10);
         var cIndex = choice - 1;
         var cID = poll.choices[cIndex].id;
         var currV = poll.choices[cIndex].votes;
@@ -564,8 +564,8 @@ botclient.on('chat', async (channel, userstate, message, self) => {
           { $addToSet: { voters: tUser }, $set: { 'choices.$.votes': i } },
           { useFindAndModify: false, new: true },
           (err, doc) => {
-            console.log(doc.choices[cIndex].votes);
-            console.log(doc);
+            // console.log(doc.choices[cIndex].votes);
+            // console.log(doc);
             polls.emit('pollUpdate', {
               doc: doc
             });
@@ -579,20 +579,21 @@ botclient.on('chat', async (channel, userstate, message, self) => {
         return
       }
     } else {
-      var choice = parseInt(parsedM[1], 10);
+      var numIndex = message.search(/\d/)
+      var int = message[numIndex]
+      var choice = parseInt(int, 10);
       var cIndex = choice - 1;
       var cID = poll.choices[cIndex].id;
       var currV = poll.choices[cIndex].votes;
       var i = currV + 1;
       var tUser = userstate.username;
-
       await Poll.findOneAndUpdate(
         { _id: poll.id, 'choices.id': cID },
         { $addToSet: { voters: tUser }, $set: { 'choices.$.votes': i } },
         { useFindAndModify: false, new: true },
         (err, doc) => {
-          console.log(doc.choices[cIndex].votes);
-          console.log(doc);
+          // console.log(doc.choices[cIndex].votes);
+          // console.log(doc);
           polls.emit('pollUpdate', {
             doc: doc
           });
@@ -601,15 +602,15 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     }
   }
 
-  if (parsedM[0] === '!devareall') {
+  if (parsedM[0] === '!deleteall') {
     if (admins.includes(userstate.username)) {
-      await Poll.devareMany({}).then((err, doc) => {
+      await Poll.deleteMany({}).then((err, doc) => {
         if (err) {
           console.error(err);
           errTxt(err);
           return;
         }
-        botclient.say(twitchChan[0], `Polls devared!`);
+        botclient.say(twitchChan[0], `Polls deleted!`);
       });
     }
   }
