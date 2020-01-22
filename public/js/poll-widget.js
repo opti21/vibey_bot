@@ -51,7 +51,7 @@ $(document).ready(function () {
           var cI = i + 1
           var choiceElem = document.createElement('li')
           choiceElem.setAttribute('class', 'list-group-item bg-info text-white')
-          choiceElem.innerHTML = `<div class="choiceColor mr-2" style="background-color: ${pollColors[i]};"></div> <h4>!c ${cI} = ${choice.text}</h4>`
+          choiceElem.innerHTML = `<div class="choiceColor mr-2" style="background-color: ${pollColors[i]};"></div> <h4>${cI} = ${choice.text}</h4>`
           choices.append(choiceElem);
 
           console.log(choice)
@@ -96,7 +96,7 @@ socket.on('pollOpen', function (data) {
     var cI = i + 1
     var choiceElem = document.createElement('li')
     choiceElem.setAttribute('class', 'list-group-item bg-info text-white')
-    choiceElem.innerHTML = `<div class="choiceColor mr-2" style="background-color: ${pollColors[i]};"></div> <h4>!c ${cI} = ${choice.text}</h4>`
+    choiceElem.innerHTML = `<div class="choiceColor mr-2" style="background-color: ${pollColors[i]};"></div> <h4>${cI} = ${choice.text}</h4>`
     choices.append(choiceElem);
 
     var choiceArr = [`${choice.text}`, choice.votes];
