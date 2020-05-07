@@ -33,6 +33,7 @@
     "passport": "^0.4.1",
     "passport-oauth": "^1.0.0",
     "passport-twitch-new": "0.0.1",
+    "passport-twitch.js": "0.0.9",
     "project-version": "^1.2.0",
     "pusher": "^2.2.2",
     "simple-youtube-api": "^5.2.1",
@@ -49,8 +50,9 @@
     "dotenv": "^8.2.0",
     "gulp": "^4.0.2",
     "install-peers": "^1.0.3",
-    "mocha": "^6.2.2",
+    "mocha": "^7.1.2",
     "morgan": "^1.9.1",
+    "nodemon": "^2.0.3",
     "parcel-bundler": "^1.12.4"
   }
 }
