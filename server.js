@@ -286,16 +286,6 @@ global.botclient = botclient;
 botclient.on("connected", (address, port) => {
   // botclient.say(twitchChan[0], `Hey Chat! Send me those vibes`)
   console.log("connected to twitch chat client");
-  if (process.env.NODE_ENV === "development") {
-    var cmd = `osascript -e 'display notification "${address} on port ${port}" with title "Connected to Twitch!" sound name "Submarine"'`;
-
-    exec(cmd, function (error, stdout, stderr) {
-      // command output is in stdout
-      if (error) {
-        console.error(error);
-      }
-    });
-  }
 });
 
 // Regex
