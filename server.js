@@ -340,7 +340,7 @@ function refreshTokenThenAdd(user, uri) {
           {
             spotify: {
               access_token: code_res.data.access_token,
-              refres_token: user.spotify.refres_token,
+              refresh_token: user.spotify.refres_token,
               token_type: code_res.data.token_type,
               expires_in: moment()
                 .utc()
@@ -380,7 +380,10 @@ function checkPlaylist(uri, channel, user_token) {
       botclient.say(config.comfyChan, "Song is already on the playlist");
       return;
     }
-  });
+  })
+    .catch((e) => {
+      console.error(e)
+    });
 }
 
 function addSongtoPlaylist(uri, channel, user_token) {
@@ -398,26 +401,23 @@ function addSongtoPlaylist(uri, channel, user_token) {
     },
   })
     .then((res) => {
-      // console.log(res.data);
+      console.log(res.data);
       botclient.say(channel, "Song added to playlist successfully");
       return;
     })
-    .catch((e) => {
-      console.error(e);
-      return;
-    });
 }
 
 // ComfyJs Client to catch channel point redemptions
 ComfyJS.onChat = async (user, command, message, flags, extra) => {
-  console.log(extra);
+  // console.log(extra)
   if (extra.customRewardId === "609d1f92-0dde-4057-9902-30f5f78237e6") {
     // Check to see if URL matches for spotify
+    let song = command
     console.log("I see the redemption");
 
-    if (spRegex.test(message)) {
-      var spID = spotifyUri.parse(message);
-      var spURI = spotifyUri.formatURI(message);
+    if (spRegex.test(song)) {
+      var spID = spotifyUri.parse(song);
+      var spURI = spotifyUri.formatURI(song);
       let user = await User.findOne({ username: extra.channel });
       let user_token = user.spotify.access_token;
       let tokenExpire = user.spotify.expires_in;

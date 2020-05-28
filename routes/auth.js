@@ -28,7 +28,7 @@ router.get(
 
 router.get("/spotify", (req, res) => {
   res.redirect(
-    `https://accounts.spotify.com/authorize?client_id=${spotify_id}&response_type=code&redirect_uri=${encoded_url}&scope=playlist-read-private%20playlist-modify-public`
+    `https://accounts.spotify.com/authorize?client_id=${spotify_id}&response_type=code&redirect_uri=${encoded_url}&scope=playlist-read-private%20playlist-modify-public%20playlist-modify-private`
   );
 });
 
