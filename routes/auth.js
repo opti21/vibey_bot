@@ -52,7 +52,6 @@ router.get("/spotify/callback", (req, res) => {
 
     .then((code_res) => {
       console.log(code_res.data);
-      res.redirect("/requests");
       try {
         let spData = {
           access_token: code_res.data.access_token,
@@ -67,6 +66,7 @@ router.get("/spotify/callback", (req, res) => {
           { new: true }
         ).then((update_res) => {
           console.log(update_res);
+          res.redirect("/requests");
         });
       } catch (e) {
         console.error(e);
