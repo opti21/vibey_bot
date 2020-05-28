@@ -29,6 +29,10 @@ const exec = require("child_process").exec;
 const he = require("he");
 const sgMail = require("@sendgrid/mail");
 const fs = require("fs");
+const axios = require("axios");
+const qs = require("querystring");
+const ComfyJS = require("comfy.js");
+ComfyJS.Init(config.comfyChan);
 
 // SendGrid Emails
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -293,10 +297,154 @@ const URLRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()
 const spRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:track\/|\?uri=spotify:track:)((\w|-){22})/;
 const ytRegex = /(?:https?:\/\/)?(?:(?:(?:www\.?)?youtube\.com(?:\/(?:(?:watch\?.*?(v=[^&\s]+).*)|(?:v(\/.*))|(channel\/.+)|(?:user\/(.+))|(?:results\?(search_query=.+))))?)|(?:youtu\.be(\/.*)?))/;
 
+function findURI(object, property, value) {
+  return (
+    object[property] === value ||
+    Object.keys(object).some(function (k) {
+      return (
+        object[k] &&
+        typeof object[k] === "object" &&
+        findURI(object[k], property, value)
+      );
+    })
+  );
+}
+
+function refreshTokenThenAdd(user, uri) {
+  let cb_url = process.env.SPOTIFY_CALLBACK_URL;
+  console.log("REFRESH TOKEN");
+  console.log(user.spotify.refresh_token);
+
+  let body = {
+    client_id: process.env.SPOTIFY_ID,
+    client_secret: process.env.SPOTIFY_SECRET,
+    refresh_token: user.spotify.refresh_token,
+    grant_type: "refresh_token",
+    redirect_uri: cb_url,
+  };
+
+  let config = {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  };
+
+  axios
+    .post("https://accounts.spotify.com/api/token/", qs.stringify(body), config)
+
+    .then((code_res) => {
+      console.log(code_res.data);
+      try {
+        User.findOneAndUpdate(
+          { twitch_id: user.twitch_id },
+          {
+            spotify: {
+              access_token: code_res.data.access_token,
+              refres_token: user.spotify.refres_token,
+              token_type: code_res.data.token_type,
+              expires_in: moment()
+                .utc()
+                .add(code_res.data.expires_in, "seconds"),
+              scope: code_res.data.scope,
+            },
+          },
+          { new: true }
+        ).then((update_res) => {
+          console.log(update_res);
+          console.log("token refreshed");
+          checkPlaylist(uri, user.username, update_res.spotify.access_token);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    })
+    .catch((e) => {
+      console.error(e);
+    });
+}
+
+function checkPlaylist(uri, channel, user_token) {
+  axios({
+    method: "get",
+    url: `https://api.spotify.com/v1/playlists/${config.spotify_playlist}/tracks`,
+    headers: {
+      Authorization: "Bearer " + user_token,
+    },
+    params: {
+      fields: "items(track(uri))",
+    },
+  }).then((res) => {
+    if (!findURI(res.data.items, "uri", uri)) {
+      addSongtoPlaylist(uri, channel, user_token);
+    } else {
+      botclient.say(config.comfyChan, "Song is already on the playlist");
+      return;
+    }
+  });
+}
+
+function addSongtoPlaylist(uri, channel, user_token) {
+  // Add song to playlist
+  axios({
+    method: "post",
+    url: `https://api.spotify.com/v1/playlists/${config.spotify_playlist}/tracks`,
+    data: {
+      uris: [uri],
+    },
+
+    headers: {
+      Authorization: "Bearer " + user_token,
+      Accept: "application/json",
+    },
+  })
+    .then((res) => {
+      // console.log(res.data);
+      botclient.say(channel, "Song added to playlist successfully");
+      return;
+    })
+    .catch((e) => {
+      console.error(e);
+      return;
+    });
+}
+
+// ComfyJs Client to catch channel point redemptions
+ComfyJS.onChat = async (user, command, message, flags, extra) => {
+  console.log(extra);
+  if (extra.customRewardId === "609d1f92-0dde-4057-9902-30f5f78237e6") {
+    // Check to see if URL matches for spotify
+    console.log("I see the redemption");
+
+    if (spRegex.test(message)) {
+      var spID = spotifyUri.parse(message);
+      var spURI = spotifyUri.formatURI(message);
+      let user = await User.findOne({ username: extra.channel });
+      let user_token = user.spotify.access_token;
+      let tokenExpire = user.spotify.expires_in;
+
+      console.log(tokenExpire);
+      console.log(moment(moment().utc()).isBefore(tokenExpire));
+
+      // Check to see if token is valid
+      if (moment(moment().utc()).isBefore(tokenExpire)) {
+        checkPlaylist(spURI, user.username, user_token);
+      } else {
+        refreshTokenThenAdd(user, spURI);
+      }
+    } else {
+      botclient.say(config.comfyChan, "Not a valid spotify URL");
+    }
+
+    // Search for song on spotify
+
+    // Add song on playlist
+  }
+};
+
 // Song Requests
 botclient.on("chat", async (channel, userstate, message, self) => {
   if (self) return;
-  var parsedM = message.trim().split(" ");
+  var parsedM = message.toLowerCase().trim().split(" ");
   if (parsedM[0] === "!sr" || parsedM[0] === "!songrequest") {
     if (URLRegex.test(parsedM[1])) {
       // Spotify link
