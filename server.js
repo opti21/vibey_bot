@@ -373,16 +373,17 @@ function checkPlaylist(uri, channel, user_token) {
     params: {
       fields: "items(track(uri))",
     },
-  }).then((res) => {
-    if (!findURI(res.data.items, "uri", uri)) {
-      addSongtoPlaylist(uri, channel, user_token);
-    } else {
-      botclient.say(config.comfyChan, "Song is already on the playlist");
-      return;
-    }
   })
+    .then((res) => {
+      if (!findURI(res.data.items, "uri", uri)) {
+        addSongtoPlaylist(uri, channel, user_token);
+      } else {
+        botclient.say(config.comfyChan, "Song is already on the playlist");
+        return;
+      }
+    })
     .catch((e) => {
-      console.error(e)
+      console.error(e);
     });
 }
 
@@ -399,12 +400,17 @@ function addSongtoPlaylist(uri, channel, user_token) {
       Authorization: "Bearer " + user_token,
       Accept: "application/json",
     },
-  })
-    .then((res) => {
-      console.log(res.data);
-      botclient.say(channel, "Song added to playlist successfully");
-      return;
-    })
+  }).then((res) => {
+    console.log(res.data);
+    spotify
+      .request(`https://api.spotify.com/v1/tracks/${uri}`)
+      .then(function (data) {
+        botclient.say(
+          channel,
+          `${data.name} by ${data.artists[0].name} added to playlist successfully`
+        );
+      });
+  });
 }
 
 // ComfyJs Client to catch channel point redemptions
@@ -412,7 +418,7 @@ ComfyJS.onChat = async (user, command, message, flags, extra) => {
   // console.log(extra)
   if (extra.customRewardId === "609d1f92-0dde-4057-9902-30f5f78237e6") {
     // Check to see if URL matches for spotify
-    let song = command
+    let song = command;
     console.log("I see the redemption");
 
     if (spRegex.test(song)) {
@@ -432,7 +438,10 @@ ComfyJS.onChat = async (user, command, message, flags, extra) => {
         refreshTokenThenAdd(user, spURI);
       }
     } else {
-      botclient.say(config.comfyChan, "Not a valid spotify URL");
+      botclient.say(
+        config.comfyChan,
+        "Issue adding song @opti_21 @veryhandsomebilly"
+      );
     }
 
     // Search for song on spotify
