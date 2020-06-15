@@ -403,7 +403,7 @@ function addSongtoPlaylist(uri, channel, user_token) {
   }).then((res) => {
     console.log(res.data);
     spotify
-      .request(`https://api.spotify.com/v1/tracks/${uri}`)
+      .request(`https://api.spotify.com/v1/tracks/${uri.slice(12)}`)
       .then(function (data) {
         botclient.say(
           channel,
