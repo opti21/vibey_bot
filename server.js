@@ -340,7 +340,7 @@ function refreshTokenThenAdd(user, uri) {
           {
             spotify: {
               access_token: code_res.data.access_token,
-              refresh_token: user.spotify.refres_token,
+              refresh_token: user.spotify.refresh_token,
               token_type: code_res.data.token_type,
               expires_in: moment()
                 .utc()
