@@ -8,7 +8,7 @@ const Toast = Swal.mixin({
 // let globalChannel = document
 //   .getElementById("pageInfo")
 //   .getAttribute("data-channel");
-let globalChannel = "opti_21";
+let globalChannel = "veryhandsomebilly";
 
 // $(document).ready(function() {
 //   $("#sr-table").DataTable({
