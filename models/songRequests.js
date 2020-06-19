@@ -1,36 +1,34 @@
 const mongoose = require("mongoose");
 
 const srSchema = new mongoose.Schema({
-  track: [
-    {
-      name: String,
-      artist: String,
-      link: String,
-      uri: String
-    }
-  ],
+  track: {
+    name: String,
+    artist: String,
+    link: String,
+    uri: String,
+  },
   requestedBy: {
-    type: String
+    type: String,
   },
   timeOfReq: {
-    type: String
+    type: String,
   },
   source: {
-    type: String
+    type: String,
   },
   fulfilled: {
     type: Boolean,
-    default: false
+    default: false,
   },
   dateFulfilled: {
-    type: String
+    type: String,
   },
   lyrics: {
-    type: String
+    type: String,
   },
   channel: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 module.exports = mongoose.model("SongRequests", srSchema);

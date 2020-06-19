@@ -1,29 +1,22 @@
 body {
-	color: white !important;
-	background-color: #2d3436 !important;
-	
+  color: white !important;
+  font-family: 'Montserrat', sans-serif, "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
 }
-#profilePic {
-  width: 40px;
-  height: 40px;
+#sidebar-wrapper {
+  background-color: #372d47 !important;
 }
-
-li{
-  position:relative;
-  background-color:blue;
-  width:100px;
-  list-style:none;
-  padding:10px;
-  margin:2px;
+.nav-btn {
+  background-color: #372d47 !important;
+}
+a.nav-btn:hover {
+  background-color: #745f96 !important;
+}
+.bg-dark {
+  background-color: #200033 !important;
 }
 
-ul{
-  margin:0px;
-  padding:0px;
-}
-
-span {
-  display:inline-block;
+a.bg-dark:hover {
+  background-color: #745f96 !important;
 }
 
 /*!
@@ -31,14 +24,14 @@ span {
  * Copyright 2013-2019 Start Bootstrap
  * Licensed under MIT (https://github.com/BlackrockDigital/startbootstrap-simple-sidebar/blob/master/LICENSE)
  */
- #sidebar-wrapper {
+#sidebar-wrapper {
   position: relative;
   min-height: 100vh;
   margin-left: -15rem;
-  -webkit-transition: margin .25s ease-out;
-  -moz-transition: margin .25s ease-out;
-  -o-transition: margin .25s ease-out;
-  transition: margin .25s ease-out;
+  -webkit-transition: margin 0.25s ease-out;
+  -moz-transition: margin 0.25s ease-out;
+  -o-transition: margin 0.25s ease-out;
+  transition: margin 0.25s ease-out;
 }
 
 #version {

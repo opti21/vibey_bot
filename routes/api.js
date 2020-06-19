@@ -1,10 +1,13 @@
 const router = require("express").Router();
+const User = require("../models/users");
+const SongRequest = require("../models/songRequests");
 const mixReqs = require("../models/mixRequests");
 const Poll = require("../models/polls");
-const User = require("../models/users");
 const config = require("../config/config");
 const twitchchan = config.twitchChan;
 const pollsIO = io.of("/polls-namescape");
+const moment = require("moment-timezone");
+const rqs = io.of("/req-namescape");
 
 function loggedIn(req, res, next) {
   if (!req.user) {
@@ -14,6 +17,115 @@ function loggedIn(req, res, next) {
   }
 }
 
+router.get("/requests/:channel", loggedIn, async (req, res) => {
+  console.log(req.params.channel);
+  let requests = await SongRequest.find({});
+  console.log(requests);
+  res.status(200).send(requests);
+});
+
+// Mixes
+router.get("/mixes/:channel", loggedIn, async (req, res) => {
+  let mixes = await mixReqs.find({ channel: req.params.channel });
+  res.status(200).send(mixes);
+});
+
+// Add request to mix
+router.post("/mixes/:channel/add/:id", loggedIn, async (req, res) => {
+  await SongRequest.findById(req.params.id, (err, request) => {
+    if (err) {
+      return;
+    } else {
+      request.fulfilled = true;
+      request.dateFulfilled = moment().utc();
+      request.save().then(console.log("Request updated"));
+      var mixAdd = new mixReqs({
+        track: {
+          name: request.track.name,
+          artist: request.track.artist,
+          link: request.track.link,
+          uri: request.track.uri,
+        },
+        requestedBy: request.requestedBy,
+        timeOfReq: request.timeOfReq,
+        source: request.source,
+        channel: request.channel,
+      });
+      mixAdd.save().then((doc) => {
+        try {
+          res.status(200).send("Added to Mix");
+          rqs.emit("mix-add", {
+            id: `${doc.id}`,
+            reqBy: `${doc.requestedBy}`,
+            track: `${doc.track.name}`,
+            artist: `${doc.track.artist}`,
+            uri: `${doc.track.uri}`,
+            link: `${doc.track.link}`,
+            source: `${doc.source}`,
+            channel: `${doc.channel}`,
+          });
+        } catch (err) {
+          console.error(err);
+          res.status(500).send("Error Adding song to mix");
+        }
+      });
+    }
+  });
+});
+
+// Delete Request
+router.delete("/requests/:channel/delete/:id", loggedIn, (req, res) => {
+  SongRequest.findByIdAndDelete(req.params.id, (err, mixRes) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Error deleting request");
+    } else {
+      console.log("Request deleted");
+      res.status(200).send("Request Delted successfully");
+    }
+  });
+});
+
+// Delete Mix request
+router.delete("/mixes/:channel/delete/:id", loggedIn, (req, res) => {
+  mixReqs.findByIdAndDelete(req.params.id, (err, mixRes) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Error deleting request");
+    } else {
+      console.log("Request delted");
+      res.status(200).send("Request Delted successfully");
+    }
+  });
+});
+
+// Clear Request Queue
+router.delete("/requests/:channel/clearqueue", (req, res) => {
+  SongRequest.deleteMany({ channel: req.params.channel }, (err, response) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Error Clearing queue");
+    } else {
+      console.log("Queue cleared");
+      res.status(200).send("Queue cleared");
+    }
+  });
+});
+
+// Clear Mix Queue
+router.delete("/mixes/:channel/clear", (req, res) => {
+  SongRequest.deleteMany({ channel: req.params.channel }, (err, response) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Error Clearing queue");
+    } else {
+      console.log("Queue cleared");
+      res.status(200).send("Queue cleared");
+    }
+  });
+});
+
+// Polls
 router.get("/polls", loggedIn, async (req, res) => {
   try {
     let polls = await Poll.find();
@@ -103,7 +215,7 @@ router.get("/createSongpoll", loggedIn, async (req, res) => {
       function choiceAppend(element, index, array) {
         let choice = {
           id: makeid(10),
-          text: choices[index].track[0].name,
+          text: choices[index].track.name,
           votes: 0,
         };
         choiceArray.push(choice);

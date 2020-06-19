@@ -1,18 +1,51 @@
-<div class="bg-dark" id="sidebar-wrapper">
-	<div class="sidebar-heading">Vibey Menu</div>
-	<div class="list-group list-group-flush">
-		<a id="requests-nav" href="/requests" class="list-group-item list-group-item-action bg-dark text-white"><i
-				class="fas fa-music mr-2"></i>Requests<span class="sr-only">(current)</span></a>
-		<a id="poll-nav" href="/poll" class="list-group-item list-group-item-action bg-dark text-white"> <i
-				class="fas fa-poll mr-2"></i>Poll</a>
-		<a id="hi-nav" href="/hi" class="list-group-item list-group-item-action bg-dark text-white"> <i
-				class="fas fa-smile mr-2"></i>Say Hi</a>
-		<a id="settings-nav" href="#" class="list-group-item list-group-item-action bg-dark text-muted"> <i
-				class="fas fa-cogs mr-1"></i>Settings (soon)</a>
-	</div>
-	<div id="version">
-		<p class="text-muted ml-3 mt-3">v<%= version %></p>
-		<p class="text-muted text-center ml-3 mt-3">Made with ❤️ by opti_21</p>
-		<a href="/logout"><button class="ml-3 mb-3 btn btn-sm btn-danger">Logout</button></a>
-	</div>
+<div class="bg-dark border-secondary" id="sidebar-wrapper">
+  <div
+    style="
+      background: url(/img/vb-header.svg) no-repeat;
+      width: 240px;
+      height: 200px;
+    "
+    class="sidebar-heading"
+  ></div>
+  <div class="ml-3 mb-3" id="loggedInUser">
+    <img
+      style="width: 40px; height: 40px;"
+      class="rounded-circle mr-2"
+      id="profilePic"
+      src="<%= loggedInUserPic %>"
+    /><%= loggedInUser %>
+  </div>
+  <div class="list-group list-group-flush">
+    <a
+      id="requests-nav"
+      href="/requests"
+      class="list-group-item list-group-item-action nav-btn text-white"
+      ><i class="fas fa-music mr-2"></i>Requests<span class="sr-only"></span
+    ></a>
+    <!-- <a
+      id="poll-nav"
+      href="/poll"
+      class="list-group-item list-group-item-action nav-btn text-white"
+    >
+      <i class="fas fa-poll mr-2"></i>Poll</a
+    > -->
+    <!-- <a
+      id="settings-nav"
+      href="/settings"
+      class="list-group-item list-group-item-action nav-btn text-white"
+    >
+      <i class="fas fa-cogs mr-1"></i>Settings</a
+    > -->
+  </div>
+  <div id="version">
+    <div class="ml-3 mb-2 mt-3">
+      <a href="/logout"
+        ><button style="display: inline;" class="btn btn-sm btn-danger">
+          Logout
+        </button></a
+      >
+      <p style="display: inline;" class="text-muted ml-3">v<%= version %></p>
+    </div>
+    <p class="text-muted text-center ml-3">Made with ❤️ by opti_21</p>
+  </div>
 </div>

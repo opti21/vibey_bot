@@ -443,21 +443,20 @@ ComfyJS.onChat = async (user, command, message, flags, extra) => {
         "Issue adding song @opti_21 @veryhandsomebilly"
       );
     }
-
-    // Search for song on spotify
-
-    // Add song on playlist
   }
 };
 
 // Song Requests
 botclient.on("chat", async (channel, userstate, message, self) => {
   if (self) return;
-  var parsedM = message.toLowerCase().trim().split(" ");
-  if (parsedM[0] === "!sr" || parsedM[0] === "!songrequest") {
+  if (message[0] !== "!") return;
+  var parsedM = message.trim().split(" ");
+  let command = parsedM[0].toLowerCase();
+  if (command === "!sr" || command === "!songrequest") {
     if (URLRegex.test(parsedM[1])) {
       // Spotify link
       if (spRegex.test(parsedM[1])) {
+        console.log("spotify link");
         var spID = spotifyUri.parse(parsedM[1]);
         var spURI = spotifyUri.formatURI(parsedM[1]);
         spotify
@@ -473,6 +472,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
               requestedBy: userstate.username,
               timeOfReq: moment.utc().format(),
               source: "spotify",
+              channel: channel.slice(1),
             });
             newSpotSR
               .save()
@@ -480,17 +480,17 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                 if (chatRespond) {
                   botclient.say(
                     channel,
-                    `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist}`
+                    `@${doc.requestedBy} requested ${doc.track.name} by ${doc.track.artist}`
                   );
                 }
                 // Real time data push to front end
                 rqs.emit("sr-event", {
                   id: `${doc.id}`,
                   reqBy: `${doc.requestedBy}`,
-                  track: `${doc.track[0].name}`,
-                  artist: `${doc.track[0].artist}`,
-                  uri: `${doc.track[0].uri}`,
-                  link: `${doc.track[0].link}`,
+                  track: `${doc.track.name}`,
+                  artist: `${doc.track.artist}`,
+                  uri: `${doc.track.uri}`,
+                  link: `${doc.track.link}`,
                   source: `${doc.source}`,
                   timeOfReq: `${doc.timeOfReq}`,
                 });
@@ -505,12 +505,14 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       }
       // Youtube Link
       if (ytRegex.test(parsedM[1])) {
+        console.log("youtube link");
         youtube.getVideo(parsedM[1]).then((video) => {
           var newYTSR = new SongRequest({
             track: { name: video.title, link: parsedM[1] },
             requestedBy: userstate.username,
             timeOfReq: moment.utc().format(),
             source: "youtube",
+            channel: channel.slice(1),
           });
           newYTSR
             .save()
@@ -518,15 +520,15 @@ botclient.on("chat", async (channel, userstate, message, self) => {
               if (chatRespond) {
                 botclient.say(
                   channel,
-                  `@${doc.requestedBy} requested ${doc.track[0].name} ${doc.track[0].link}`
+                  `@${doc.requestedBy} requested ${doc.track.name} ${doc.track.link}`
                 );
               }
               // Real time data push to front end
               rqs.emit("sr-event", {
                 id: `${doc.id}`,
                 reqBy: `${doc.requestedBy}`,
-                track: `${doc.track[0].name}`,
-                link: `${doc.track[0].link}`,
+                track: `${doc.track.name}`,
+                link: `${doc.track.link}`,
                 source: `${doc.source}`,
                 timeOfReq: `${doc.timeOfReq}`,
               });
@@ -564,6 +566,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                     requestedBy: userstate.username,
                     timeOfReq: moment.utc().format(),
                     source: "youtube",
+                    channel: channel.slice(1),
                   });
                   newYTSR
                     .save()
@@ -571,7 +574,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                       if (chatRespond) {
                         botclient.say(
                           channel,
-                          `@${doc.requestedBy} requested ${doc.track[0].name} https://youtu.be/${results[0].id}`
+                          `@${doc.requestedBy} requested ${doc.track.name} https://youtu.be/${results[0].id}`
                         );
                       }
 
@@ -579,8 +582,8 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                       rqs.emit("sr-event", {
                         id: `${doc.id}`,
                         reqBy: `${doc.requestedBy}`,
-                        track: `${doc.track[0].name}`,
-                        link: `${doc.track[0].link}`,
+                        track: `${doc.track.name}`,
+                        link: `${doc.track.link}`,
                         source: `${doc.source}`,
                         timeOfReq: `${doc.timeOfReq}`,
                       });
@@ -601,12 +604,13 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                 requestedBy: userstate.username,
                 timeOfReq: moment.utc().format(),
                 source: "spotify",
+                channel: channel.slice(1),
               });
               newSpotSR.save().then((doc) => {
                 if (chatRespond) {
                   botclient.say(
                     channel,
-                    `@${doc.requestedBy} requested ${doc.track[0].name} by ${doc.track[0].artist} - ${doc.track[0].link}`
+                    `@${doc.requestedBy} requested ${doc.track.name} by ${doc.track.artist} - ${doc.track.link}`
                   );
                 }
 
@@ -614,10 +618,10 @@ botclient.on("chat", async (channel, userstate, message, self) => {
                 rqs.emit("sr-event", {
                   id: `${doc.id}`,
                   reqBy: `${doc.requestedBy}`,
-                  track: `${doc.track[0].name}`,
-                  artist: `${doc.track[0].artist}`,
-                  uri: `${doc.track[0].uri}`,
-                  link: `${doc.track[0].link}`,
+                  track: `${doc.track.name}`,
+                  artist: `${doc.track.artist}`,
+                  uri: `${doc.track.uri}`,
+                  link: `${doc.track.link}`,
                   source: `${doc.source}`,
                   timeOfReq: `${doc.timeOfReq}`,
                 });
@@ -629,7 +633,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     }
   }
 
-  if (parsedM[0] === "!tr") {
+  if (command === "!tr") {
     var request = parsedM.slice(1).join(" ");
     var newText = new SongRequest({
       track: {
@@ -638,25 +642,27 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       requestedBy: userstate.username,
       timeOfReq: moment.utc().format(),
       source: "text",
+      channel: channel.slice(1),
     });
     newText
       .save()
       .then((doc) => {
         botclient.say(
           channel,
-          `@${doc.requestedBy} requested ${doc.track[0].name}`
+          `@${doc.requestedBy} requested ${doc.track.name}`
         );
         // Real time data push to front end
         rqs.emit("sr-event", {
           id: `${doc.id}`,
           reqBy: `${doc.requestedBy}`,
-          track: `${doc.track[0].name}`,
+          track: `${doc.track.name}`,
           source: `${doc.source}`,
           timeOfReq: `${doc.timeOfReq}`,
         });
       })
       .catch(console.error);
   }
+
   // Choice selection for polls
   let numRegex = /^[0-9]+$/;
   // Check to see if message is only numbers
@@ -719,7 +725,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     }
   }
 
-  if (parsedM[0] === "!deleteall") {
+  if (command === "!deleteall") {
     if (admins.includes(userstate.username)) {
       await Poll.deleteMany({}).then((err, doc) => {
         if (err) {
@@ -732,14 +738,14 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     }
   }
 
-  if (parsedM[0] === "!p") {
+  if (command === "!p") {
     if (admins.includes(userstate.username)) {
       var poll = await Poll.findOne({});
       console.log(poll);
     }
   }
 
-  if (parsedM[0] === "!goodnews" || parsedM[0] === "!goodn") {
+  if (command === "!goodnews" || command === "!goodn") {
     var tUser = userstate["user-id"];
     var twitchCreds = await TwitchCreds.findOne({});
     var goodnews = parsedM.slice(1).join(" ");
@@ -770,7 +776,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     fetchJson.get(url, params, options).then(handleData);
   }
 
-  if (parsedM[0] === "!science" && admins.includes(userstate.username)) {
+  if (command === "!science" && admins.includes(userstate.username)) {
     var handleData = (data) => {
       var diff = capitalize(data.results[0].difficulty);
       var q = data.results[0].question;
@@ -788,13 +794,13 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       .then(handleData);
   }
 
-  if (parsedM[0] === "!answer" && admins.includes(userstate.username)) {
+  if (command === "!answer" && admins.includes(userstate.username)) {
     botclient.say(twitchChan[0], he.decode(`${answer}`));
     // console.log(answer)
   }
 
   // Time Command
-  if (parsedM[0] === "!time") {
+  if (command === "!time") {
     var day = moment.tz(moment(), "Pacific/Auckland").format("dddd");
     var dNum = moment.tz(moment(), "Pacific/Auckland").format("Do");
     var month = moment.tz(moment(), "Pacific/Auckland").format("MMMM");
@@ -805,7 +811,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     );
   }
 
-  if (parsedM[0] === "!wolfram") {
+  if (command === "!wolfram") {
     var query = he.encode(`${parsedM.slice(1).join(" ")}`);
     var handleData = (data) => {
       console.log(data);
@@ -818,7 +824,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       .then(handleData);
   }
 
-  if (parsedM[0] === "!wolframi") {
+  if (command === "!wolframi") {
     var query = he.encode(`${parsedM.slice(1).join(" ")}`);
     var handleData = (data) => {
       console.log(data);
@@ -831,7 +837,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       .then(handleData);
   }
 
-  if (parsedM[0] === "!horoscope") {
+  if (command === "!horoscope") {
     var sign = parsedM[1];
     var handleData = (data) => {
       console.log(data);
@@ -849,7 +855,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       .then(handleData);
   }
 
-  if (parsedM[0] === "!reply" && admins.includes(userstate.username)) {
+  if (command === "!reply" && admins.includes(userstate.username)) {
     if (chatRespond === true) {
       botclient.say(twitchChan[0], he.decode(`RESPONSES TURNED OFF`));
       chatRespond = !chatRespond;
@@ -861,7 +867,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     }
   }
 
-  if (parsedM[0] === "!test" && admins.includes(userstate.username)) {
+  if (command === "!test" && admins.includes(userstate.username)) {
     botclient.say(twitchChan[0], he.decode(`THIS IS A TEST`));
   }
 });

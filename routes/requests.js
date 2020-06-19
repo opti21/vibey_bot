@@ -18,6 +18,7 @@ function loggedIn(req, res, next) {
 
 router.get("/", loggedIn, async (req, res) => {
   try {
+    let isAdmin = admins.includes(req.user.login);
     var user = await User.findOne({ twitch_id: req.user.id });
     if (user === null) {
       res.redirect("/login");
@@ -27,8 +28,11 @@ router.get("/", loggedIn, async (req, res) => {
     var mixRequests = await mixReqs.find();
     if (admins.includes(user.username)) {
       res.render("requests", {
-        feUser: user.username,
-        profilePic: req.user["profile_image_url"],
+        // Add isAllowed
+        isAllowed: true,
+        loggedInUser: req.user.login,
+        loggedInUserPic: req.user["profile_image_url"],
+        channel: req.user.login,
         requests: feSongRequests,
         mixReqs: mixRequests,
         version: version,

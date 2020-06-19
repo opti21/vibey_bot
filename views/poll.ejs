@@ -4,16 +4,18 @@
 <head>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
 	<title>Vibey Poll</title>
-	<link rel="apple-touch-icon" sizes="180x180" href="img/icon/apple-touch-icon.png">
-	<link rel="icon" type="image/png" sizes="32x32" href="img/icon/favicon-32x32.png">
-	<link rel="icon" type="image/png" sizes="16x16" href="img/icon/favicon-16x16.png">
-	<link rel="manifest" href="img/icon/site.webmanifest">
+	<link rel="apple-touch-icon" sizes="180x180" href="/img/icon/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/img/icon/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/img/icon/favicon-16x16.png">
+	<link rel="manifest" href="/img/icon/site.webmanifest">
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-	<link rel="stylesheet" href="css/poll.css">
-	<link rel="stylesheet" href="css/bootstrap.min.css">
-	<link rel="stylesheet" type="text/css" href="vendor/DataTables/datatables.min.css" />
+  <script src="https://kit.fontawesome.com/e363ab566b.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css?family=Poppins:400,700,900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="/css/overall.css">
+	<link rel="stylesheet" href="/css/poll.css">
 </head>
 
 <body>
@@ -29,25 +31,25 @@
 			<div class="container-fluid">
 				<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
 					<button class="btn btn-dark mr-3" id="menu-toggle"><i class="fas fa-bars"></i></button>
-					<span class="navbar-brand mb-0 h1"><i class="far fa-hand-peace"></i> Vibey Bot</span>
 				</nav>
+				<% if (isAllowed) { %>
 				<div class="row">
 					<div class="col left">
 						<h2>New Poll</h2>
-						<form id="poll-form" action="/api/polls/newpoll" method="post">
+						<form id="poll-form" method="post">
 							<div class="form-group">
 								<label for="poll-text">Poll Text:</label>
-								<input type="text" class="form-control" id="poll-text" name="polltext"
-									placeholder="Poll text" tabindex="1" required>
+								<input type="text" class="form-control" id="poll-text" name="polltext" placeholder="Poll text"
+									tabindex="1" required>
 							</div>
 							<div class="form-group field_wrapper">
 								<label for="choice1" class="mb-4">Choices</label>
 								<button type="button" class="btn btn-sm btn-success add_button">Add Choice</button>
 								<button type="button" class="btn btn-sm btn-danger remove_button">Remove Choice</button>
-								<input type="text" class="form-control mb-2" placeholder="Choice 1" id="choice1"
-									name="choice" tabindex="2" required />
-								<input type="text" class="form-control mb-2" placeholder="Choice 2" id="choice2"
-									name="choice" tabindex="3" required />
+								<input type="text" class="form-control mb-2" placeholder="Choice 1" id="choice1" name="choice1"
+									tabindex="2" required />
+								<input type="text" class="form-control mb-2" placeholder="Choice 2" id="choice2" name="choice2"
+									tabindex="3" required />
 							</div>
 							<div class="text-right">
 								<div class="custom-control custom-switch">
@@ -80,20 +82,23 @@
 			</div>
 		</div>
 	</div>
+	<% } else { %>
+	<%- include ./partials/noAccess.ejs %>
+	<% } %>
+	<div id="pageInfo" data-channel="<%= channel %>" data-loggedIn="<%= loggedInUser %>"></div>
 	<!-- /#page-content-wrapper -->
 
 	</div>
 	<!-- /#wrapper -->
 
-	<script src="vendor/jquery/jquery.js"></script>
-	<script src="vendor/bootstrap/js/bootstrap.bundle.js"></script>
-	<script src="vendor/gsap/TweenMax.min.js"></script>
-	<script src="js/moment.min.js"></script>
-	<script src="https://js.pusher.com/4.4/pusher.min.js"></script>
-	<script src="js/sweetalert2.all.min.js"></script>
-	<script type="text/javascript" src="vendor/DataTables/datatables.min.js"></script>
+	<%- include ./partials/sidebar-js.ejs %>
+	<script src="/vendor/jquery/jquery.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap"></script>
+	<script src="/js/moment.min.js"></script>
+	<script src="/js/sweetalert2.all.min.js"></script>
+	<script type="text/javascript" src="/vendor/DataTables/datatables.min.js"></script>
 	<script src="/socket.io/socket.io.js"></script>
-	<script src="js/poll.js"></script>
+	<script src="/js/poll.js"></script>
 
 </body>
 

@@ -77,54 +77,6 @@ router.get("/spotify/callback", (req, res) => {
     });
 });
 
-// router.get("/spotify/refresh", async (req, res) => {
-//   let user = await User.findOne({ twitch_id: req.user.id });
-//   console.log(user);
-//   let body = {
-//     client_id: process.env.SPOTIFY_ID,
-//     client_secret: process.env.SPOTIFY_SECRET,
-//     refresh_token: user.spotify.refresh_token,
-//     grant_type: "refresh_token",
-//     redirect_uri: cb_url,
-//   };
-
-//   let config = {
-//     headers: {
-//       "Content-Type": "application/x-www-form-urlencoded",
-//     },
-//   };
-
-//   axios
-//     .post("https://accounts.spotify.com/api/token/", qs.stringify(body), config)
-
-//     .then((code_res) => {
-//       console.log(code_res.data);
-//       try {
-//         User.updateOne(
-//           { twitch_id: user.twitch_id },
-//           {
-//             spotify: {
-//               access_token: code_res.data.access_token,
-//               refresh_token: user.spotify.refresh_token,
-//               token_type: code_res.data.token_type,
-//               expires_in: moment()
-//                 .utc()
-//                 .add(code_res.data.expires_in, "seconds"),
-//               scope: code_res.data.scope,
-//             },
-//           },
-//           { new: true }
-//         ).then((update_res) => {
-//           console.log(update_res);
-//           console.log("token refreshed");
-//           res.end();
-//         });
-//       } catch (e) {
-//         console.error(e);
-//       }
-//     });
-// });
-
 // router.get("/test", (req, res) => {
 //   res.render("test");
 //   console.log(encoded_url);

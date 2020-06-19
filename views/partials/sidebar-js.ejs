@@ -1,0 +1,25 @@
+<script>
+	let wrapper = document.getElementById('wrapper')
+	if (!localStorage.getItem("menuOpen")) {
+		wrapper.classList.add('toggled');
+		localStorage.setItem("menuOpen", false);
+	} else {
+		if (localStorage.getItem("menuOpen") === 'false') {
+			wrapper.classList.remove('toggled')
+		}
+		if (localStorage.getItem("menuOpen") === 'true') {
+			wrapper.classList.add('toggled')
+		}
+	}
+
+	document.getElementById('menu-toggle').onclick = (e) => {
+		e.preventDefault();
+		wrapper.classList.toggle('toggled');
+		let menuToggle = localStorage.getItem("menuOpen");
+		if (menuToggle === 'true') {
+			localStorage.setItem("menuOpen", false);
+		} else {
+			localStorage.setItem("menuOpen", true);
+		}
+	}
+</script>

@@ -15,7 +15,12 @@ function loggedIn(req, res, next) {
 
 // Front page
 router.get("/", (req, res) => {
-  res.render("index");
+  let loggedIn = req.user || false;
+  let loggedInUser = req.user.login || null;
+  res.render("index", {
+    isLoggedIn: loggedIn,
+    loggedInUser: loggedInUser,
+  });
 });
 
 // Login
@@ -38,6 +43,7 @@ router.get("/logout", async function (req, res) {
 
 router.get("/poll", loggedIn, async (req, res) => {
   try {
+    let isAdmin = admins.includes(req.user.login);
     var user = await User.findOne({ twitch_id: req.user.id });
     // console.log(user.username);
     if (user === null) {
@@ -45,6 +51,10 @@ router.get("/poll", loggedIn, async (req, res) => {
     }
     if (admins.includes(user.username)) {
       res.render("poll", {
+        isAllowed: true,
+        loggedInUser: req.user.login,
+        loggedInUserPic: req.user["profile_image_url"],
+        channel: req.user.login,
         version: version,
         feUser: user.username,
         profilePic: req.user["profile_image_url"],
@@ -55,24 +65,6 @@ router.get("/poll", loggedIn, async (req, res) => {
   } catch (err) {
     console.error(err);
   }
-});
-
-router.get("/hi", loggedIn, async (req, res) => {
-  try {
-    let user = await User.findOne({ twitch_id: req.user.id });
-    let chatUsers = await ChatUser.find({ saidHi: false });
-
-    if (admins.includes(user.username)) {
-      res.render("hi", {
-        version: version,
-        feUser: user.username,
-        profilePic: req.user["profile_image_url"],
-        chatUsers: chatUsers,
-      });
-    } else {
-      res.redirect("/login");
-    }
-  } catch {}
 });
 
 // Test

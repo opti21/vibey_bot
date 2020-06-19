@@ -4,17 +4,14 @@
 <head>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
 	<title>Vibey Requests</title>
-	<link rel="apple-touch-icon" sizes="180x180" href="img/icon/apple-touch-icon.png">
-	<link rel="icon" type="image/png" sizes="32x32" href="img/icon/favicon-32x32.png">
-	<link rel="icon" type="image/png" sizes="16x16" href="img/icon/favicon-16x16.png">
-	<link rel="manifest" href="img/icon/site.webmanifest">
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-	<link rel="stylesheet" href="css/requests.css">
-	<link rel="stylesheet" href="css/bootstrap.min.css">
-	<link rel="stylesheet" type="text/css" href="vendor/DataTables/datatables.min.css" />
-	<link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+	<link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+	<link rel="stylesheet" href="/css/overall.css">
+	<link rel="stylesheet" href="/css/requests.css">
+  <script src="https://kit.fontawesome.com/e363ab566b.js" crossorigin="anonymous"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -30,125 +27,60 @@
 			<div class="container-fluid">
 				<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
 					<button class="btn btn-dark mr-3" id="menu-toggle"><i class="fas fa-bars"></i></button>
-					<span class="navbar-brand mb-0 h1"><i class="far fa-hand-peace"></i> Vibey Bot</span>
 				</nav>
-				<div class="row">
-					<div class="col left">
-						<h2 id="title">Song Requests</h2>
-						<div id="clear-queue">
-							<button class="delete-queue btn btn-danger btn-sm mb-3"> Clear Queue </button>
-						</div>
-						<table id="sr-table" class="table table-dark table-hover table-sm">
-							<thead>
-								<tr>
-									<th scope="col"></th>
-									<th scope="col">Track:</th>
-									<th scope="col">User:</th>
-									<th scope="col"><i class="far fa-clock" title="Time Requested"></i></th>
-								</tr>
-							</thead>
-							<tbody id="srContainer">
-								<% requests.forEach(request => { %>
-								<tr width="100%" id="<%= request.id %>">
-									<td>
-										<button class="btn btn-success btn-md mr-3 p-1 mix-add" data-srID="<%= request.id %>"> Mix +
-										</button>
-										<button class="delete btn btn-danger btn-sm" data-srID="<%= request.id %>"
-											data-srName="<%= request.track[0].name %>"> <i class="fas fa-minus-circle"></i>
-										</button>
-									</td>
-									<td>
-										<% if(request.source === 'spotify'){ %>
-										<a class="srLink" href="<%= request.track[0].link %>" target="_blank"><%= request.track[0].name %> -
-											<%= request.track[0].artist %></a>
-										<a class="spotify" href="<%= request.track[0].uri %>"><i class="fab fa-spotify"
-												title="Open in Spotify"></i></a>
-										<% } if(request.source === 'youtube'){ %>
-										<a class="srLink" href="<%= request.track[0].link %>"
-											target="_blank"><%= request.track[0].name %></a>
-										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
-												title="Open on Youtube"></i></a>
-										<% } if(request.source === 'text'){ %>
-										<%= request.track[0].name %>
-										<% } %>
-									</td>
-									<td><%= request.requestedBy %></td>
-									<td>
-										<div class="timeReq" data-time="<%= request.timeOfReq %>"></div>
-									</td>
-								</tr>
-								<% }) %>
-							</tbody>
-						</table>
-					</div>
+				<% if (isAllowed) { %>
+				<!--<div id="nowplaying">
+					<h2>Now Playing</h2>
+          TODO: change this section to play selected song 
+					<iframe src="https://open.spotify.com/embed/track/5iFwAOB2TFkPJk8sMlxP8g" width="100%" height="80"
+						frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+        </div>-->
+				  <div>
+						<div class="row">
+							<div class="col left">
+								<h2 id="title">Song Requests</h2>
+								<div id="clear-queue">
+									<button class="delete-reqs btn btn-danger btn-sm mb-3"> Clear Queue </button>
+								</div>
+								<div id="requests">
+									<!-- Songs Go here -->
+								</div>
+							</div>
 
-					<div class="col right">
-						<h2>Current Mix</h2>
-						<div id="clear-mix">
-							<button class="delete-mix btn btn-danger btn-sm mb-3"> Clear Mix </button>
+							<div class="col right">
+								<h2>Current Mix</h2>
+								<div id="clear-mix">
+									<button class="delete-mix btn btn-danger btn-sm mb-3"> Clear Mix </button>
+                  					<!-- <button id="songpoll" class="songpoll btn btn-sm btn-info mb-3" type="button">Start Song Poll</button> -->
+								</div>
+								<div id="mix">
+									<!-- Mix goes here -->
+								</div>
+							</div>
 						</div>
-						<table id="mix-table" class="table table-dark table-hover table-sm">
-							<thead>
-								<tr>
-									<th scope="col">Track Requested</th>
-									<th scope="col">Requested By:</th>
-									<th scope="col">Edit</th>
-								</tr>
-							</thead>
-							<tbody id="mixContainer">
-								<% mixReqs.forEach(request => { %>
-								<tr width="100%" id="<%= request.id %>">
-									<td>
-										<% if(request.source === 'spotify'){ %>
-										<a class="srLink" href="<%= request.track[0].link %>" target="_blank"><%= request.track[0].name %> -
-											<%= request.track[0].artist %></a>
-										<a class="spotify" href="<%= request.track[0].uri %>"><i class="fab fa-spotify"
-												title="Open in Spotify"></i></a>
-										<% } if(request.source === 'youtube'){ %>
-										<a class="srLink" href="<%= request.track[0].link %>"
-											target="_blank"><%= request.track[0].name %></a>
-										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
-												title="Open on Youtube"></i></a>
-										<% } if(request.source === 'text'){ %>
-										<a class="srLink" href="<%= request.track[0].link %>"
-											target="_blank"><%= request.track[0].name %></a>
-										<a class="youtube" href="<%= request.track[0].link %>" target="_blank"><i class="fab fa-youtube"
-												title="Open on Youtube"></i></a>
-										<% } %>
-									</td>
-									<td><%= request.requestedBy %></td>
-									<td>
-										<button class=" delete btn btn-danger btn-sm mix" data-srID="<%= request.id %>"
-											data-srName="<%= request.track[0].name %>"> Remove </button>
-									</td>
-								</tr>
-								<% }) %>
-							</tbody>
-						</table>
 					</div>
 				</div>
+				<% } else { %>
+				<%- include ./partials/noAccess.ejs %>
+				<% } %>
 			</div>
-		</div>
-	</div>
-	<!-- /#page-content-wrapper -->
+			<!-- /#page-content-wrapper -->
 
-	</div>
-	<!-- /#wrapper -->
 
-	<!-- Menu Toggle Script -->
+			<div id="pageInfo" data-channel="<%= channel %>" data-loggedIn="<%= loggedInUser %>"></div>
+			<!-- /#wrapper -->
 
-	<script src="vendor/jquery/jquery.js"></script>
-	<script src="vendor/bootstrap/js/bootstrap.bundle.js"></script>
-	<script src="js/jquery-ui.min.js"></script>
-	<script src="vendor/gsap/TweenMax.min.js"></script>
-	<script src="js/moment.min.js"></script>
-	<script src="/socket.io/socket.io.js"></script>
-	<script src="https://js.pusher.com/4.4/pusher.min.js"></script>
-	<script src="js/sweetalert2.all.min.js"></script>
-	<script type="text/javascript" src="vendor/DataTables/datatables.min.js"></script>
-	<!-- <script src="js/script.min.js"></script> -->
-	<script src="js/requests.js"></script>
+			<!-- Menu Toggle Script -->
 
+			<%- include ./partials/sidebar-js.ejs %>
+			<script src="/vendor/jquery/jquery.js"></script>
+			<% if (isAllowed) { %>
+      <script src="https://cdn.jsdelivr.net/npm/gsap"></script>
+			<script src="/js/moment.min.js"></script>
+			<script src="/socket.io/socket.io.js"></script>
+			<script src="/js/sweetalert2.all.min.js"></script>
+			<script src="/js/requests.js"></script>
+			<% } %>
 </body>
 
 </html>
