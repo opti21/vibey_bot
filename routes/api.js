@@ -18,9 +18,7 @@ function loggedIn(req, res, next) {
 }
 
 router.get("/requests/:channel", loggedIn, async (req, res) => {
-  console.log(req.params.channel);
-  let requests = await SongRequest.find({});
-  console.log(requests);
+  let requests = await SongRequest.find({ channel: req.params.channel });
   res.status(200).send(requests);
 });
 

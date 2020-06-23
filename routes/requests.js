@@ -28,7 +28,6 @@ router.get("/", loggedIn, async (req, res) => {
     var mixRequests = await mixReqs.find();
     if (admins.includes(user.username)) {
       res.render("requests", {
-        // Add isAllowed
         isAllowed: true,
         loggedInUser: req.user.login,
         loggedInUserPic: req.user["profile_image_url"],

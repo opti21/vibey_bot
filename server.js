@@ -113,11 +113,14 @@ const mixRoute = require("./routes/mix");
 const widgetRoute = require("./routes/widget");
 const apiRoute = require("./routes/api");
 const settingsRoute = require("./routes/settings");
+const authedUser = require("./routes/authedUser");
 
 app.use("/", indexRoute);
 app.use("/auth", authRoute);
-app.use("/requests", reqsRoute);
-app.use("/mix", mixRoute);
+app.use("/u", authedUser);
+
+// app.use("/requests", reqsRoute);
+// app.use("/mix", mixRoute);
 app.use("/widget", widgetRoute);
 app.use("/api", apiRoute);
 app.use("/settings", settingsRoute);

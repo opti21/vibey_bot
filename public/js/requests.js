@@ -5,10 +5,9 @@ const Toast = Swal.mixin({
   timer: 2000,
 });
 
-// let globalChannel = document
-//   .getElementById("pageInfo")
-//   .getAttribute("data-channel");
-let globalChannel = "veryhandsomebilly";
+let globalChannel = document
+  .getElementById("pageInfo")
+  .getAttribute("data-channel");
 
 // $(document).ready(function() {
 //   $("#sr-table").DataTable({
@@ -48,6 +47,9 @@ fetch(`/api/requests/${globalChannel}`)
       reqElem.setAttribute("id", `${request._id}`);
       reqElem.setAttribute("class", "song mb-3 border rounded");
       reqElem.innerHTML = `
+      <!-- <div class="progress" style="height: 10px;">
+          <div class="progress-bar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+        </div> -->
       <div class="song-top p-2">
         <div class="d-flex flex-column">
             <a class="srName pl-2" href="${request.track.link}" target="_blank">
