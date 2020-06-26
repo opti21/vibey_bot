@@ -298,7 +298,7 @@ JoinedChannel.find({}).then((res) => {
 
 // Bot says hello on connect
 botclient.on("connected", (address, port) => {
-  // botclient.say(twitchChan[0], `Hey Chat! Send me those vibes`)
+  // botclient.say(channel, `Hey Chat! Send me those vibes`)
   console.log("connected to twitch chat client");
   console.log(address);
 });
@@ -744,7 +744,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
 
           return;
         }
-        botclient.say(twitchChan[0], `Polls deleted!`);
+        botclient.say(channel, `Polls deleted!`);
       });
     }
   }
@@ -793,7 +793,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       var q = data.results[0].question;
       answer = data.results[0].correct_answer;
       botclient.say(
-        twitchChan[0],
+        channel,
         he.decode(
           `@veryhandsomebilly SCIENCE QUESTION Difficulty: ${diff} Question: ${q}`
         )
@@ -806,7 +806,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
   }
 
   if (command === "!answer" && admins.includes(userstate.username)) {
-    botclient.say(twitchChan[0], he.decode(`${answer}`));
+    botclient.say(channel, he.decode(`${answer}`));
     // console.log(answer)
   }
 
@@ -817,7 +817,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     var month = moment.tz(moment(), "Pacific/Auckland").format("MMMM");
     var time = moment.tz(moment(), "Pacific/Auckland").format("hh:mmA");
     botclient.say(
-      twitchChan[0],
+      channel,
       `In New Zealand it is currently ${day} the ${dNum} of ${month} and the time is ${time}`
     );
   }
@@ -826,7 +826,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     var query = he.encode(`${parsedM.slice(1).join(" ")}`);
     var handleData = (data) => {
       console.log(data);
-      botclient.say(twitchChan[0], he.decode(`${data.bodyText}`));
+      botclient.say(channel, he.decode(`${data.bodyText}`));
     };
     fetchJson
       .get(
@@ -839,7 +839,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     var query = he.encode(`${parsedM.slice(1).join(" ")}`);
     var handleData = (data) => {
       console.log(data);
-      botclient.say(twitchChan[0], he.decode(`${data.bodyText}`));
+      botclient.say(channel, he.decode(`${data.bodyText}`));
     };
     fetchJson
       .get(
@@ -853,12 +853,9 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     var handleData = (data) => {
       console.log(data);
       if (data.sunsign === "undefined") {
-        botclient.say(
-          twitchChan[0],
-          "No sign received Example: !horoscope Libra"
-        );
+        botclient.say(channel, "No sign received Example: !horoscope Libra");
       } else {
-        botclient.say(twitchChan[0], he.decode(`${data.horoscope}`));
+        botclient.say(channel, he.decode(`${data.horoscope}`));
       }
     };
     fetchJson
@@ -868,18 +865,18 @@ botclient.on("chat", async (channel, userstate, message, self) => {
 
   if (command === "!reply" && admins.includes(userstate.username)) {
     if (chatRespond === true) {
-      botclient.say(twitchChan[0], he.decode(`RESPONSES TURNED OFF`));
+      botclient.say(channel, he.decode(`RESPONSES TURNED OFF`));
       chatRespond = !chatRespond;
       console.log(chatRespond);
     } else {
-      botclient.say(twitchChan[0], he.decode(`RESPONSES TURNED ON`));
+      botclient.say(channel, he.decode(`RESPONSES TURNED ON`));
       console.log(chatRespond);
       chatRespond = !chatRespond;
     }
   }
 
   if (command === "!test" && admins.includes(userstate.username)) {
-    botclient.say(twitchChan[0], he.decode(`THIS IS A TEST`));
+    botclient.say(channel, he.decode(`THIS IS A TEST`));
   }
 });
 // Bot replies
