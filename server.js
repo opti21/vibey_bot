@@ -30,9 +30,10 @@ const he = require("he");
 const sgMail = require("@sendgrid/mail");
 const fs = require("fs");
 const axios = require("axios");
+const JoinedChannel = require("./models/joinedChannels");
 const qs = require("querystring");
 const ComfyJS = require("comfy.js");
-ComfyJS.Init(config.comfyChan);
+// ComfyJS.Init(config.comfyChan);
 
 // SendGrid Emails
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -266,7 +267,6 @@ const tmi = require("tmi.js");
 const twitchclientid = process.env.TWITCH_CLIENTID;
 const twitchuser = process.env.TWITCH_USER;
 const twitchpass = process.env.TWITCH_PASS;
-const twitchChan = config.twitchChan;
 
 const tmiOptions = {
   options: {
@@ -280,7 +280,6 @@ const tmiOptions = {
     username: twitchuser,
     password: twitchpass,
   },
-  channels: twitchChan,
 };
 
 const botclient = new tmi.client(tmiOptions);
@@ -289,10 +288,19 @@ const botclient = new tmi.client(tmiOptions);
 botclient.connect();
 global.botclient = botclient;
 
+// re-join channels that were already connected
+JoinedChannel.find({}).then((res) => {
+  res.forEach((doc) => {
+    console.log(doc.channel);
+    botclient.join(doc.channel);
+  });
+});
+
 // Bot says hello on connect
 botclient.on("connected", (address, port) => {
   // botclient.say(twitchChan[0], `Hey Chat! Send me those vibes`)
   console.log("connected to twitch chat client");
+  console.log(address);
 });
 
 // Regex

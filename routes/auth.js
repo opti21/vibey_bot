@@ -66,7 +66,7 @@ router.get("/spotify/callback", (req, res) => {
           { new: true }
         ).then((update_res) => {
           console.log(update_res);
-          res.redirect(`/u/${req.user.login}/requests`);
+          res.redirect(`/u/${req.user.login}/dashboard`);
         });
       } catch (e) {
         console.error(e);

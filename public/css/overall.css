@@ -1,9 +1,11 @@
 body {
   color: white !important;
-  font-family: 'Montserrat', sans-serif, "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+  font-family: "Montserrat", sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
 }
 #sidebar-wrapper {
   background-color: #372d47 !important;
+  border-right: 1px solid #372d47;
 }
 .nav-btn {
   background-color: #372d47 !important;
@@ -12,6 +14,10 @@ a.nav-btn:hover {
   background-color: #745f96 !important;
 }
 .bg-dark {
+  background-image: url("/img/bg.png") !important;
+  background-repeat: repeat;
+}
+.dark-bg {
   background-color: #200033 !important;
 }
 

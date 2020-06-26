@@ -2,23 +2,16 @@
 <html lang="en">
 
 <head>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
 	<title>Vibey Requests</title>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-	<link rel="stylesheet" href="/css/overall.css">
+	<%- include('./partials/head') %>
 	<link rel="stylesheet" href="/css/requests.css">
-  <script src="https://kit.fontawesome.com/e363ab566b.js" crossorigin="anonymous"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
 	<div class="d-flex bg-dark" id="wrapper">
 
 		<!-- Sidebar -->
-		<%- include ./partials/sidebar.ejs %>
+		<%- include('./partials/sidebar') %>
 		<!-- /#sidebar-wrapper -->
 
 		<!-- Page Content -->
@@ -61,7 +54,7 @@
 					</div>
 				</div>
 				<% } else { %>
-				<%- include ./partials/noAccess.ejs %>
+				<%- include('./partials/noAccess') %>
 				<% } %>
 			</div>
 			<!-- /#page-content-wrapper -->
@@ -72,7 +65,8 @@
 
 			<!-- Menu Toggle Script -->
 
-			<%- include ./partials/sidebar-js.ejs %>
+			<%- include('./partials/sidebar-js') %>
+
 			<script src="/vendor/jquery/jquery.js"></script>
 			<% if (isAllowed) { %>
       		<script src="https://cdn.jsdelivr.net/npm/gsap"></script>

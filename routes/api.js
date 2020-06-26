@@ -3,6 +3,7 @@ const User = require("../models/users");
 const SongRequest = require("../models/songRequests");
 const mixReqs = require("../models/mixRequests");
 const Poll = require("../models/polls");
+const JoinedChannel = require("../models/joinedChannels");
 const config = require("../config/config");
 const twitchchan = config.twitchChan;
 const pollsIO = io.of("/polls-namescape");
@@ -132,6 +133,58 @@ router.get("/polls", loggedIn, async (req, res) => {
     res.send("error").send(500);
     console.error(err);
   }
+});
+
+router.post("/connect", loggedIn, async (req, res) => {
+  let channel = req.query.channel;
+  let exists = await JoinedChannel.exists({ channel: channel });
+  if (exists) {
+    res.status(409).send("Channel is already joined");
+  } else {
+    let joinedChannel = new JoinedChannel({
+      channel: channel,
+    });
+    joinedChannel
+      .save()
+      .then((doc) => {
+        botclient
+          .join(`${channel}`)
+          .then((data) => {
+            console.log(data);
+            res.status(200).send("Channel joined successfully!");
+          })
+          .catch((err) => {
+            console.error(err);
+            res.status(500).send("Error Joining channel");
+          });
+      })
+      .catch((e) => {
+        console.error(e);
+      });
+  }
+});
+
+router.delete("/disconnect", loggedIn, (req, res) => {
+  let channel = req.query.channel;
+  JoinedChannel.findOneAndDelete({
+    channel: channel,
+  })
+    .then((response) => {
+      console.log("Channel Document deleted");
+      botclient
+        .part(`${channel}`)
+        .then((data) => {
+          console.log(data);
+          res.status(200).send("Channel joined successfully!");
+        })
+        .catch((err) => {
+          console.error(err);
+          res.status(500).send("Error Joining channel");
+        });
+    })
+    .catch((e) => {
+      console.error(e);
+    });
 });
 
 router.post("/polls/newpoll", loggedIn, async (req, res) => {
