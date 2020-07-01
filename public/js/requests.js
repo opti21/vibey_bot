@@ -1,13 +1,13 @@
 const Toast = Swal.mixin({
   toast: true,
-  position: "top-end",
+  position: 'top-end',
   showConfirmButton: false,
   timer: 2000,
 });
 
 let globalChannel = document
-  .getElementById("pageInfo")
-  .getAttribute("data-channel");
+  .getElementById('pageInfo')
+  .getAttribute('data-channel');
 
 // $(document).ready(function() {
 //   $("#sr-table").DataTable({
@@ -19,14 +19,14 @@ let globalChannel = document
 //  $("#requests-nav").addClass("active");
 //});
 
-var socket = io("/req-namescape");
+var socket = io('/req-namescape');
 
-socket.emit("create", `${globalChannel}`);
+socket.emit('create', `${globalChannel}`);
 
-socket.on("socketConnect", function (data) {
+socket.on('socketConnect', function (data) {
   Toast.fire({
-    type: "success",
-    title: "Socket Connected!",
+    type: 'success',
+    title: 'Socket Connected!',
   });
 });
 
@@ -35,17 +35,17 @@ fetch(`/api/requests/${globalChannel}`)
   .then((res) => res.json())
   .then((requests) => {
     console.log(requests);
-    let reqDiv = document.getElementById("requests");
+    let reqDiv = document.getElementById('requests');
     requests.forEach((request) => {
-      let reqElem = document.createElement("div");
+      let reqElem = document.createElement('div');
       let artist;
       if (request.track.artist !== undefined) {
         artist = `- ${request.track.artist}`;
       } else {
-        artist = "";
+        artist = '';
       }
-      reqElem.setAttribute("id", `${request._id}`);
-      reqElem.setAttribute("class", "song mb-3 border rounded");
+      reqElem.setAttribute('id', `sr${request._id}`);
+      reqElem.setAttribute('class', 'song mb-3 border rounded');
       reqElem.innerHTML = `
       <!-- <div class="progress" style="height: 10px;">
           <div class="progress-bar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
@@ -66,6 +66,12 @@ fetch(`/api/requests/${globalChannel}`)
       </div>
     `;
       reqDiv.prepend(reqElem);
+      gsap.from(`#sr${request._id}`, {
+        opacity: 0,
+        y: -50,
+        duration: 0.5,
+        ease: 'power4.out',
+      });
     });
   });
 
@@ -74,17 +80,17 @@ fetch(`/api/mixes/${globalChannel}`)
   .then((res) => res.json())
   .then((mixes) => {
     console.log(mixes);
-    let mixDiv = document.getElementById("mix");
+    let mixDiv = document.getElementById('mix');
     mixes.forEach((mixReq) => {
-      let mixElem = document.createElement("div");
+      let mixElem = document.createElement('div');
       let artist;
       if (mixReq.track.artist !== undefined) {
         artist = `- ${mixReq.track.artist}`;
       } else {
-        artist = "";
+        artist = '';
       }
-      mixElem.setAttribute("id", `mix${mixReq._id}`);
-      mixElem.setAttribute("class", "mix-song mb-3 border");
+      mixElem.setAttribute('id', `mix${mixReq._id}`);
+      mixElem.setAttribute('class', 'mix-song mb-3 border');
       mixElem.innerHTML = `
       <div class="song-top p-2">
         <div class="d-flex flex-column">
@@ -103,20 +109,20 @@ fetch(`/api/mixes/${globalChannel}`)
   });
 
 // Realtime song request
-socket.on("sr-event", (request) => {
+socket.on('sr-event', (request) => {
   try {
-    console.log("New Request");
+    console.log('New Request');
     console.log(request);
-    let reqDiv = document.getElementById("requests");
-    let reqElem = document.createElement("div");
+    let reqDiv = document.getElementById('requests');
+    let reqElem = document.createElement('div');
     let artist;
     if (request.artist !== undefined) {
       artist = `- ${request.artist}`;
     } else {
-      artist = "";
+      artist = '';
     }
-    reqElem.setAttribute("class", "song mb-3 border");
-    reqElem.setAttribute("id", `${request.id}`);
+    reqElem.setAttribute('class', 'song mb-3 border');
+    reqElem.setAttribute('id', `sr${request.id}`);
     reqElem.innerHTML = `
       <div class="song-top p-2">
         <div class="d-flex flex-column">
@@ -129,11 +135,17 @@ socket.on("sr-event", (request) => {
         <a href="#" data-srID="${request.id}" class="reqDelBtn p-1 flex-fill text-center">
           Delete
         </a>
-        <a href="#" data-srID="${request.id}" class="addMixBtn p-1 flex-fill text-center">Mix +</a>
+        <a href="#" data-srID="sr${request.id}" class="addMixBtn p-1 flex-fill text-center">Mix +</a>
         <!--<a href="#" data-uri="${request.uri}" class="playBtn p-1 flex-fill text-center">Play <i class="fas fa-play-circle"></i></a>-->
       </div>
     `;
     reqDiv.prepend(reqElem);
+    gsap.from(`#sr${request.id}`, {
+      opacity: 0,
+      y: -50,
+      duration: 0.5,
+      ease: 'power4.out',
+    });
   } catch (err) {
     console.error(err);
   }
@@ -143,28 +155,28 @@ socket.on("sr-event", (request) => {
 var timeDiff = setInterval(reqTime, 1000);
 
 function reqTime() {
-  $(".timeReq").each(function () {
-    var ago = moment.utc(`${$(this).attr("data-time")}`).fromNow();
+  $('.timeReq').each(function () {
+    var ago = moment.utc(`${$(this).attr('data-time')}`).fromNow();
     $(this).text(`${ago}`);
   });
 }
 
 // realtime song add to mix
-socket.on("mix-add", (data) => {
+socket.on('mix-add', (data) => {
   try {
-    console.log("Add song to Mix");
+    console.log('Add song to Mix');
     console.log(data);
     let request = data;
-    let mixDiv = document.getElementById("mix");
-    let mixElem = document.createElement("div");
+    let mixDiv = document.getElementById('mix');
+    let mixElem = document.createElement('div');
     let artist;
     if (request.artist !== undefined) {
       artist = `- ${request.artist}`;
     } else {
-      artist = "";
+      artist = '';
     }
-    mixElem.setAttribute("class", "mix-song mb-3 border");
-    mixElem.setAttribute("id", `mix${request.id}`);
+    mixElem.setAttribute('class', 'mix-song mb-3 border');
+    mixElem.setAttribute('id', `mix${request.id}`);
     mixElem.innerHTML = `
       <div class="song-top p-2">
         <div class="d-flex flex-column">
@@ -179,6 +191,12 @@ socket.on("mix-add", (data) => {
       </div>
     `;
     mixDiv.prepend(mixElem);
+    gsap.from(`#mix${request.id}`, {
+      opacity: 0,
+      y: -50,
+      duration: 0.5,
+      ease: 'power4.out',
+    });
   } catch (err) {
     console.error(err);
   }
@@ -186,28 +204,28 @@ socket.on("mix-add", (data) => {
 
 // new Add request to mix
 document.addEventListener(
-  "click",
+  'click',
   (e) => {
-    if (!e.target.matches(".addMixBtn")) return;
+    if (!e.target.matches('.addMixBtn')) return;
     e.preventDefault();
-    console.log(e.target.getAttribute("data-srID"));
-    var srId = e.target.getAttribute("data-srID");
+    console.log(e.target.getAttribute('data-srID'));
+    var srId = e.target.getAttribute('data-srID');
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", `/api/mixes/${globalChannel}/add/${srId}`);
+    xhr.open('POST', `/api/mixes/${globalChannel}/add/${srId}`);
     xhr.onload = function () {
       if (xhr.status === 200) {
         try {
           Toast.fire({
-            type: "success",
-            title: "Song Added to Mix!",
+            type: 'success',
+            title: 'Song Added to Mix!',
           });
         } catch (err) {
           console.error(err);
         }
       } else {
         swal.fire({
-          type: "error",
-          title: "Error adding song!",
+          type: 'error',
+          title: 'Error adding song!',
           text: `${xhr.responseText}`,
         });
       }
@@ -217,32 +235,44 @@ document.addEventListener(
   false
 );
 
+function removeDiv(div) {
+  console.log(div);
+  let srDiv = document.getElementById(div);
+  srDiv.remove();
+}
+
 // NEW Delete Song Request
 document.addEventListener(
-  "click",
+  'click',
   (e) => {
-    if (!e.target.matches(".reqDelBtn")) return;
+    if (!e.target.matches('.reqDelBtn')) return;
     e.preventDefault();
-    console.log(e.target.getAttribute("data-srID"));
-    var srID = e.target.getAttribute("data-srID");
+    console.log(e.target.getAttribute('data-srID'));
+    var srID = e.target.getAttribute('data-srID');
     var xhr = new XMLHttpRequest();
-    xhr.open("DELETE", `/api/requests/${globalChannel}/delete/${srID}`);
+    xhr.open('DELETE', `/api/requests/${globalChannel}/delete/${srID}`);
     xhr.onload = function () {
       if (xhr.status === 200) {
         try {
-          let srDiv = document.getElementById(`${srID}`);
-          srDiv.remove();
+          gsap.to(`#sr${srID}`, {
+            opacity: 0,
+            y: -50,
+            duration: 0.5,
+            ease: 'power4.out',
+            onComplete: removeDiv,
+            onCompleteParams: [`sr${srID}`],
+          });
           Toast.fire({
-            type: "success",
-            title: "Song Request removed!",
+            type: 'success',
+            title: 'Song Request removed!',
           });
         } catch (err) {
           console.error(err);
         }
       } else {
         swal.fire({
-          type: "error",
-          title: "Error deleting song!",
+          type: 'error',
+          title: 'Error deleting song!',
           text: `${xhr.responseText}`,
         });
       }
@@ -254,30 +284,36 @@ document.addEventListener(
 
 // new Delete request from mix
 document.addEventListener(
-  "click",
+  'click',
   (e) => {
-    if (!e.target.matches(".delMixBtn")) return;
+    if (!e.target.matches('.delMixBtn')) return;
     e.preventDefault();
-    console.log(e.target.getAttribute("data-srID"));
-    var srID = e.target.getAttribute("data-srID");
+    console.log(e.target.getAttribute('data-srID'));
+    var srID = e.target.getAttribute('data-srID');
     var xhr = new XMLHttpRequest();
-    xhr.open("DELETE", `/api/mixes/${globalChannel}/delete/${srID}`);
+    xhr.open('DELETE', `/api/mixes/${globalChannel}/delete/${srID}`);
     xhr.onload = function () {
       if (xhr.status === 200) {
         try {
-          let songDiv = document.getElementById(`mix${srID}`);
-          songDiv.remove();
+          gsap.to(`#mix${srID}`, {
+            opacity: 0,
+            y: -50,
+            duration: 0.5,
+            ease: 'power4.out',
+            onComplete: removeDiv,
+            onCompleteParams: [`mix${srID}`],
+          });
           Toast.fire({
-            type: "success",
-            title: "Song Request removed!",
+            type: 'success',
+            title: 'Song Request removed!',
           });
         } catch (err) {
           console.error(err);
         }
       } else {
         swal.fire({
-          type: "error",
-          title: "Error deleting song!",
+          type: 'error',
+          title: 'Error deleting song!',
           text: `${xhr.responseText}`,
         });
       }
@@ -289,30 +325,30 @@ document.addEventListener(
 
 // NEW Clear queue
 document.addEventListener(
-  "click",
+  'click',
   (e) => {
-    if (!e.target.matches(".delete-reqs")) return;
+    if (!e.target.matches('.delete-reqs')) return;
     e.preventDefault();
     swal
       .fire({
         title: `Are you sure you want to clear the queue?`,
         text: "You won't be able to revert this!",
-        type: "warning",
+        type: 'warning',
         showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!',
       })
       .then((result) => {
         if (result.value) {
           var xhr = new XMLHttpRequest();
-          xhr.open("DELETE", `/api/requests/${globalChannel}/clearqueue`);
+          xhr.open('DELETE', `/api/requests/${globalChannel}/clearqueue`);
           xhr.onload = function () {
             if (xhr.status === 200) {
               Swal.fire({
-                title: "Cleared!",
+                title: 'Cleared!',
                 text: `Queue has been cleared.`,
-                type: "success",
+                type: 'success',
                 timer: 500,
                 allowOutsideClick: false,
                 allowEscapeKey: false,
@@ -320,7 +356,7 @@ document.addEventListener(
                   Swal.showLoading();
                 },
                 onClose: () => {
-                  let songs = document.querySelectorAll(".song");
+                  let songs = document.querySelectorAll('.song');
                   console.log(songs);
                   songs.forEach((song) => {
                     song.remove();
@@ -329,9 +365,9 @@ document.addEventListener(
               });
             } else {
               Swal.fire(
-                "Uh Oh!",
+                'Uh Oh!',
                 `There was an error clearing the queue. Error: ${xhr.responseText}`,
-                "error"
+                'error'
               );
             }
           };
@@ -344,30 +380,30 @@ document.addEventListener(
 
 // NEW Clear mix
 document.addEventListener(
-  "click",
+  'click',
   (e) => {
-    if (!e.target.matches(".delete-mix")) return;
+    if (!e.target.matches('.delete-mix')) return;
     e.preventDefault();
     swal
       .fire({
         title: `Are you sure you want to clear the queue?`,
         text: "You won't be able to revert this!",
-        type: "warning",
+        type: 'warning',
         showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!',
       })
       .then((result) => {
         if (result.value) {
           var xhr = new XMLHttpRequest();
-          xhr.open("DELETE", `/api/mixes/${globalChannel}/clear`);
+          xhr.open('DELETE', `/api/mixes/${globalChannel}/clear`);
           xhr.onload = function () {
             if (xhr.status === 200) {
               Swal.fire({
-                title: "Cleared!",
+                title: 'Cleared!',
                 text: `Queue has been cleared.`,
-                type: "success",
+                type: 'success',
                 timer: 500,
                 allowOutsideClick: false,
                 allowEscapeKey: false,
@@ -375,7 +411,7 @@ document.addEventListener(
                   Swal.showLoading();
                 },
                 onClose: () => {
-                  let songs = document.querySelectorAll(".mix-song");
+                  let songs = document.querySelectorAll('.mix-song');
                   console.log(songs);
                   songs.forEach((song) => {
                     song.remove();
@@ -384,9 +420,9 @@ document.addEventListener(
               });
             } else {
               Swal.fire(
-                "Uh Oh!",
+                'Uh Oh!',
                 `There was an error clearing the mix. Error: ${xhr.responseText}`,
-                "error"
+                'error'
               );
             }
           };
