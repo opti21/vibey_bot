@@ -21,7 +21,7 @@ let globalChannel = document
 
 var socket = io("/req-namescape");
 
-// socket.emit("create", `${globalChannel}`);
+socket.emit("create", `${globalChannel}`);
 
 socket.on("socketConnect", function (data) {
   Toast.fire({

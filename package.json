@@ -8,7 +8,7 @@
   },
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon server.js --ignore public/",
+    "dev": "nodemon --inspect server.js --ignore public/",
     "test": "mocha"
   },
   "author": "Brandon Rowe",
@@ -46,6 +46,9 @@
     "uglify-es": "^3.3.9",
     "util": "^0.12.1",
     "uws": "^100.0.1"
+  },
+  "prettier": {
+    "singleQuote": true
   },
   "devDependencies": {
     "chai": "^4.2.0",

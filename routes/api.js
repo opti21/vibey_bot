@@ -53,7 +53,7 @@ router.post("/mixes/:channel/add/:id", loggedIn, async (req, res) => {
       mixAdd.save().then((doc) => {
         try {
           res.status(200).send("Added to Mix");
-          rqs.emit("mix-add", {
+          rqs.to(`${req.params.channel}`).emit("mix-add", {
             id: `${doc.id}`,
             reqBy: `${doc.requestedBy}`,
             track: `${doc.track.name}`,

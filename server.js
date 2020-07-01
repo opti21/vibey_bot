@@ -1,38 +1,38 @@
-require("dotenv").config();
+require('dotenv').config();
 
-const config = require("./config/config");
-const version = require("project-version");
-console.log("Version: " + version);
+const config = require('./config/config');
+const version = require('project-version');
+console.log('Version: ' + version);
 
-const express = require("express");
+const express = require('express');
 const app = express();
-const server = require("http").Server(app);
-const passport = require("passport");
-const twitchStrategy = require("passport-twitch.js").Strategy;
-const bodyParser = require("body-parser");
-const cookieSession = require("cookie-session");
-const spotifyUri = require("spotify-uri");
-const Spotify = require("node-spotify-api");
+const server = require('http').Server(app);
+const passport = require('passport');
+const twitchStrategy = require('passport-twitch.js').Strategy;
+const bodyParser = require('body-parser');
+const cookieSession = require('cookie-session');
+const spotifyUri = require('spotify-uri');
+const Spotify = require('node-spotify-api');
 const spotify = new Spotify({
   id: process.env.SPOTIFY_ID,
   secret: process.env.SPOTIFY_SECRET,
 });
-const YouTube = require("simple-youtube-api");
+const YouTube = require('simple-youtube-api');
 const youtube = new YouTube(process.env.YT_API);
-const moment = require("moment-timezone");
-const io = require("socket.io")(server);
+const moment = require('moment-timezone');
+const io = require('socket.io')(server);
 global.io = io;
-const fetchJson = require("fetch-json");
-const ComfyDiscord = require("comfydiscord");
+const fetchJson = require('fetch-json');
+const ComfyDiscord = require('comfydiscord');
 const admins = config.admins;
-const exec = require("child_process").exec;
-const he = require("he");
-const sgMail = require("@sendgrid/mail");
-const fs = require("fs");
-const axios = require("axios");
-const JoinedChannel = require("./models/joinedChannels");
-const qs = require("querystring");
-const ComfyJS = require("comfy.js");
+const exec = require('child_process').exec;
+const he = require('he');
+const sgMail = require('@sendgrid/mail');
+const fs = require('fs');
+const axios = require('axios');
+const JoinedChannel = require('./models/joinedChannels');
+const qs = require('querystring');
+const ComfyJS = require('comfy.js');
 // ComfyJS.Init(config.comfyChan);
 
 // SendGrid Emails
@@ -42,7 +42,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 ComfyDiscord.Init(process.env.DISCORDTOKEN);
 
 // Tiwtch Creds for App
-const TwitchCreds = require("./models/twitchCreds");
+const TwitchCreds = require('./models/twitchCreds');
 
 getTwitchCreds();
 async function getTwitchCreds() {
@@ -56,16 +56,16 @@ async function getTwitchCreds() {
       console.log(data);
       const newTwitch = new TwitchCreds({
         accessToken: data.access_token,
-        expireAt: moment().utc().add(data.expires_in, "seconds"),
+        expireAt: moment().utc().add(data.expires_in, 'seconds'),
       });
       newTwitch
         .save()
-        .then(console.log("New Twitch Creds created"))
+        .then(console.log('New Twitch Creds created'))
         .catch(console.error);
     };
     fetchJson.post(twitchUserURL).then(handleData).catch(console.error);
   } else {
-    console.log("Twitch Creds already exist");
+    console.log('Twitch Creds already exist');
   }
 }
 
@@ -73,31 +73,34 @@ async function getTwitchCreds() {
 // errTxt("REALLY BAD ERROR");
 
 // Real time data
-const rqs = io.of("/req-namescape");
-const polls = io.of("/polls-namescape");
-const hellos = io.of("/hellos-namescape");
+const rqs = io.of('/req-namescape');
+const polls = io.of('/polls-namescape');
+const hellos = io.of('/hellos-namescape');
 
-rqs.on("connection", function (socket) {
-  console.log("Connected to requests");
+rqs.on('connection', function (socket) {
+  // Create room and
   // Trigger front end notification
-  socket.emit("socketConnect", {});
-
+  socket.on('create', function (room) {
+    console.log(` ${room} Connected to requests`);
+    socket.join(room);
+    rqs.to(`${room}`).emit('socketConnect', {});
+  });
   //Whenever someone disconnects this piece of code executed
-  rqs.on("disconnect", function () {
-    console.log("User disconnected from requests");
+  rqs.on('disconnect', function () {
+    console.log('User disconnected from requests');
   });
 });
 
-app.set("trust proxy", 1);
-app.set("views", "./views");
-app.set("view engine", "ejs");
+app.set('trust proxy', 1);
+app.set('views', './views');
+app.set('view engine', 'ejs');
 
-app.use(express.static("public"));
+app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(
   cookieSession({
-    name: "session",
+    name: 'session',
     secret: `${process.env.SESSION_SECRET}`,
     saveUninitialized: false,
     resave: false,
@@ -107,30 +110,30 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Route Files
-const indexRoute = require("./routes/index");
-const authRoute = require("./routes/auth");
-const reqsRoute = require("./routes/requests");
-const mixRoute = require("./routes/mix");
-const widgetRoute = require("./routes/widget");
-const apiRoute = require("./routes/api");
-const settingsRoute = require("./routes/settings");
-const authedUser = require("./routes/authedUser");
+const indexRoute = require('./routes/index');
+const authRoute = require('./routes/auth');
+const reqsRoute = require('./routes/requests');
+const mixRoute = require('./routes/mix');
+const widgetRoute = require('./routes/widget');
+const apiRoute = require('./routes/api');
+const settingsRoute = require('./routes/settings');
+const authedUser = require('./routes/authedUser');
 
-app.use("/", indexRoute);
-app.use("/auth", authRoute);
-app.use("/u", authedUser);
+app.use('/', indexRoute);
+app.use('/auth', authRoute);
+app.use('/u', authedUser);
 
 // app.use("/requests", reqsRoute);
 // app.use("/mix", mixRoute);
-app.use("/widget", widgetRoute);
-app.use("/api", apiRoute);
-app.use("/settings", settingsRoute);
+app.use('/widget', widgetRoute);
+app.use('/api', apiRoute);
+app.use('/settings', settingsRoute);
 
 // Databae
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 switch (process.env.NODE_ENV) {
-  case "production":
+  case 'production':
     mongoose
       .connect(
         `mongodb+srv://vibey_bot:${process.env.DB_PASS}@cluster0-gtgmw.mongodb.net/vibeybot?retryWrites=true&w=majority`,
@@ -143,13 +146,13 @@ switch (process.env.NODE_ENV) {
       .catch(function (err) {
         // TODO: Throw error page if DB doesn't connect
         console.error(
-          "Unable to connect to the mongodb instance. Error: ",
+          'Unable to connect to the mongodb instance. Error: ',
           err
         );
       });
     break;
 
-  case "staging":
+  case 'staging':
     mongoose
       .connect(
         `mongodb+srv://vibey_bot:${process.env.DB_PASS}@cluster0-gtgmw.mongodb.net/vibeystaging?retryWrites=true&w=majority`,
@@ -162,16 +165,16 @@ switch (process.env.NODE_ENV) {
       .catch(function (err) {
         // TODO: Throw error page if DB doesn't connect
         console.error(
-          "Unable to connect to the mongodb instance. Error: ",
+          'Unable to connect to the mongodb instance. Error: ',
           err
         );
       });
     break;
 
-  case "dev":
+  case 'dev':
     mongoose
       .connect(
-        `mongodb+srv://vibey_bot:${process.env.DB_PASS}@cluster0-gtgmw.mongodb.net/vibeystaging?retryWrites=true&w=majority`,
+        `mongodb+srv://vibey_bot:${process.env.DB_PASS}@cluster0-gtgmw.mongodb.net/vibeydev?retryWrites=true&w=majority`,
         {
           useNewUrlParser: true,
           useUnifiedTopology: true,
@@ -181,7 +184,7 @@ switch (process.env.NODE_ENV) {
       .catch(function (err) {
         // TODO: Throw error page if DB doesn't connect
         console.error(
-          "Unable to connect to the mongodb instance. Error: ",
+          'Unable to connect to the mongodb instance. Error: ',
           err
         );
       });
@@ -189,17 +192,17 @@ switch (process.env.NODE_ENV) {
 }
 
 const db = mongoose.connection;
-db.on("error", (error) => {
+db.on('error', (error) => {
   console.error(error);
 });
-db.once("open", () => console.log("Connected to Mongoose " + Date()));
+db.once('open', () => console.log('Connected to Mongoose ' + Date()));
 
 //Models
-const User = require("./models/users");
-const SongRequest = require("./models/songRequests");
-const Poll = require("./models/polls");
-const Good = require("./models/goods");
-const ChatUser = require("./models/chatUser");
+const User = require('./models/users');
+const SongRequest = require('./models/songRequests');
+const Poll = require('./models/polls');
+const Good = require('./models/goods');
+const Queue = require('./models/queues');
 
 // Twitch auth
 passport.use(
@@ -208,7 +211,7 @@ passport.use(
       clientID: process.env.TWITCH_CLIENTID,
       clientSecret: process.env.TWITCH_SECRET,
       callbackURL: `${process.env.APP_URL}/auth/twitch/callback`,
-      scope: "user:read:email",
+      scope: 'user:read:email',
     },
     async function (accessToken, refreshToken, profile, done) {
       try {
@@ -222,17 +225,21 @@ passport.use(
                 display_name: profile.display_name,
                 email: profile.email,
                 profile_pic_url: profile.profile_image_url,
-                provider: "twitch",
+                provider: 'twitch',
                 twitch: profile,
                 accessToken: accessToken,
                 refreshToken: refreshToken,
-                expireAt: moment().utc().add(8, "hours"),
+                expireAt: moment().utc().add(8, 'hours'),
               });
-              console.log("New user created");
+              console.log('New user created');
+              let queue = new Queue({
+                channel: profile.login,
+              });
+              queue.save();
               user.save();
               return done(null, profile);
             } else {
-              console.log("User already exists");
+              console.log('User already exists');
               console.log(UserSearch.twitch_id);
               return done(null, profile);
             }
@@ -258,12 +265,12 @@ passport.deserializeUser(function (obj, done) {
 /* *** DON'T PLACE ANY PAGES ***
  ***  AFTER THE 404 PAGE   *** */
 //404
-app.get("*", (req, res) => {
-  res.render("404");
+app.get('*', (req, res) => {
+  res.render('404');
 });
 
 // Twitch Client
-const tmi = require("tmi.js");
+const tmi = require('tmi.js');
 const twitchclientid = process.env.TWITCH_CLIENTID;
 const twitchuser = process.env.TWITCH_USER;
 const twitchpass = process.env.TWITCH_PASS;
@@ -297,9 +304,9 @@ JoinedChannel.find({}).then((res) => {
 });
 
 // Bot says hello on connect
-botclient.on("connected", (address, port) => {
+botclient.on('connected', (address, port) => {
   // botclient.say(channel, `Hey Chat! Send me those vibes`)
-  console.log("connected to twitch chat client");
+  console.log('connected to twitch chat client');
   console.log(address);
 });
 
@@ -314,7 +321,7 @@ function findURI(object, property, value) {
     Object.keys(object).some(function (k) {
       return (
         object[k] &&
-        typeof object[k] === "object" &&
+        typeof object[k] === 'object' &&
         findURI(object[k], property, value)
       );
     })
@@ -323,25 +330,25 @@ function findURI(object, property, value) {
 
 function refreshTokenThenAdd(user, uri) {
   let cb_url = process.env.SPOTIFY_CALLBACK_URL;
-  console.log("REFRESH TOKEN");
+  console.log('REFRESH TOKEN');
   console.log(user.spotify.refresh_token);
 
   let body = {
     client_id: process.env.SPOTIFY_ID,
     client_secret: process.env.SPOTIFY_SECRET,
     refresh_token: user.spotify.refresh_token,
-    grant_type: "refresh_token",
+    grant_type: 'refresh_token',
     redirect_uri: cb_url,
   };
 
   let config = {
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
   };
 
   axios
-    .post("https://accounts.spotify.com/api/token/", qs.stringify(body), config)
+    .post('https://accounts.spotify.com/api/token/', qs.stringify(body), config)
 
     .then((code_res) => {
       console.log(code_res.data);
@@ -355,14 +362,14 @@ function refreshTokenThenAdd(user, uri) {
               token_type: code_res.data.token_type,
               expires_in: moment()
                 .utc()
-                .add(code_res.data.expires_in, "seconds"),
+                .add(code_res.data.expires_in, 'seconds'),
               scope: code_res.data.scope,
             },
           },
           { new: true }
         ).then((update_res) => {
           console.log(update_res);
-          console.log("token refreshed");
+          console.log('token refreshed');
           checkPlaylist(uri, user.username, update_res.spotify.access_token);
         });
       } catch (e) {
@@ -376,20 +383,20 @@ function refreshTokenThenAdd(user, uri) {
 
 function checkPlaylist(uri, channel, user_token) {
   axios({
-    method: "get",
+    method: 'get',
     url: `https://api.spotify.com/v1/playlists/${config.spotify_playlist}/tracks`,
     headers: {
-      Authorization: "Bearer " + user_token,
+      Authorization: 'Bearer ' + user_token,
     },
     params: {
-      fields: "items(track(uri))",
+      fields: 'items(track(uri))',
     },
   })
     .then((res) => {
-      if (!findURI(res.data.items, "uri", uri)) {
+      if (!findURI(res.data.items, 'uri', uri)) {
         addSongtoPlaylist(uri, channel, user_token);
       } else {
-        botclient.say(config.comfyChan, "Song is already on the playlist");
+        botclient.say(config.comfyChan, 'Song is already on the playlist');
         return;
       }
     })
@@ -401,15 +408,15 @@ function checkPlaylist(uri, channel, user_token) {
 function addSongtoPlaylist(uri, channel, user_token) {
   // Add song to playlist
   axios({
-    method: "post",
+    method: 'post',
     url: `https://api.spotify.com/v1/playlists/${config.spotify_playlist}/tracks`,
     data: {
       uris: [uri],
     },
 
     headers: {
-      Authorization: "Bearer " + user_token,
-      Accept: "application/json",
+      Authorization: 'Bearer ' + user_token,
+      Accept: 'application/json',
     },
   }).then((res) => {
     console.log(res.data);
@@ -427,10 +434,10 @@ function addSongtoPlaylist(uri, channel, user_token) {
 // ComfyJs Client to catch channel point redemptions
 ComfyJS.onChat = async (user, command, message, flags, extra) => {
   // console.log(extra)
-  if (extra.customRewardId === "609d1f92-0dde-4057-9902-30f5f78237e6") {
+  if (extra.customRewardId === '609d1f92-0dde-4057-9902-30f5f78237e6') {
     // Check to see if URL matches for spotify
     let song = command;
-    console.log("I see the redemption");
+    console.log('I see the redemption');
 
     if (spRegex.test(song)) {
       var spID = spotifyUri.parse(song);
@@ -451,56 +458,112 @@ ComfyJS.onChat = async (user, command, message, flags, extra) => {
     } else {
       botclient.say(
         config.comfyChan,
-        "Issue adding song @opti_21 @veryhandsomebilly"
+        'Issue adding song @opti_21 @veryhandsomebilly'
       );
     }
   }
 };
 
 // Song Requests
-botclient.on("chat", async (channel, userstate, message, self) => {
+botclient.on('chat', async (channel, userstate, message, self) => {
   if (self) return;
-  if (message[0] !== "!") return;
-  var parsedM = message.trim().split(" ");
-  let command = parsedM[0].toLowerCase();
-  if (command === "!sr" || command === "!songrequest") {
-    if (URLRegex.test(parsedM[1])) {
-      // Spotify link
-      if (spRegex.test(parsedM[1])) {
-        console.log("spotify link");
-        var spID = spotifyUri.parse(parsedM[1]);
-        var spURI = spotifyUri.formatURI(parsedM[1]);
-        spotify
-          .request(`https://api.spotify.com/v1/tracks/${spID.id}`)
-          .then(function (data) {
-            var newSpotSR = new SongRequest({
-              track: {
-                name: data.name,
-                artist: data.artists[0].name,
-                link: parsedM[1],
-                uri: spURI,
-              },
+  if (message[0] !== '!') return;
+  var parsedM = message.trim().split(' ');
+  let command = parsedM[0].slice(1).toLowerCase();
+  let noHashChan = channel.slice(1);
+  if (command === 'close' && userstate.badges.broadcaster === '1') {
+    Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: false }).then(
+      (doc) => {
+        botclient.say(channel, 'Requests are now closed');
+      }
+    );
+  }
+  if (command === 'open' && userstate.badges.broadcaster === '1') {
+    Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: true }).then(
+      (doc) => {
+        botclient.say(channel, 'Requests are now open');
+      }
+    );
+  }
+  if (command === 'sr' || command === 'songrequest') {
+    let queue = await Queue.findOne({ channel: noHashChan });
+    // console.log(queue.settings);
+    if (queue.allowReqs) {
+      if (URLRegex.test(parsedM[1])) {
+        // Spotify link
+        if (spRegex.test(parsedM[1])) {
+          console.log('spotify link');
+          var spID = spotifyUri.parse(parsedM[1]);
+          var spURI = spotifyUri.formatURI(parsedM[1]);
+          spotify
+            .request(`https://api.spotify.com/v1/tracks/${spID.id}`)
+            .then(function (data) {
+              var newSpotSR = new SongRequest({
+                track: {
+                  name: data.name,
+                  artist: data.artists[0].name,
+                  link: parsedM[1],
+                  uri: spURI,
+                },
+                requestedBy: userstate.username,
+                timeOfReq: moment.utc().format(),
+                source: 'spotify',
+                channel: channel.slice(1),
+              });
+              newSpotSR
+                .save()
+                .then((doc) => {
+                  if (chatRespond) {
+                    botclient.say(
+                      channel,
+                      `@${doc.requestedBy} requested ${doc.track.name} by ${doc.track.artist}`
+                    );
+                  }
+                  // Real time data push to front end
+                  rqs.to(`${channel}`).emit('sr-event', {
+                    id: `${doc.id}`,
+                    reqBy: `${doc.requestedBy}`,
+                    track: `${doc.track.name}`,
+                    artist: `${doc.track.artist}`,
+                    uri: `${doc.track.uri}`,
+                    link: `${doc.track.link}`,
+                    source: `${doc.source}`,
+                    timeOfReq: `${doc.timeOfReq}`,
+                  });
+                })
+                .catch((err) => {
+                  console.error(err);
+                });
+            })
+            .catch(function (err) {
+              console.error('Error occurred: ' + err);
+            });
+        }
+        // Youtube Link
+        if (ytRegex.test(parsedM[1])) {
+          console.log('youtube link');
+          youtube.getVideo(parsedM[1]).then((video) => {
+            var newYTSR = new SongRequest({
+              track: { name: video.title, link: parsedM[1] },
               requestedBy: userstate.username,
               timeOfReq: moment.utc().format(),
-              source: "spotify",
+              source: 'youtube',
               channel: channel.slice(1),
             });
-            newSpotSR
+            newYTSR
               .save()
               .then((doc) => {
                 if (chatRespond) {
                   botclient.say(
                     channel,
-                    `@${doc.requestedBy} requested ${doc.track.name} by ${doc.track.artist}`
+                    `@${doc.requestedBy} requested ${doc.track.name} ${doc.track.link}`
                   );
                 }
                 // Real time data push to front end
-                rqs.emit("sr-event", {
+                rqs.to(`${channel}`).emit('sr-event', {
                   id: `${doc.id}`,
                   reqBy: `${doc.requestedBy}`,
                   track: `${doc.track.name}`,
-                  artist: `${doc.track.artist}`,
-                  uri: `${doc.track.uri}`,
                   link: `${doc.track.link}`,
                   source: `${doc.source}`,
                   timeOfReq: `${doc.timeOfReq}`,
@@ -509,169 +572,161 @@ botclient.on("chat", async (channel, userstate, message, self) => {
               .catch((err) => {
                 console.error(err);
               });
-          })
-          .catch(function (err) {
-            console.error("Error occurred: " + err);
           });
+        }
       }
-      // Youtube Link
-      if (ytRegex.test(parsedM[1])) {
-        console.log("youtube link");
-        youtube.getVideo(parsedM[1]).then((video) => {
-          var newYTSR = new SongRequest({
-            track: { name: video.title, link: parsedM[1] },
-            requestedBy: userstate.username,
-            timeOfReq: moment.utc().format(),
-            source: "youtube",
-            channel: channel.slice(1),
-          });
-          newYTSR
-            .save()
-            .then((doc) => {
-              if (chatRespond) {
-                botclient.say(
-                  channel,
-                  `@${doc.requestedBy} requested ${doc.track.name} ${doc.track.link}`
-                );
+      // Check for text content
+      if (parsedM[1] === undefined) {
+        botclient.say(
+          channel,
+          `No input received. !requests to see how to submit requests`
+        );
+      } else {
+        // Searches Spotify & Youtube when only text is provided
+        if (!ytRegex.test(parsedM[1])) {
+          var request = parsedM.slice(1).join(' ');
+          // var ytQuery = parsedM.slice(1).join('+');
+          // var ytSearch = `https://www.youtube.com/results?search_query=${ytQuery}`;
+          spotify.search(
+            { type: 'track', query: `${request}`, limit: 1 },
+            function (err, data) {
+              if (err) {
+                console.error(err);
               }
-              // Real time data push to front end
-              rqs.emit("sr-event", {
-                id: `${doc.id}`,
-                reqBy: `${doc.requestedBy}`,
-                track: `${doc.track.name}`,
-                link: `${doc.track.link}`,
-                source: `${doc.source}`,
-                timeOfReq: `${doc.timeOfReq}`,
-              });
-            })
-            .catch((err) => {
-              console.error(err);
-            });
-        });
-      }
-    }
-    // Check for text content
-    if (parsedM[1] === undefined) {
-      botclient.say(
-        channel,
-        `No input received. !requests to see how to submit requests`
-      );
-    } else {
-      // Searches Spotify & Youtube when only text is provided
-      if (!ytRegex.test(parsedM[1])) {
-        var request = parsedM.slice(1).join(" ");
-        var ytQuery = parsedM.slice(1).join("+");
-        var ytSearch = `https://www.youtube.com/results?search_query=${ytQuery}`;
-        spotify.search(
-          { type: "track", query: `${request}`, limit: 1 },
-          function (err, data) {
-            if (data === null) {
-              youtube
-                .search(request, 1)
-                .then((results) => {
-                  var newYTSR = new SongRequest({
-                    track: {
-                      name: results[0].title,
-                      link: `https://youtu.be/${results[0].id}`,
-                    },
-                    requestedBy: userstate.username,
-                    timeOfReq: moment.utc().format(),
-                    source: "youtube",
-                    channel: channel.slice(1),
-                  });
-                  newYTSR
-                    .save()
-                    .then((doc) => {
-                      if (chatRespond) {
-                        botclient.say(
-                          channel,
-                          `@${doc.requestedBy} requested ${doc.track.name} https://youtu.be/${results[0].id}`
-                        );
-                      }
+              if (data === null) {
+                // If Spotify can't find the song search for song on Youtube
+                youtube
+                  .search(request, 1)
+                  .then((results) => {
+                    var newYTSR = new SongRequest({
+                      track: {
+                        name: results[0].title,
+                        link: `https://youtu.be/${results[0].id}`,
+                      },
+                      requestedBy: userstate.username,
+                      timeOfReq: moment.utc().format(),
+                      source: 'youtube',
+                      channel: channel.slice(1),
+                    });
+                    newYTSR
+                      .save()
+                      .then((doc) => {
+                        if (chatRespond) {
+                          botclient.say(
+                            channel,
+                            `@${doc.requestedBy} requested ${doc.track.name} https://youtu.be/${results[0].id}`
+                          );
+                        }
 
+                        // Real time data push to front end
+                        rqs.to(`${channel}`).emit('sr-event', {
+                          id: `${doc.id}`,
+                          reqBy: `${doc.requestedBy}`,
+                          track: `${doc.track.name}`,
+                          link: `${doc.track.link}`,
+                          source: `${doc.source}`,
+                          timeOfReq: `${doc.timeOfReq}`,
+                        });
+                      })
+                      .catch((err) => {
+                        console.error(err);
+                      });
+                  })
+                  .catch(console.error);
+              } else {
+                // If song was found on Spotify create song request
+                var newSpotSR = new SongRequest({
+                  track: {
+                    name: data.tracks.items[0].name,
+                    artist: data.tracks.items[0].artists[0].name,
+                    link: data.tracks.items[0].external_urls.spotify,
+                    uri: data.tracks.items[0].uri,
+                  },
+                  requestedBy: userstate.username,
+                  timeOfReq: moment.utc().format(),
+                  source: 'spotify',
+                  channel: channel.slice(1),
+                });
+                newSpotSR.save().then((doc) => {
+                  queue.currQueue.push(doc._id);
+                  let newQueue = queue.currQueue;
+                  // console.log(queue);
+                  Queue.findOneAndUpdate(
+                    { channel: noHashChan },
+                    { currQueue: newQueue },
+                    { new: true }
+                  )
+                    .then((queueDoc) => {
                       // Real time data push to front end
-                      rqs.emit("sr-event", {
+                      // console.log(doc);
+                      console.log(queueDoc);
+
+                      rqs.to(`${noHashChan}`).emit('sr-event', {
                         id: `${doc.id}`,
                         reqBy: `${doc.requestedBy}`,
                         track: `${doc.track.name}`,
+                        artist: `${doc.track.artist}`,
+                        uri: `${doc.track.uri}`,
                         link: `${doc.track.link}`,
                         source: `${doc.source}`,
                         timeOfReq: `${doc.timeOfReq}`,
                       });
-                    })
-                    .catch((err) => {
-                      console.error(err);
-                    });
-                })
-                .catch(console.error);
-            } else {
-              var newSpotSR = new SongRequest({
-                track: {
-                  name: data.tracks.items[0].name,
-                  artist: data.tracks.items[0].artists[0].name,
-                  link: data.tracks.items[0].external_urls.spotify,
-                  uri: data.tracks.items[0].uri,
-                },
-                requestedBy: userstate.username,
-                timeOfReq: moment.utc().format(),
-                source: "spotify",
-                channel: channel.slice(1),
-              });
-              newSpotSR.save().then((doc) => {
-                if (chatRespond) {
-                  botclient.say(
-                    channel,
-                    `@${doc.requestedBy} requested ${doc.track.name} by ${doc.track.artist} - ${doc.track.link}`
-                  );
-                }
 
-                // Real time data push to front end
-                rqs.emit("sr-event", {
-                  id: `${doc.id}`,
-                  reqBy: `${doc.requestedBy}`,
-                  track: `${doc.track.name}`,
-                  artist: `${doc.track.artist}`,
-                  uri: `${doc.track.uri}`,
-                  link: `${doc.track.link}`,
-                  source: `${doc.source}`,
-                  timeOfReq: `${doc.timeOfReq}`,
+                      if (chatRespond) {
+                        botclient.say(
+                          channel,
+                          `@${doc.requestedBy} requested ${doc.track.name} by ${doc.track.artist} - ${doc.track.link}`
+                        );
+                      }
+                    })
+                    .catch((e) => {
+                      console.error(e);
+                    });
                 });
-              });
+              }
             }
-          }
-        );
+          );
+        }
       }
+    } else {
+      botclient.say(channel, 'Requests are closed');
     }
   }
 
-  if (command === "!tr") {
-    var request = parsedM.slice(1).join(" ");
-    var newText = new SongRequest({
-      track: {
-        name: request,
-      },
-      requestedBy: userstate.username,
-      timeOfReq: moment.utc().format(),
-      source: "text",
-      channel: channel.slice(1),
-    });
-    newText
-      .save()
-      .then((doc) => {
-        botclient.say(
-          channel,
-          `@${doc.requestedBy} requested ${doc.track.name}`
-        );
-        // Real time data push to front end
-        rqs.emit("sr-event", {
-          id: `${doc.id}`,
-          reqBy: `${doc.requestedBy}`,
-          track: `${doc.track.name}`,
-          source: `${doc.source}`,
-          timeOfReq: `${doc.timeOfReq}`,
-        });
-      })
-      .catch(console.error);
+  if (command === 'tr') {
+    let queue = await Queue.findOne({ channel: channel.slice(1) });
+    // console.log(queue.settings);
+    if (queue.allowReqs) {
+      var request = parsedM.slice(1).join(' ');
+      var newText = new SongRequest({
+        track: {
+          name: request,
+        },
+        requestedBy: userstate.username,
+        timeOfReq: moment.utc().format(),
+        source: 'text',
+        channel: channel.slice(1),
+      });
+      newText
+        .save()
+        .then((doc) => {
+          botclient.say(
+            channel,
+            `@${doc.requestedBy} requested ${doc.track.name}`
+          );
+          // Real time data push to front end
+          rqs.to(`${channel}`).emit('sr-event', {
+            id: `${doc.id}`,
+            reqBy: `${doc.requestedBy}`,
+            track: `${doc.track.name}`,
+            source: `${doc.source}`,
+            timeOfReq: `${doc.timeOfReq}`,
+          });
+        })
+        .catch(console.error);
+    } else {
+      botclient.say(channel, 'Requests are closed');
+    }
   }
 
   // Choice selection for polls
@@ -697,13 +752,13 @@ botclient.on("chat", async (channel, userstate, message, self) => {
         var tUser = userstate.username;
 
         await Poll.findOneAndUpdate(
-          { _id: poll.id, "choices.id": cID },
-          { $addToSet: { voters: tUser }, $set: { "choices.$.votes": i } },
+          { _id: poll.id, 'choices.id': cID },
+          { $addToSet: { voters: tUser }, $set: { 'choices.$.votes': i } },
           { useFindAndModify: false, new: true },
           (err, doc) => {
             // console.log(doc.choices[cIndex].votes);
             // console.log(doc);
-            polls.emit("pollUpdate", {
+            polls.emit('pollUpdate', {
               doc: doc,
             });
           }
@@ -722,13 +777,13 @@ botclient.on("chat", async (channel, userstate, message, self) => {
       var i = currV + 1;
       var tUser = userstate.username;
       await Poll.findOneAndUpdate(
-        { _id: poll.id, "choices.id": cID },
-        { $addToSet: { voters: tUser }, $set: { "choices.$.votes": i } },
+        { _id: poll.id, 'choices.id': cID },
+        { $addToSet: { voters: tUser }, $set: { 'choices.$.votes': i } },
         { useFindAndModify: false, new: true },
         (err, doc) => {
           // console.log(doc.choices[cIndex].votes);
           // console.log(doc);
-          polls.emit("pollUpdate", {
+          polls.emit('pollUpdate', {
             doc: doc,
           });
         }
@@ -736,7 +791,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     }
   }
 
-  if (command === "!deleteall") {
+  if (command === 'deleteall') {
     if (admins.includes(userstate.username)) {
       await Poll.deleteMany({}).then((err, doc) => {
         if (err) {
@@ -749,24 +804,24 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     }
   }
 
-  if (command === "!p") {
+  if (command === 'p') {
     if (admins.includes(userstate.username)) {
       var poll = await Poll.findOne({});
       console.log(poll);
     }
   }
 
-  if (command === "!goodnews" || command === "!goodn") {
-    var tUser = userstate["user-id"];
+  if (command === 'goodnews' || command === 'goodn') {
+    var tUser = userstate['user-id'];
     var twitchCreds = await TwitchCreds.findOne({});
-    var goodnews = parsedM.slice(1).join(" ");
+    var goodnews = parsedM.slice(1).join(' ');
     console.log(tUser);
     console.log(twitchCreds);
     var url = `https://api.twitch.tv/helix/users?id=${tUser}`;
     var params = {};
     var options = {
       headers: {
-        "Client-ID": `${process.env.TWITCH_CLIENTID}`,
+        'Client-ID': `${process.env.TWITCH_CLIENTID}`,
         Authorization: `Bearer ${twitchCreds.accessToken}`,
       },
     };
@@ -778,7 +833,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
         news: goodnews,
       });
       ComfyDiscord.Say(
-        "good-news",
+        'good-news',
         `${userstate.username}'s good news: ${goodnews}`
       );
       newGood.save();
@@ -787,83 +842,19 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     fetchJson.get(url, params, options).then(handleData);
   }
 
-  if (command === "!science" && admins.includes(userstate.username)) {
-    var handleData = (data) => {
-      var diff = capitalize(data.results[0].difficulty);
-      var q = data.results[0].question;
-      answer = data.results[0].correct_answer;
-      botclient.say(
-        channel,
-        he.decode(
-          `@veryhandsomebilly SCIENCE QUESTION Difficulty: ${diff} Question: ${q}`
-        )
-      );
-      // console.log('Difficulty: ' + diff + 'Question: ' + q)
-    };
-    fetchJson
-      .get("https://opentdb.com/api.php?amount=1&category=17")
-      .then(handleData);
-  }
-
-  if (command === "!answer" && admins.includes(userstate.username)) {
-    botclient.say(channel, he.decode(`${answer}`));
-    // console.log(answer)
-  }
-
   // Time Command
-  if (command === "!time") {
-    var day = moment.tz(moment(), "Pacific/Auckland").format("dddd");
-    var dNum = moment.tz(moment(), "Pacific/Auckland").format("Do");
-    var month = moment.tz(moment(), "Pacific/Auckland").format("MMMM");
-    var time = moment.tz(moment(), "Pacific/Auckland").format("hh:mmA");
+  if (command === 'time' && channel.slice(1) === 'veryhandsomebilly') {
+    var day = moment.tz(moment(), 'Pacific/Auckland').format('dddd');
+    var dNum = moment.tz(moment(), 'Pacific/Auckland').format('Do');
+    var month = moment.tz(moment(), 'Pacific/Auckland').format('MMMM');
+    var time = moment.tz(moment(), 'Pacific/Auckland').format('hh:mmA');
     botclient.say(
       channel,
       `In New Zealand it is currently ${day} the ${dNum} of ${month} and the time is ${time}`
     );
   }
 
-  if (command === "!wolfram") {
-    var query = he.encode(`${parsedM.slice(1).join(" ")}`);
-    var handleData = (data) => {
-      console.log(data);
-      botclient.say(channel, he.decode(`${data.bodyText}`));
-    };
-    fetchJson
-      .get(
-        `http://api.wolframalpha.com/v1/result?appid=${process.env.WOLFRAM_APPID}&i=${query}&units=metric`
-      )
-      .then(handleData);
-  }
-
-  if (command === "!wolframi") {
-    var query = he.encode(`${parsedM.slice(1).join(" ")}`);
-    var handleData = (data) => {
-      console.log(data);
-      botclient.say(channel, he.decode(`${data.bodyText}`));
-    };
-    fetchJson
-      .get(
-        `http://api.wolframalpha.com/v1/result?appid=${process.env.WOLFRAM_APPID}&i=${query}&units=imperial`
-      )
-      .then(handleData);
-  }
-
-  if (command === "!horoscope") {
-    var sign = parsedM[1];
-    var handleData = (data) => {
-      console.log(data);
-      if (data.sunsign === "undefined") {
-        botclient.say(channel, "No sign received Example: !horoscope Libra");
-      } else {
-        botclient.say(channel, he.decode(`${data.horoscope}`));
-      }
-    };
-    fetchJson
-      .get(`http://horoscope-api.herokuapp.com/horoscope/today/${sign}`)
-      .then(handleData);
-  }
-
-  if (command === "!reply" && admins.includes(userstate.username)) {
+  if (command === 'reply' && admins.includes(userstate.username)) {
     if (chatRespond === true) {
       botclient.say(channel, he.decode(`RESPONSES TURNED OFF`));
       chatRespond = !chatRespond;
@@ -875,7 +866,7 @@ botclient.on("chat", async (channel, userstate, message, self) => {
     }
   }
 
-  if (command === "!test" && admins.includes(userstate.username)) {
+  if (command === 'test' && userstate.badges.broadcaster === '1') {
     botclient.say(channel, he.decode(`THIS IS A TEST`));
   }
 });
@@ -883,21 +874,21 @@ botclient.on("chat", async (channel, userstate, message, self) => {
 var chatRespond = true;
 
 // Answer for !science
-var answer = "";
+var answer = '';
 
 const port = process.env.PORT || 3000;
 server.listen(port);
 
 // Utils
 const capitalize = (s) => {
-  if (typeof s !== "string") return "";
+  if (typeof s !== 'string') return '';
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
 function makeid(length) {
-  var result = "";
+  var result = '';
   var characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   var charactersLength = characters.length;
   for (var i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));

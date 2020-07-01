@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const srSchema = new mongoose.Schema({
+const mashSchema = new mongoose.Schema({
   track: {
     name: String,
     artist: String,
@@ -31,4 +31,4 @@ const srSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("SongRequests", srSchema);
+module.exports = mongoose.model("MashupRequests", mashSchema);
