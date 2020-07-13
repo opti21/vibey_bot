@@ -1,12 +1,12 @@
 .left {
-  height: 90vh;
+  height: 95vh;
 }
 .container {
   height: 100vh;
   width: 100vw;
 }
 #requests {
-  height: 75vh;
+  height: 85vh;
   overflow: hidden;
   overflow-y: scroll;
 }
@@ -41,19 +41,19 @@
 }
 .reqBy {
   background-color: #270040 !important;
-  border-color: #31004f !important
+  border-color: #31004f !important;
 }
 .song-ctrl {
   background-color: #270040 !important;
 }
 
-.addMixBtn {
+.moveBtn {
   background-color: rgba(0, 150, 52, 0.35);
 }
-.addMixBtn:hover {
+.moveBtn:hover {
   background-color: rgb(0, 150, 52);
 }
-a.addMixBtn {
+a.moveBtn {
   color: white;
   text-decoration: none !important;
 }

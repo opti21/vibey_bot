@@ -31,7 +31,7 @@ router.get("/login", (req, res) => {
 // Logout
 router.get("/logout", async function (req, res) {
   try {
-    await User.deleteOne({ twitch_id: req.user.id });
+    // await User.deleteOne({ twitch_id: req.user.id });
     req.session = null;
     req.user = null;
     req.logout();

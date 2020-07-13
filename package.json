@@ -4,11 +4,11 @@
   "description": "The vibeyest bot there is :)",
   "repository": {
     "type": "git",
-    "url": "https://gitlab.com/opti21/vibey_gitlab.git"
+    "url": "https://github.com/opti21/vibey.git"
   },
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon server.js --ignore public/",
+    "dev": "nodemon --inspect server.js --ignore public/ --ignore client/",
     "test": "mocha"
   },
   "author": "Brandon Rowe",
@@ -43,9 +43,15 @@
     "spotify-uri": "^1.0.0",
     "tmi.js": "^1.5.0",
     "twitch": "^3.5.6",
+    "twitchps": "^1.5.1",
     "uglify-es": "^3.3.9",
     "util": "^0.12.1",
-    "uws": "^100.0.1"
+    "uuid": "^8.2.0",
+    "uws": "^100.0.1",
+    "ws": "^7.3.1"
+  },
+  "prettier": {
+    "singleQuote": true
   },
   "devDependencies": {
     "chai": "^4.2.0",

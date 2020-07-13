@@ -46,10 +46,10 @@ const userSchema = new mongoose.Schema({
   },
   accessToken: String,
   refreshToken: String,
-  expireAt: { type: Date, default: undefined },
+  // expireAt: { type: Date, default: undefined },
   settings: [settingSchema],
 });
 
-userSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
+// userSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model("Users", userSchema);
