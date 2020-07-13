@@ -5,6 +5,8 @@ const spotify_id = process.env.SPOTIFY_ID;
 const spotify_secret = process.env.SPOTIFY_SECRET;
 const cb_url = process.env.SPOTIFY_CALLBACK_URL;
 const encoded_url = encodeURIComponent(cb_url);
+const nightbot_cb_url = process.env.APP_URL + '/auth/nightbot/callback';
+const encoded_nightbot_url = encodeURIComponent(nightbot_cb_url);
 const Spotify = require('node-spotify-api');
 const spotify = new Spotify({
   id: process.env.SPOTIFY_ID,
@@ -15,6 +17,14 @@ const b64 = require('js-base64').Base64;
 const qs = require('querystring');
 const User = require('../models/users');
 const moment = require('moment-timezone');
+
+function loggedIn(req, res, next) {
+  if (!req.user) {
+    res.redirect('/login');
+  } else {
+    next();
+  }
+}
 
 router.get('/twitch', passport.authenticate('twitch.js'));
 router.get(
@@ -66,7 +76,7 @@ router.get('/spotify/callback', (req, res) => {
           { new: true }
         ).then((update_res) => {
           console.log(update_res);
-          res.redirect(`/u/${req.user.login}/dashboard`);
+          res.redirect(`/u/${req.user.login}/queue`);
         });
       } catch (e) {
         console.error(e);
@@ -76,6 +86,12 @@ router.get('/spotify/callback', (req, res) => {
       console.error(e);
     });
 });
+
+// router.get('/auth/nightbot', loggedIn, async (req, res) => {
+//   res.redirect(
+//     `https://api.nightbot.tv/oauth2/authorize/?client_id=${process.env.NIGHTBOT_CLIENT}&redirect_uri=&${encoded_nightbot_url}&response_type=code`
+//   );
+// });
 
 // router.get("/test", (req, res) => {
 //   res.render("test");

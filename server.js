@@ -33,6 +33,7 @@ const axios = require('axios');
 const JoinedChannel = require('./models/joinedChannels');
 const qs = require('querystring');
 const ComfyJS = require('comfy.js');
+const { v4: uuidv4 } = require('uuid');
 // ComfyJS.Init(config.comfyChan);
 
 // SendGrid Emails
@@ -211,7 +212,7 @@ passport.use(
       clientID: process.env.TWITCH_CLIENTID,
       clientSecret: process.env.TWITCH_SECRET,
       callbackURL: `${process.env.APP_URL}/auth/twitch/callback`,
-      scope: 'user:read:email',
+      scope: 'user:read:email channel_subscriptions',
     },
     async function (accessToken, refreshToken, profile, done) {
       try {
@@ -634,8 +635,9 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                   })
                   .catch(console.error);
               } else {
-                // If song was found on Spotify create song request
-                var newSpotSR = new SongRequest({
+                // If song was found on Spotify add song to queue
+                var newSr = {
+                  id: uuidv4(),
                   track: {
                     name: data.tracks.items[0].name,
                     artist: data.tracks.items[0].artists[0].name,
@@ -646,43 +648,42 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                   timeOfReq: moment.utc().format(),
                   source: 'spotify',
                   channel: channel.slice(1),
-                });
-                newSpotSR.save().then((doc) => {
-                  queue.currQueue.push(doc._id);
-                  let newQueue = queue.currQueue;
-                  // console.log(queue);
-                  Queue.findOneAndUpdate(
-                    { channel: noHashChan },
-                    { currQueue: newQueue },
-                    { new: true }
-                  )
-                    .then((queueDoc) => {
-                      // Real time data push to front end
-                      // console.log(doc);
-                      console.log(queueDoc);
+                };
 
-                      rqs.to(`${noHashChan}`).emit('sr-event', {
-                        id: `${doc.id}`,
-                        reqBy: `${doc.requestedBy}`,
-                        track: `${doc.track.name}`,
-                        artist: `${doc.track.artist}`,
-                        uri: `${doc.track.uri}`,
-                        link: `${doc.track.link}`,
-                        source: `${doc.source}`,
-                        timeOfReq: `${doc.timeOfReq}`,
-                      });
+                queue.currQueue.push(newSr);
+                let newQueue = queue.currQueue;
+                // console.log(queue);
+                Queue.findOneAndUpdate(
+                  { channel: noHashChan },
+                  { currQueue: newQueue },
+                  { new: true, useFindAndModify: false }
+                )
+                  .then((queueDoc) => {
+                    // Real time data push to front end
+                    // console.log(doc);
+                    // console.log(queueDoc);
 
-                      if (chatRespond) {
-                        botclient.say(
-                          channel,
-                          `@${doc.requestedBy} requested ${doc.track.name} by ${doc.track.artist} - ${doc.track.link}`
-                        );
-                      }
-                    })
-                    .catch((e) => {
-                      console.error(e);
+                    rqs.to(`${noHashChan}`).emit('sr-event', {
+                      id: `${newSr.id}`,
+                      reqBy: `${newSr.requestedBy}`,
+                      track: `${newSr.track.name}`,
+                      artist: `${newSr.track.artist}`,
+                      uri: `${newSr.track.uri}`,
+                      link: `${newSr.track.link}`,
+                      source: `${newSr.source}`,
+                      timeOfReq: `${newSr.timeOfReq}`,
                     });
-                });
+
+                    if (chatRespond) {
+                      botclient.say(
+                        channel,
+                        `@${newSr.requestedBy} requested ${newSr.track.name} by ${newSr.track.artist} - ${newSr.track.link}`
+                      );
+                    }
+                  })
+                  .catch((e) => {
+                    console.error(e);
+                  });
               }
             }
           );
@@ -895,3 +896,34 @@ function makeid(length) {
   }
   return result;
 }
+
+// const TwitchPS = require('twitchps');
+
+// // Initial topics are required
+// let init_topics = [
+//   { topic: 'video-playback.opti_21' },
+//   {
+//     topic: 'channel-subscribe-events-v1.',
+//     token: '',
+//   },
+// ];
+// // Optional reconnect, debug options (Defaults: reconnect: true, debug: false)
+// var ps = new TwitchPS({
+//   init_topics: init_topics,
+//   reconnect: true,
+//   debug: true,
+// });
+
+// ps.on('stream-up', (data) => {
+//   console.log(data.time, data.channel_name);
+//   // Use data here
+// });
+
+// ps.on('stream-down', (data) => {
+//   console.log(data.time, data.channel_name);
+//   // Use data here
+// });
+
+// ps.on('subscribe', (data) => {
+//   console.log(data);
+// });

@@ -67,7 +67,7 @@ router.get('/:channel/dashboard', loggedIn, async (req, res) => {
   });
 });
 
-router.get('/:channel/requests', loggedIn, async (req, res) => {
+router.get('/:channel/queue', loggedIn, async (req, res) => {
   let isChannelOwner = req.user.login === req.params.channel;
   let isAdmin = admins.includes(req.user.login);
   let isMod;
@@ -77,14 +77,12 @@ router.get('/:channel/requests', loggedIn, async (req, res) => {
   }
   if (isAdmin === false && isChannelOwner === false) {
   }
-  var feSongRequests = await SongRequest.find();
   var mixRequests = await mixReqs.find();
-  res.render('requests', {
+  res.render('queue', {
     isAllowed: isAllowed,
     loggedInUser: req.user.login,
     channel: req.params.channel,
     loggedInUserPic: req.user['profile_image_url'],
-    requests: feSongRequests,
     version: version,
   });
 });

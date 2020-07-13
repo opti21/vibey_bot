@@ -1,145 +1,136 @@
-const router = require("express").Router();
-const User = require("../models/users");
-const SongRequest = require("../models/songRequests");
-const mixReqs = require("../models/mixRequests");
-const Poll = require("../models/polls");
-const JoinedChannel = require("../models/joinedChannels");
-const config = require("../config/config");
+const router = require('express').Router();
+const User = require('../models/users');
+const SongRequest = require('../models/songRequests');
+const Queue = require('../models/queues');
+const mixReqs = require('../models/mixRequests');
+const Poll = require('../models/polls');
+const JoinedChannel = require('../models/joinedChannels');
+const config = require('../config/config');
 const twitchchan = config.twitchChan;
-const pollsIO = io.of("/polls-namescape");
-const moment = require("moment-timezone");
-const rqs = io.of("/req-namescape");
+const pollsIO = io.of('/polls-namescape');
+const moment = require('moment-timezone');
+const rqs = io.of('/req-namescape');
 
 function loggedIn(req, res, next) {
   if (!req.user) {
-    res.redirect("/login");
+    res.redirect('/login');
   } else {
     next();
   }
 }
 
-router.get("/requests/:channel", loggedIn, async (req, res) => {
-  let requests = await SongRequest.find({ channel: req.params.channel });
-  res.status(200).send(requests);
+router.get('/queue/:channel', loggedIn, async (req, res) => {
+  let queue = await Queue.findOne({ channel: req.params.channel });
+  // console.log(queue.currQueue);
+  res.status(200).send(queue.currQueue);
 });
 
 // Mixes
-router.get("/mixes/:channel", loggedIn, async (req, res) => {
+router.get('/mixes/:channel', loggedIn, async (req, res) => {
   let mixes = await mixReqs.find({ channel: req.params.channel });
   res.status(200).send(mixes);
 });
 
-// Add request to mix
-router.post("/mixes/:channel/add/:id", loggedIn, async (req, res) => {
-  await SongRequest.findById(req.params.id, (err, request) => {
-    if (err) {
-      return;
-    } else {
-      request.fulfilled = true;
-      request.dateFulfilled = moment().utc();
-      request.save().then(console.log("Request updated"));
-      var mixAdd = new mixReqs({
-        track: {
-          name: request.track.name,
-          artist: request.track.artist,
-          link: request.track.link,
-          uri: request.track.uri,
-        },
-        requestedBy: request.requestedBy,
-        timeOfReq: request.timeOfReq,
-        source: request.source,
-        channel: request.channel,
-      });
-      mixAdd.save().then((doc) => {
-        try {
-          res.status(200).send("Added to Mix");
-          rqs.to(`${req.params.channel}`).emit("mix-add", {
-            id: `${doc.id}`,
-            reqBy: `${doc.requestedBy}`,
-            track: `${doc.track.name}`,
-            artist: `${doc.track.artist}`,
-            uri: `${doc.track.uri}`,
-            link: `${doc.track.link}`,
-            source: `${doc.source}`,
-            channel: `${doc.channel}`,
-          });
-        } catch (err) {
-          console.error(err);
-          res.status(500).send("Error Adding song to mix");
-        }
-      });
+router.put('/queues/:channel/:move/:id', loggedIn, async (req, res) => {
+  let queue = await Queue.findOne({ channel: req.params.channel });
+  let move = req.params.move;
+  let songIndex = queue.currQueue.findIndex(
+    (song) => song.id === req.params.id
+  );
+  if (songIndex === 0 && move === 'move-up') {
+    res.status(200).send(queue.currQueue);
+  } else {
+    let song = queue.currQueue[songIndex];
+
+    let newIndex;
+
+    if (req.params.move === 'move-up') {
+      newIndex = songIndex - 1;
     }
-  });
+
+    if (req.params.move === 'move-down') {
+      newIndex = songIndex + 1;
+    }
+
+    // temp remove song from array
+    queue.currQueue.splice(songIndex, 1);
+
+    // put song into new position
+    queue.currQueue.splice(newIndex, 0, song);
+
+    Queue.findOneAndUpdate(
+      { channel: req.params.channel },
+      { currQueue: queue.currQueue },
+      { new: true, useFindAndModify: false }
+    )
+      .then((queueDoc) => {
+        res.status(200).send(queue.currQueue);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send('Error moving song');
+      });
+  }
 });
 
-// Delete Request
-router.delete("/requests/:channel/delete/:id", loggedIn, (req, res) => {
-  SongRequest.findByIdAndDelete(req.params.id, (err, mixRes) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send("Error deleting request");
-    } else {
-      console.log("Request deleted");
-      res.status(200).send("Request Delted successfully");
-    }
-  });
-});
-
-// Delete Mix request
-router.delete("/mixes/:channel/delete/:id", loggedIn, (req, res) => {
-  mixReqs.findByIdAndDelete(req.params.id, (err, mixRes) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send("Error deleting request");
-    } else {
-      console.log("Request delted");
-      res.status(200).send("Request Delted successfully");
-    }
-  });
-});
+// Delete Request from queue
+router.delete(
+  '/queues/:channel/delete-song/:id',
+  loggedIn,
+  async (req, res) => {
+    let queue = await Queue.findOne({ channel: req.params.channel });
+    let songIndex = queue.currQueue.findIndex(
+      (song) => song.id === req.params.id
+    );
+    queue.currQueue.splice(songIndex, 1);
+    Queue.findOneAndUpdate(
+      { channel: req.params.channel },
+      { currQueue: queue.currQueue },
+      { new: true, useFindAndModify: false }
+    )
+      .then((queueDoc) => {
+        res.status(200).send('Song request deleted');
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send('Error deleting song request');
+      });
+  }
+);
 
 // Clear Request Queue
-router.delete("/requests/:channel/clearqueue", (req, res) => {
-  SongRequest.deleteMany({ channel: req.params.channel }, (err, response) => {
-    if (err) {
+router.delete('/requests/:channel/clearqueue', loggedIn, (req, res) => {
+  Queue.findOneAndUpdate(
+    { channel: req.params.channel },
+    { currQueue: [] },
+    { new: true, useFindAndModify: false }
+  )
+    .then((doc) => {
+      console.log('Queue cleared');
+      res.status(200).send('Queue cleared');
+    })
+    .catch((err) => {
       console.error(err);
-      res.status(500).send("Error Clearing queue");
-    } else {
-      console.log("Queue cleared");
-      res.status(200).send("Queue cleared");
-    }
-  });
-});
-
-// Clear Mix Queue
-router.delete("/mixes/:channel/clear", (req, res) => {
-  SongRequest.deleteMany({ channel: req.params.channel }, (err, response) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send("Error Clearing queue");
-    } else {
-      console.log("Queue cleared");
-      res.status(200).send("Queue cleared");
-    }
-  });
+      res.status(500).send('Error Clearing queue');
+    });
 });
 
 // Polls
-router.get("/polls", loggedIn, async (req, res) => {
+router.get('/polls', loggedIn, async (req, res) => {
   try {
     let polls = await Poll.find();
     res.send(polls).status(200);
   } catch (err) {
-    res.send("error").send(500);
+    res.send('error').send(500);
     console.error(err);
   }
 });
 
-router.post("/connect", loggedIn, async (req, res) => {
+router.post('/connect', loggedIn, async (req, res) => {
   let channel = req.query.channel;
   let exists = await JoinedChannel.exists({ channel: channel });
   if (exists) {
-    res.status(409).send("Channel is already joined");
+    res.status(409).send('Channel is already joined');
   } else {
     let joinedChannel = new JoinedChannel({
       channel: channel,
@@ -151,11 +142,11 @@ router.post("/connect", loggedIn, async (req, res) => {
           .join(`${channel}`)
           .then((data) => {
             console.log(data);
-            res.status(200).send("Channel joined successfully!");
+            res.status(200).send('Channel joined successfully!');
           })
           .catch((err) => {
             console.error(err);
-            res.status(500).send("Error Joining channel");
+            res.status(500).send('Error Joining channel');
           });
       })
       .catch((e) => {
@@ -164,22 +155,22 @@ router.post("/connect", loggedIn, async (req, res) => {
   }
 });
 
-router.delete("/disconnect", loggedIn, (req, res) => {
+router.delete('/disconnect', loggedIn, (req, res) => {
   let channel = req.query.channel;
   JoinedChannel.findOneAndDelete({
     channel: channel,
   })
     .then((response) => {
-      console.log("Channel Document deleted");
+      console.log('Channel Document deleted');
       botclient
         .part(`${channel}`)
         .then((data) => {
           console.log(data);
-          res.status(200).send("Channel joined successfully!");
+          res.status(200).send('Channel joined successfully!');
         })
         .catch((err) => {
           console.error(err);
-          res.status(500).send("Error Joining channel");
+          res.status(500).send('Error Joining channel');
         });
     })
     .catch((e) => {
@@ -187,14 +178,14 @@ router.delete("/disconnect", loggedIn, (req, res) => {
     });
 });
 
-router.post("/polls/newpoll", loggedIn, async (req, res) => {
+router.post('/polls/newpoll', loggedIn, async (req, res) => {
   try {
     let user = await User.findOne({ twitch_id: req.user.id });
     let poll = await Poll.find({ active: true });
     if (poll.length === 0) {
-      let pollText = req.body["formData"][0].value;
-      let choices = req.body["formData"].slice(1);
-      let multipleVotes = req.body["multipleVotes"];
+      let pollText = req.body['formData'][0].value;
+      let choices = req.body['formData'].slice(1);
+      let multipleVotes = req.body['multipleVotes'];
       let choiceArray = [];
       let votes = [];
       choices.forEach(choiceAppend);
@@ -223,7 +214,7 @@ router.post("/polls/newpoll", loggedIn, async (req, res) => {
         let choices = [];
         botclient.say(
           twitchchan[0],
-          "A new poll has started! Vote with the # of the choice you would like to win!"
+          'A new poll has started! Vote with the # of the choice you would like to win!'
         );
         botclient.say(twitchchan[0], `The poll question is: ${pollText}`);
 
@@ -233,7 +224,7 @@ router.post("/polls/newpoll", loggedIn, async (req, res) => {
           let choiceArr = [`${choice.text}`, choice.votes];
           choices.push(choiceArr);
         });
-        pollsIO.emit("pollOpen", {
+        pollsIO.emit('pollOpen', {
           poll: doc,
         });
 
@@ -242,21 +233,21 @@ router.post("/polls/newpoll", loggedIn, async (req, res) => {
       });
     } else {
       console.log(poll);
-      res.status(418).send("Poll is already running");
+      res.status(418).send('Poll is already running');
     }
   } catch (err) {
-    res.status(500).send("Error creating poll document");
+    res.status(500).send('Error creating poll document');
     console.error(err);
   }
 });
 
 // Song Poll
-router.get("/createSongpoll", loggedIn, async (req, res) => {
+router.get('/createSongpoll', loggedIn, async (req, res) => {
   try {
     let poll = await Poll.find({ active: true });
     let mix = await mixReqs.find({});
     if (poll.length === 0) {
-      let pollText = "Which song?";
+      let pollText = 'Which song?';
       let choices = mix;
       let choiceArray = [];
       let votes = [];
@@ -287,7 +278,7 @@ router.get("/createSongpoll", loggedIn, async (req, res) => {
         let choices = [];
         botclient.say(
           twitchchan[0],
-          "A new poll has started! Vote with the # of the choice you want i.e.(2)"
+          'A new poll has started! Vote with the # of the choice you want i.e.(2)'
         );
         botclient.say(twitchchan[0], `The poll question is: ${pollText}`);
 
@@ -297,7 +288,7 @@ router.get("/createSongpoll", loggedIn, async (req, res) => {
           let choiceArr = [`${choice.text}`, choice.votes];
           choices.push(choiceArr);
         });
-        pollsIO.emit("pollOpen", {
+        pollsIO.emit('pollOpen', {
           poll: doc,
         });
 
@@ -306,14 +297,14 @@ router.get("/createSongpoll", loggedIn, async (req, res) => {
       });
     } else {
       console.log(poll);
-      res.status(418).send("Poll is already running");
+      res.status(418).send('Poll is already running');
     }
   } catch (err) {
     console.error(err);
   }
 });
 
-router.get("/polls/close/:id", loggedIn, async (req, res) => {
+router.get('/polls/close/:id', loggedIn, async (req, res) => {
   try {
     let user = await User.findOne({ twitch_id: req.user.id });
     let poll = await Poll.findOne({ _id: req.params.id });
@@ -336,13 +327,13 @@ router.get("/polls/close/:id", loggedIn, async (req, res) => {
         try {
           res.sendStatus(200);
 
-          botclient.say(twitchchan[0], "The poll is now closed");
+          botclient.say(twitchchan[0], 'The poll is now closed');
           botclient.say(
             twitchchan[0],
             `Poll: ${doc.polltext} Winner: ${doc.choices[i].text}`
           );
 
-          pollsIO.emit("pollClose", {
+          pollsIO.emit('pollClose', {
             pollID: doc._id,
             win: win,
             winText: poll.choices[i].text,
@@ -353,7 +344,7 @@ router.get("/polls/close/:id", loggedIn, async (req, res) => {
       }
     );
   } catch (err) {
-    res.status(500).send("Error closing Poll");
+    res.status(500).send('Error closing Poll');
     console.error(err);
   }
 });
@@ -361,9 +352,9 @@ router.get("/polls/close/:id", loggedIn, async (req, res) => {
 module.exports = router;
 
 function makeid(length) {
-  let result = "";
+  let result = '';
   let characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let charactersLength = characters.length;
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));

@@ -4,7 +4,7 @@
 <head>
 	<title>Vibey Requests</title>
 	<%- include('./partials/head') %>
-	<link rel="stylesheet" href="/css/requests.css">
+	<link rel="stylesheet" href="/css/queue.css">
 </head>
 
 <body>
@@ -41,14 +41,8 @@
 							</div>
 
 							<div class="col right">
-								<h2>Current Mix</h2>
-								<div id="clear-mix">
-									<button class="delete-mix btn btn-danger btn-sm mb-3"> Clear Mix </button>
-                  					<!-- <button id="songpoll" class="songpoll btn btn-sm btn-info mb-3" type="button">Start Song Poll</button> -->
-								</div>
-								<div id="mix">
-									<!-- Mix goes here -->
-								</div>
+								<!-- notifications will go here maybe -->
+								
 							</div>
 						</div>
 					</div>
@@ -73,7 +67,7 @@
 			<script src="/js/moment.min.js"></script>
 			<script src="/socket.io/socket.io.js"></script>
 			<script src="/js/sweetalert2.all.min.js"></script>
-			<script src="/js/requests.js"></script>
+			<script src="/js/queue.min.js"></script>
 			<% } %>
 </body>
 
