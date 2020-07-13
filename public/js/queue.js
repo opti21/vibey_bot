@@ -67,6 +67,12 @@ fetch(`/api/queue/${globalChannel}`)
       </div>
     `;
       reqDiv.prepend(reqElem);
+      gsap.from(`#sr${request._id}`, {
+        opacity: 0,
+        y: -50,
+        duration: 0.5,
+        ease: 'power4.out',
+      });
     });
   });
 
@@ -103,6 +109,12 @@ socket.on('sr-event', (request) => {
       </div>
     `;
     reqDiv.prepend(reqElem);
+    gsap.from(`#sr${request.id}`, {
+      opacity: 0,
+      y: -50,
+      duration: 0.5,
+      ease: 'power4.out',
+    });
   } catch (err) {
     console.error(err);
   }
@@ -197,6 +209,12 @@ document.addEventListener(
   false
 );
 
+function removeDiv(div) {
+  console.log(div);
+  let srDiv = document.getElementById(div);
+  srDiv.remove();
+}
+
 // NEW Delete Song Request
 document.addEventListener(
   'click',
@@ -210,8 +228,14 @@ document.addEventListener(
     xhr.onload = function () {
       if (xhr.status === 200) {
         try {
-          let srDiv = document.getElementById(`${srID}`);
-          srDiv.remove();
+          gsap.to(`#sr${srID}`, {
+            opacity: 0,
+            y: -50,
+            duration: 0.5,
+            ease: 'power4.out',
+            onComplete: removeDiv,
+            onCompleteParams: [`sr${srID}`],
+          });
           Toast.fire({
             type: 'success',
             title: 'Song Request removed!',
@@ -245,8 +269,14 @@ document.addEventListener(
     xhr.onload = function () {
       if (xhr.status === 200) {
         try {
-          let songDiv = document.getElementById(`mix${srID}`);
-          songDiv.remove();
+          gsap.to(`#mix${srID}`, {
+            opacity: 0,
+            y: -50,
+            duration: 0.5,
+            ease: 'power4.out',
+            onComplete: removeDiv,
+            onCompleteParams: [`mix${srID}`],
+          });
           Toast.fire({
             type: 'success',
             title: 'Song Request removed!',
