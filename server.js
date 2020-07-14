@@ -488,13 +488,13 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     return;
   }
 
-  if (command === 'closesr' && userstate.badges.broadcaster === '1') {
+  if (command === 'opensr' && userstate.badges.broadcaster === '1') {
     Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: true })
       .then((doc) => {
         botclient.say(channel, 'Requests are now open');
       })
       .catch((err) => console.error(err));
-  } else if (command === 'closesr' && userstate.mod === true) {
+  } else if (command === 'opensr' && userstate.mod === true) {
     Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: true })
       .then((doc) => {
         botclient.say(channel, 'Requests are now open');
