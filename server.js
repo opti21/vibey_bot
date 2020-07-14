@@ -212,7 +212,7 @@ passport.use(
       clientID: process.env.TWITCH_CLIENTID,
       clientSecret: process.env.TWITCH_SECRET,
       callbackURL: `${process.env.APP_URL}/auth/twitch/callback`,
-      scope: 'user:read:email channel_subscriptions',
+      scope: 'user:read:email channel_subscriptions ',
     },
     async function (accessToken, refreshToken, profile, done) {
       try {
@@ -469,23 +469,41 @@ ComfyJS.onChat = async (user, command, message, flags, extra) => {
 botclient.on('chat', async (channel, userstate, message, self) => {
   if (self) return;
   if (message[0] !== '!') return;
-  var parsedM = message.trim().split(' ');
+  let parsedM = message.trim().split(' ');
   let command = parsedM[0].slice(1).toLowerCase();
   let noHashChan = channel.slice(1);
-  if (command === 'close' && userstate.badges.broadcaster === '1') {
-    Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: false }).then(
-      (doc) => {
+  if (command === 'closesr' && userstate.badges.broadcaster === '1') {
+    Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: false })
+      .then((doc) => {
         botclient.say(channel, 'Requests are now closed');
-      }
-    );
+      })
+      .catch((err) => console.error(err));
+  } else if (command === 'closesr' && userstate.mod === true) {
+    Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: false })
+      .then((doc) => {
+        botclient.say(channel, 'Requests are now closed');
+      })
+      .catch((err) => console.error(err));
+  } else {
+    return;
   }
-  if (command === 'open' && userstate.badges.broadcaster === '1') {
-    Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: true }).then(
-      (doc) => {
+
+  if (command === 'closesr' && userstate.badges.broadcaster === '1') {
+    Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: true })
+      .then((doc) => {
         botclient.say(channel, 'Requests are now open');
-      }
-    );
+      })
+      .catch((err) => console.error(err));
+  } else if (command === 'closesr' && userstate.mod === true) {
+    Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: true })
+      .then((doc) => {
+        botclient.say(channel, 'Requests are now open');
+      })
+      .catch((err) => console.error(err));
+  } else {
+    return;
   }
+
   if (command === 'sr' || command === 'songrequest') {
     let queue = await Queue.findOne({ channel: noHashChan });
     // console.log(queue.settings);
@@ -499,7 +517,8 @@ botclient.on('chat', async (channel, userstate, message, self) => {
           spotify
             .request(`https://api.spotify.com/v1/tracks/${spID.id}`)
             .then(function (data) {
-              var newSpotSR = new SongRequest({
+              let newSr = {
+                id: uuidv4(),
                 track: {
                   name: data.name,
                   artist: data.artists[0].name,
@@ -510,30 +529,41 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                 timeOfReq: moment.utc().format(),
                 source: 'spotify',
                 channel: channel.slice(1),
-              });
-              newSpotSR
-                .save()
-                .then((doc) => {
+              };
+
+              queue.currQueue.push(newSr);
+              let newQueue = queue.currQueue;
+              // console.log(queue);
+              Queue.findOneAndUpdate(
+                { channel: noHashChan },
+                { currQueue: newQueue },
+                { new: true, useFindAndModify: false }
+              )
+                .then((queueDoc) => {
+                  // Real time data push to front end
+                  // console.log(doc);
+                  // console.log(queueDoc);
+
+                  rqs.to(`${noHashChan}`).emit('sr-event', {
+                    id: `${newSr.id}`,
+                    reqBy: `${newSr.requestedBy}`,
+                    track: `${newSr.track.name}`,
+                    artist: `${newSr.track.artist}`,
+                    uri: `${newSr.track.uri}`,
+                    link: `${newSr.track.link}`,
+                    source: `${newSr.source}`,
+                    timeOfReq: `${newSr.timeOfReq}`,
+                  });
+
                   if (chatRespond) {
                     botclient.say(
                       channel,
-                      `@${doc.requestedBy} requested ${doc.track.name} by ${doc.track.artist}`
+                      `@${newSr.requestedBy} requested ${newSr.track.name} by ${newSr.track.artist} - ${newSr.track.link}`
                     );
                   }
-                  // Real time data push to front end
-                  rqs.to(`${channel}`).emit('sr-event', {
-                    id: `${doc.id}`,
-                    reqBy: `${doc.requestedBy}`,
-                    track: `${doc.track.name}`,
-                    artist: `${doc.track.artist}`,
-                    uri: `${doc.track.uri}`,
-                    link: `${doc.track.link}`,
-                    source: `${doc.source}`,
-                    timeOfReq: `${doc.timeOfReq}`,
-                  });
                 })
-                .catch((err) => {
-                  console.error(err);
+                .catch((e) => {
+                  console.error(e);
                 });
             })
             .catch(function (err) {
@@ -544,34 +574,47 @@ botclient.on('chat', async (channel, userstate, message, self) => {
         if (ytRegex.test(parsedM[1])) {
           console.log('youtube link');
           youtube.getVideo(parsedM[1]).then((video) => {
-            var newYTSR = new SongRequest({
+            let newSr = {
+              id: uuidv4(),
               track: { name: video.title, link: parsedM[1] },
               requestedBy: userstate.username,
               timeOfReq: moment.utc().format(),
               source: 'youtube',
               channel: channel.slice(1),
-            });
-            newYTSR
-              .save()
-              .then((doc) => {
+            };
+
+            queue.currQueue.push(newSr);
+            let newQueue = queue.currQueue;
+            // console.log(queue);
+            Queue.findOneAndUpdate(
+              { channel: noHashChan },
+              { currQueue: newQueue },
+              { new: true, useFindAndModify: false }
+            )
+              .then((queueDoc) => {
+                // Real time data push to front end
+                // console.log(doc);
+                // console.log(queueDoc);
+
+                rqs.to(`${noHashChan}`).emit('sr-event', {
+                  id: `${newSr.id}`,
+                  reqBy: `${newSr.requestedBy}`,
+                  track: `${newSr.track.name}`,
+                  uri: `${newSr.track.uri}`,
+                  link: `${newSr.track.link}`,
+                  source: `${newSr.source}`,
+                  timeOfReq: `${newSr.timeOfReq}`,
+                });
+
                 if (chatRespond) {
                   botclient.say(
                     channel,
-                    `@${doc.requestedBy} requested ${doc.track.name} ${doc.track.link}`
+                    `@${newSr.requestedBy} requested ${newSr.track.name} - ${newSr.track.link}`
                   );
                 }
-                // Real time data push to front end
-                rqs.to(`${channel}`).emit('sr-event', {
-                  id: `${doc.id}`,
-                  reqBy: `${doc.requestedBy}`,
-                  track: `${doc.track.name}`,
-                  link: `${doc.track.link}`,
-                  source: `${doc.source}`,
-                  timeOfReq: `${doc.timeOfReq}`,
-                });
               })
-              .catch((err) => {
-                console.error(err);
+              .catch((e) => {
+                console.error(e);
               });
           });
         }
@@ -599,7 +642,8 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                 youtube
                   .search(request, 1)
                   .then((results) => {
-                    var newYTSR = new SongRequest({
+                    let newSr = {
+                      id: uuidv4(),
                       track: {
                         name: results[0].title,
                         link: `https://youtu.be/${results[0].id}`,
@@ -608,35 +652,46 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                       timeOfReq: moment.utc().format(),
                       source: 'youtube',
                       channel: channel.slice(1),
-                    });
-                    newYTSR
-                      .save()
-                      .then((doc) => {
+                    };
+
+                    queue.currQueue.push(newSr);
+                    let newQueue = queue.currQueue;
+                    // console.log(queue);
+                    Queue.findOneAndUpdate(
+                      { channel: noHashChan },
+                      { currQueue: newQueue },
+                      { new: true, useFindAndModify: false }
+                    )
+                      .then((queueDoc) => {
+                        // Real time data push to front end
+                        // console.log(doc);
+                        // console.log(queueDoc);
+
+                        rqs.to(`${noHashChan}`).emit('sr-event', {
+                          id: `${newSr.id}`,
+                          reqBy: `${newSr.requestedBy}`,
+                          track: `${newSr.track.name}`,
+                          uri: `${newSr.track.uri}`,
+                          link: `${newSr.track.link}`,
+                          source: `${newSr.source}`,
+                          timeOfReq: `${newSr.timeOfReq}`,
+                        });
+
                         if (chatRespond) {
                           botclient.say(
                             channel,
-                            `@${doc.requestedBy} requested ${doc.track.name} https://youtu.be/${results[0].id}`
+                            `@${newSr.requestedBy} requested ${newSr.track.name} - ${newSr.track.link}`
                           );
                         }
-
-                        // Real time data push to front end
-                        rqs.to(`${channel}`).emit('sr-event', {
-                          id: `${doc.id}`,
-                          reqBy: `${doc.requestedBy}`,
-                          track: `${doc.track.name}`,
-                          link: `${doc.track.link}`,
-                          source: `${doc.source}`,
-                          timeOfReq: `${doc.timeOfReq}`,
-                        });
                       })
-                      .catch((err) => {
-                        console.error(err);
+                      .catch((e) => {
+                        console.error(e);
                       });
                   })
                   .catch(console.error);
               } else {
                 // If song was found on Spotify add song to queue
-                var newSr = {
+                let newSr = {
                   id: uuidv4(),
                   track: {
                     name: data.tracks.items[0].name,
@@ -699,32 +754,51 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     // console.log(queue.settings);
     if (queue.allowReqs) {
       var request = parsedM.slice(1).join(' ');
-      var newText = new SongRequest({
+
+      let newSr = {
+        id: uuidv4(),
         track: {
           name: request,
         },
         requestedBy: userstate.username,
         timeOfReq: moment.utc().format(),
-        source: 'text',
+        source: 'spotify',
         channel: channel.slice(1),
-      });
-      newText
-        .save()
-        .then((doc) => {
-          botclient.say(
-            channel,
-            `@${doc.requestedBy} requested ${doc.track.name}`
-          );
+      };
+
+      queue.currQueue.push(newSr);
+      let newQueue = queue.currQueue;
+      // console.log(queue);
+      Queue.findOneAndUpdate(
+        { channel: noHashChan },
+        { currQueue: newQueue },
+        { new: true, useFindAndModify: false }
+      )
+        .then((queueDoc) => {
           // Real time data push to front end
-          rqs.to(`${channel}`).emit('sr-event', {
-            id: `${doc.id}`,
-            reqBy: `${doc.requestedBy}`,
-            track: `${doc.track.name}`,
-            source: `${doc.source}`,
-            timeOfReq: `${doc.timeOfReq}`,
+          // console.log(doc);
+          // console.log(queueDoc);
+
+          rqs.to(`${noHashChan}`).emit('sr-event', {
+            id: `${newSr.id}`,
+            reqBy: `${newSr.requestedBy}`,
+            track: `${newSr.track.name}`,
+            uri: `${newSr.track.uri}`,
+            link: `${newSr.track.link}`,
+            source: `${newSr.source}`,
+            timeOfReq: `${newSr.timeOfReq}`,
           });
+
+          if (chatRespond) {
+            botclient.say(
+              channel,
+              `@${newSr.requestedBy} requested ${newSr.track.name} by ${newSr.track.artist} - ${newSr.track.link}`
+            );
+          }
         })
-        .catch(console.error);
+        .catch((e) => {
+          console.error(e);
+        });
     } else {
       botclient.say(channel, 'Requests are closed');
     }
@@ -901,10 +975,12 @@ function makeid(length) {
 
 // // Initial topics are required
 // let init_topics = [
-//   { topic: 'video-playback.opti_21' },
 //   {
 //     topic: 'channel-subscribe-events-v1.',
 //     token: '',
+//   },
+//   {
+//     topic: 'channel-bits-events-v2.',
 //   },
 // ];
 // // Optional reconnect, debug options (Defaults: reconnect: true, debug: false)
