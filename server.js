@@ -478,14 +478,13 @@ botclient.on('chat', async (channel, userstate, message, self) => {
         botclient.say(channel, 'Requests are now closed');
       })
       .catch((err) => console.error(err));
-  } else if (command === 'closesr' && userstate.mod === true) {
+  }
+  if (command === 'closesr' && userstate.mod === true) {
     Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: false })
       .then((doc) => {
         botclient.say(channel, 'Requests are now closed');
       })
       .catch((err) => console.error(err));
-  } else {
-    return;
   }
 
   if (command === 'opensr' && userstate.badges.broadcaster === '1') {
@@ -494,14 +493,13 @@ botclient.on('chat', async (channel, userstate, message, self) => {
         botclient.say(channel, 'Requests are now open');
       })
       .catch((err) => console.error(err));
-  } else if (command === 'opensr' && userstate.mod === true) {
+  }
+  if (command === 'opensr' && userstate.mod === true) {
     Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: true })
       .then((doc) => {
         botclient.say(channel, 'Requests are now open');
       })
       .catch((err) => console.error(err));
-  } else {
-    return;
   }
 
   if (command === 'sr' || command === 'songrequest') {
