@@ -9,15 +9,22 @@ let globalChannel = document
   .getElementById('pageInfo')
   .getAttribute('data-channel');
 
-// $(document).ready(function() {
-//   $("#sr-table").DataTable({
-//     fixedHeader: true,
-//     ordering: false,
-//     paging: false
-//   });
-//
-//  $("#requests-nav").addClass("active");
-//});
+let loggedInUser = document
+  .getElementById('pageInfo')
+  .getAttribute('data-loggedIn');
+
+let enviroment = document
+  .getElementById('pageInfo')
+  .getAttribute('data-enviroment');
+
+Sentry.init({
+  dsn:
+    'https://32998bbe6f964551a6680d9343ae5270@o421094.ingest.sentry.io/5340398',
+  enviroment: enviroment,
+});
+Sentry.configureScope(function (scope) {
+  scope.setUser({ username: `loggedInUser` });
+});
 
 var socket = io('/req-namescape');
 
@@ -67,12 +74,12 @@ fetch(`/api/queue/${globalChannel}`)
       </div>
     `;
       reqDiv.prepend(reqElem);
-      gsap.from(`#sr${request._id}`, {
-        opacity: 0,
-        y: -50,
-        duration: 0.5,
-        ease: 'power4.out',
-      });
+      // gsap.from(`#${request.id}`, {
+      //   opacity: 0,
+      //   y: -50,
+      //   duration: 0.5,
+      //   ease: 'power4.out',
+      // });
     });
   });
 
@@ -109,12 +116,12 @@ socket.on('sr-event', (request) => {
       </div>
     `;
     reqDiv.prepend(reqElem);
-    gsap.from(`#sr${request.id}`, {
-      opacity: 0,
-      y: -50,
-      duration: 0.5,
-      ease: 'power4.out',
-    });
+    // gsap.from(`#${request.id}`, {
+    //   opacity: 0,
+    //   y: -50,
+    //   duration: 0.5,
+    //   ease: 'power4.out',
+    // });
   } catch (err) {
     console.error(err);
   }
@@ -228,14 +235,14 @@ document.addEventListener(
     xhr.onload = function () {
       if (xhr.status === 200) {
         try {
-          gsap.to(`#sr${srID}`, {
-            opacity: 0,
-            y: -50,
-            duration: 0.5,
-            ease: 'power4.out',
-            onComplete: removeDiv,
-            onCompleteParams: [`sr${srID}`],
-          });
+          // gsap.to(`#${srID}`, {
+          //   opacity: 0,
+          //   y: -50,
+          //   duration: 0.5,
+          //   ease: 'power4.out',
+          //   onComplete: removeDiv,
+          //   onCompleteParams: [`sr${srID}`],
+          // });
           Toast.fire({
             type: 'success',
             title: 'Song Request removed!',
@@ -269,14 +276,14 @@ document.addEventListener(
     xhr.onload = function () {
       if (xhr.status === 200) {
         try {
-          gsap.to(`#mix${srID}`, {
-            opacity: 0,
-            y: -50,
-            duration: 0.5,
-            ease: 'power4.out',
-            onComplete: removeDiv,
-            onCompleteParams: [`mix${srID}`],
-          });
+          // gsap.to(`#mix${srID}`, {
+          //   opacity: 0,
+          //   y: -50,
+          //   duration: 0.5,
+          //   ease: 'power4.out',
+          //   onComplete: removeDiv,
+          //   onCompleteParams: [`mix${srID}`],
+          // });
           Toast.fire({
             type: 'success',
             title: 'Song Request removed!',

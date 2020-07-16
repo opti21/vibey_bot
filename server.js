@@ -34,6 +34,14 @@ const JoinedChannel = require('./models/joinedChannels');
 const qs = require('querystring');
 const ComfyJS = require('comfy.js');
 const { v4: uuidv4 } = require('uuid');
+const Sentry = require('@sentry/node');
+
+Sentry.init({
+  dsn:
+    'https://a5bf8cfe7372430196e59f7dac579ff3@o421094.ingest.sentry.io/5340340',
+  environment: process.env.NODE_ENV,
+});
+
 ComfyJS.Init(config.comfyChan);
 
 // SendGrid Emails
