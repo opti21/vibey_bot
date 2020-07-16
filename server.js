@@ -34,7 +34,7 @@ const JoinedChannel = require('./models/joinedChannels');
 const qs = require('querystring');
 const ComfyJS = require('comfy.js');
 const { v4: uuidv4 } = require('uuid');
-// ComfyJS.Init(config.comfyChan);
+ComfyJS.Init(config.comfyChan);
 
 // SendGrid Emails
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -370,7 +370,7 @@ function refreshTokenThenAdd(user, uri) {
           { new: true }
         ).then((update_res) => {
           console.log(update_res);
-          console.log('token refreshed');
+          console.log('spotify token refreshed');
           checkPlaylist(uri, user.username, update_res.spotify.access_token);
         });
       } catch (e) {
@@ -635,7 +635,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
               if (err) {
                 console.error(err);
               }
-              if (data === null) {
+              if (data.tracks.items.length === 0) {
                 // If Spotify can't find the song search for song on Youtube
                 youtube
                   .search(request, 1)
@@ -760,7 +760,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
         },
         requestedBy: userstate.username,
         timeOfReq: moment.utc().format(),
-        source: 'spotify',
+        source: 'text',
         channel: channel.slice(1),
       };
 
@@ -781,8 +781,6 @@ botclient.on('chat', async (channel, userstate, message, self) => {
             id: `${newSr.id}`,
             reqBy: `${newSr.requestedBy}`,
             track: `${newSr.track.name}`,
-            uri: `${newSr.track.uri}`,
-            link: `${newSr.track.link}`,
             source: `${newSr.source}`,
             timeOfReq: `${newSr.timeOfReq}`,
           });
@@ -790,7 +788,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
           if (chatRespond) {
             botclient.say(
               channel,
-              `@${newSr.requestedBy} requested ${newSr.track.name} by ${newSr.track.artist} - ${newSr.track.link}`
+              `@${newSr.requestedBy} requested ${newSr.track.name}`
             );
           }
         })
