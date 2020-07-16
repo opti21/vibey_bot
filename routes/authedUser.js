@@ -1,6 +1,7 @@
 require('dotenv').config();
 const router = require('express').Router();
 const version = require('project-version');
+const enviroment = process.env.NODE_ENV;
 const User = require('../models/users');
 const ChatUser = require('../models/chatUser');
 const config = require('../config/config');
@@ -64,6 +65,7 @@ router.get('/:channel/dashboard', loggedIn, async (req, res) => {
     channel: req.params.channel,
     loggedInUserPic: req.user['profile_image_url'],
     version: version,
+    enviroment: enviroment,
   });
 });
 
@@ -84,6 +86,7 @@ router.get('/:channel/queue', loggedIn, async (req, res) => {
     channel: req.params.channel,
     loggedInUserPic: req.user['profile_image_url'],
     version: version,
+    enviroment: enviroment,
   });
 });
 
@@ -104,6 +107,7 @@ router.get('/poll', loggedIn, async (req, res) => {
         version: version,
         feUser: user.username,
         profilePic: req.user['profile_image_url'],
+        enviroment: enviroment,
       });
     } else {
       res.redirect('/login');
