@@ -760,7 +760,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
         },
         requestedBy: userstate.username,
         timeOfReq: moment.utc().format(),
-        source: 'spotify',
+        source: 'text',
         channel: channel.slice(1),
       };
 
@@ -781,8 +781,6 @@ botclient.on('chat', async (channel, userstate, message, self) => {
             id: `${newSr.id}`,
             reqBy: `${newSr.requestedBy}`,
             track: `${newSr.track.name}`,
-            uri: `${newSr.track.uri}`,
-            link: `${newSr.track.link}`,
             source: `${newSr.source}`,
             timeOfReq: `${newSr.timeOfReq}`,
           });
@@ -790,7 +788,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
           if (chatRespond) {
             botclient.say(
               channel,
-              `@${newSr.requestedBy} requested ${newSr.track.name} by ${newSr.track.artist} - ${newSr.track.link}`
+              `@${newSr.requestedBy} requested ${newSr.track.name}`
             );
           }
         })
