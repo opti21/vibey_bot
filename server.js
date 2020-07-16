@@ -212,7 +212,7 @@ passport.use(
       clientID: process.env.TWITCH_CLIENTID,
       clientSecret: process.env.TWITCH_SECRET,
       callbackURL: `${process.env.APP_URL}/auth/twitch/callback`,
-      scope: 'user:read:email channel_subscriptions ',
+      scope: 'user:read:email channel_subscriptions bits:read',
     },
     async function (accessToken, refreshToken, profile, done) {
       try {
@@ -927,17 +927,17 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     );
   }
 
-  if (command === 'reply' && admins.includes(userstate.username)) {
-    if (chatRespond === true) {
-      botclient.say(channel, he.decode(`RESPONSES TURNED OFF`));
-      chatRespond = !chatRespond;
-      console.log(chatRespond);
-    } else {
-      botclient.say(channel, he.decode(`RESPONSES TURNED ON`));
-      console.log(chatRespond);
-      chatRespond = !chatRespond;
-    }
-  }
+  // if (command === 'reply' && admins.includes(userstate.username)) {
+  //   if (chatRespond === true) {
+  //     botclient.say(channel, he.decode(`RESPONSES TURNED OFF`));
+  //     chatRespond = !chatRespond;
+  //     console.log(chatRespond);
+  //   } else {
+  //     botclient.say(channel, he.decode(`RESPONSES TURNED ON`));
+  //     console.log(chatRespond);
+  //     chatRespond = !chatRespond;
+  //   }
+  // }
 
   if (command === 'test' && userstate.badges.broadcaster === '1') {
     botclient.say(channel, he.decode(`THIS IS A TEST`));
@@ -976,9 +976,6 @@ function makeid(length) {
 //   {
 //     topic: 'channel-subscribe-events-v1.',
 //     token: '',
-//   },
-//   {
-//     topic: 'channel-bits-events-v2.',
 //   },
 // ];
 // // Optional reconnect, debug options (Defaults: reconnect: true, debug: false)
