@@ -34,7 +34,7 @@ const JoinedChannel = require('./models/joinedChannels');
 const qs = require('querystring');
 const ComfyJS = require('comfy.js');
 const { v4: uuidv4 } = require('uuid');
-// ComfyJS.Init(config.comfyChan);
+ComfyJS.Init(config.comfyChan);
 
 // SendGrid Emails
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -370,7 +370,7 @@ function refreshTokenThenAdd(user, uri) {
           { new: true }
         ).then((update_res) => {
           console.log(update_res);
-          console.log('token refreshed');
+          console.log('spotify token refreshed');
           checkPlaylist(uri, user.username, update_res.spotify.access_token);
         });
       } catch (e) {
