@@ -635,7 +635,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
               if (err) {
                 console.error(err);
               }
-              if (data === null) {
+              if (data.tracks.items.length === 0) {
                 // If Spotify can't find the song search for song on Youtube
                 youtube
                   .search(request, 1)
