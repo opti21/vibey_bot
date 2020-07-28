@@ -9,6 +9,10 @@ const queueSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  replyInChat: {
+    type: Boolean,
+    default: true,
+  },
   maxReqsPerUser: {
     type: Number,
     default: 0,

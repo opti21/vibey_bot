@@ -1,6 +1,14 @@
 .left {
   height: 95vh;
 }
+.right {
+  height: 95vh;
+}
+#noti-container {
+  height: 85vh;
+  overflow: hidden;
+  overflow-y: scroll;
+}
 .container {
   height: 100vh;
   width: 100vw;
@@ -89,4 +97,9 @@ a.playBtn:hover {
 a.playBtn {
   color: white;
   text-decoration: none !important;
+}
+
+.noti {
+  background-color: #372d47;
+  border-color: #372d47 !important;
 }

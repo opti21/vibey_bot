@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('sqreen');
 
 const config = require('./config/config');
 const version = require('project-version');
@@ -25,7 +26,6 @@ global.io = io;
 const fetchJson = require('fetch-json');
 const ComfyDiscord = require('comfydiscord');
 const admins = config.admins;
-const exec = require('child_process').exec;
 const he = require('he');
 const sgMail = require('@sendgrid/mail');
 const fs = require('fs');
@@ -35,6 +35,7 @@ const qs = require('querystring');
 const ComfyJS = require('comfy.js');
 const { v4: uuidv4 } = require('uuid');
 const Sentry = require('@sentry/node');
+const helmet = require('helmet');
 
 Sentry.init({
   dsn:
@@ -42,7 +43,7 @@ Sentry.init({
   environment: process.env.NODE_ENV,
 });
 
-ComfyJS.Init(config.comfyChan);
+// ComfyJS.Init(config.comfyChan);
 
 // SendGrid Emails
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -104,6 +105,7 @@ app.set('trust proxy', 1);
 app.set('views', './views');
 app.set('view engine', 'ejs');
 
+app.use(helmet());
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -132,8 +134,6 @@ app.use('/', indexRoute);
 app.use('/auth', authRoute);
 app.use('/u', authedUser);
 
-// app.use("/requests", reqsRoute);
-// app.use("/mix", mixRoute);
 app.use('/widget', widgetRoute);
 app.use('/api', apiRoute);
 app.use('/settings', settingsRoute);
@@ -212,6 +212,8 @@ const SongRequest = require('./models/songRequests');
 const Poll = require('./models/polls');
 const Good = require('./models/goods');
 const Queue = require('./models/queues');
+const ChannelEvent = require('./models/channelEvent');
+const SubMysteryGift = require('./models/subMysteryGifts');
 
 // Twitch auth
 passport.use(
@@ -280,6 +282,7 @@ app.get('*', (req, res) => {
 
 // Twitch Client
 const tmi = require('tmi.js');
+const { type } = require('os');
 const twitchclientid = process.env.TWITCH_CLIENTID;
 const twitchuser = process.env.TWITCH_USER;
 const twitchpass = process.env.TWITCH_PASS;
@@ -290,7 +293,9 @@ const tmiOptions = {
     clientId: twitchclientid,
   },
   connection: {
-    reconnect: true,
+    secure: true,
+    // Test server
+    // server: 'irc.fdgt.dev',
   },
   identity: {
     username: twitchuser,
@@ -473,6 +478,198 @@ ComfyJS.onChat = async (user, command, message, flags, extra) => {
   }
 };
 
+// function sendTest() {
+//   botclient.say(
+//     '#opti_21',
+//     `submysterygift --count ${Math.floor(
+//       Math.random() * 10
+//     )} --username speedrazer`
+//   );
+// }
+
+function sendraid() {
+  botclient.say('#opti_21', `raid`);
+}
+
+function sendSubGift() {
+  botclient.say('#opti_21', `subgift --tier 1 --username speedrazer`);
+}
+
+// setTimeout(sendTest, 10000);
+// setInterval(sendSubGift, 11000);
+
+// async function findEvent() {
+//   let event = await ChannelEvent.findById('5f1f98e3d74364296c3a12e4');
+//   console.log(event);
+// }
+// setTimeout(findEvent, 10000);
+
+// individual Subgifts
+botclient.on(
+  'subgift',
+  async (channel, username, streakMonths, recipient, methods, userstate) => {
+    // Total gifted over time
+    let senderCount = ~~userstate['msg-param-sender-count'];
+    // let streak = ~~userstate['msg-param-cumulative-months'];
+    // let showStreak = userstate['msg-param-should-share-streak'];
+    let noHashChan = channel.slice(1);
+    console.log(userstate);
+
+    let activeSMG = await SubMysteryGift.findOne({
+      channel: noHashChan,
+      userGivingSubs: username,
+      active: true,
+    });
+    // console.log(activeSMG);
+    if (activeSMG) {
+      if (activeSMG.subsLeft > 1) {
+        let newSubArray = activeSMG.subs;
+        let newSubCount = activeSMG.subsLeft - 1;
+        // TODO: add more sub data
+        let subData = {
+          recipient: recipient,
+        };
+        newSubArray.push(subData);
+        SubMysteryGift.findByIdAndUpdate(
+          activeSMG._id,
+          {
+            subs: newSubArray,
+            subsLeft: newSubCount,
+          },
+          {
+            new: true,
+            useFindAndModify: false,
+          }
+        )
+          .then((doc) => {
+            // console.log('SMG Updated');
+            console.log(doc);
+          })
+          .catch((err) => {
+            console.error(err);
+          });
+      } else {
+        let newSubArray = activeSMG.subs;
+        let newSubCount = activeSMG.subsLeft - 1;
+        let subData = {
+          recipient: recipient,
+        };
+        newSubArray.push(subData);
+        SubMysteryGift.findByIdAndUpdate(
+          activeSMG._id,
+          {
+            subs: newSubArray,
+            subsLeft: newSubCount,
+            active: false,
+          },
+          {
+            new: true,
+            useFindAndModify: false,
+          }
+        )
+          .then((smgDoc) => {
+            // console.log('SMG Completed');
+            let newEvent = new ChannelEvent({
+              channel: noHashChan,
+              type: 'mysterysubgift',
+              data: smgDoc,
+            });
+            newEvent.save((err, eventDoc) => {
+              if (err) console.error(err);
+              rqs.to(`${noHashChan}`).emit('noti', {
+                id: eventDoc._id,
+                type: 'mysterysubgift',
+                userGivingSubs: smgDoc.userGivingSubs,
+                subsGifted: smgDoc.subsGifted,
+                senderTotal: smgDoc.senderTotal,
+                subs: smgDoc.subs,
+              });
+            });
+          })
+          .catch((err) => {
+            console.error(err);
+          });
+      }
+    } else {
+      // console.log('No active SMG');
+      let newEvent = new ChannelEvent({
+        channel: noHashChan,
+        type: 'subgift',
+        data: {
+          username: username,
+          recipient: recipient,
+          // showStreak: showStreak,
+          // streak: streak,
+          totalGifted: senderCount,
+        },
+      });
+      newEvent.save((err, doc) => {
+        console.log('NEW SUB GIFT');
+        console.log(doc._id);
+        if (err) console.error(err);
+        rqs.to(`${noHashChan}`).emit('noti', {
+          id: doc._id,
+          type: 'subgift',
+          username: username,
+          recipient: recipient,
+          // showStreak: showStreak,
+          // streak: streak,
+          senderTotal: senderCount,
+        });
+      });
+    }
+  }
+);
+
+// Random sub gifts aka Sub bombs
+botclient.on(
+  'submysterygift',
+  (channel, username, numbOfSubs, methods, userstate) => {
+    // console.log(userstate);
+    // console.log('NEW SMG')
+    let noHashChan = channel.slice(1);
+    let senderCount = ~~userstate['msg-param-sender-count'];
+
+    let newSMG = new SubMysteryGift({
+      channel: noHashChan,
+      active: true,
+      subsLeft: numbOfSubs,
+      subsGifted: numbOfSubs,
+      userGivingSubs: username,
+      senderTotal: senderCount,
+    });
+    newSMG.save((err, doc) => {
+      if (err) console.error(err);
+    });
+  }
+);
+
+botclient.on('raided', (channel, username, viewers) => {
+  let noHashChan = channel.slice(1);
+
+  let newEvent = new ChannelEvent({
+    channel: noHashChan,
+    type: 'raid',
+    data: {
+      username: username,
+      viewers: viewers,
+    },
+  });
+  newEvent.save((err, doc) => {
+    if (err) console.error(err);
+    rqs.to(`${noHashChan}`).emit('noti', {
+      id: doc._id,
+      type: 'raid',
+      username: username,
+      viewers: viewers,
+    });
+  });
+});
+
+ChannelEvent.deleteMany({}).then((doc) => {
+  console.log('EVENTS DELETED');
+});
+
 // Song Requests
 botclient.on('chat', async (channel, userstate, message, self) => {
   if (self) return;
@@ -480,34 +677,56 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   let parsedM = message.trim().split(' ');
   let command = parsedM[0].slice(1).toLowerCase();
   let noHashChan = channel.slice(1);
-  if (command === 'closesr' && userstate.badges.broadcaster === '1') {
-    Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: false })
-      .then((doc) => {
-        botclient.say(channel, 'Requests are now closed');
-      })
-      .catch((err) => console.error(err));
-  }
-  if (command === 'closesr' && userstate.mod === true) {
-    Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: false })
-      .then((doc) => {
-        botclient.say(channel, 'Requests are now closed');
-      })
-      .catch((err) => console.error(err));
+
+  // TODO: Combine open and closing commands
+  if (command === 'closesr') {
+    if (userstate.badges.broadcaster === '1' || userstate.mod === true) {
+      Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: false })
+        .then((doc) => {
+          botclient.say(channel, 'Requests are now closed');
+        })
+        .catch((err) => console.error(err));
+    } else {
+      return;
+    }
   }
 
-  if (command === 'opensr' && userstate.badges.broadcaster === '1') {
-    Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: true })
-      .then((doc) => {
-        botclient.say(channel, 'Requests are now open');
-      })
-      .catch((err) => console.error(err));
+  if (command === 'opensr') {
+    if (userstate.badges.broadcaster === '1' || userstate.mod === true) {
+      Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: true })
+        .then((doc) => {
+          botclient.say(channel, 'Requests are now open');
+        })
+        .catch((err) => console.error(err));
+    } else {
+      return;
+    }
   }
-  if (command === 'opensr' && userstate.mod === true) {
-    Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: true })
-      .then((doc) => {
-        botclient.say(channel, 'Requests are now open');
-      })
-      .catch((err) => console.error(err));
+
+  if (command === 'replies') {
+    if (userstate.badges.broadcaster === '1' || userstate.mod === true) {
+      let allowed = ['off', 'on'];
+      let setting = parsedM[1];
+      if (!allowed.includes(setting)) {
+        botclient.say(noHashChan, 'Unrecognized setting, please use off or on');
+        return;
+      }
+      let settingBool;
+      if (setting === 'off') {
+        settingBool = false;
+      }
+      if (setting === 'on') {
+        settingBool = true;
+      }
+
+      Queue.updateOne({ channel: noHashChan }, { replyInChat: settingBool })
+        .then((doc) => {
+          botclient.say(channel, `Replies are now ${setting}`);
+        })
+        .catch((err) => console.error(err));
+    } else {
+      return;
+    }
   }
 
   if (command === 'sr' || command === 'songrequest') {
@@ -757,6 +976,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
 
   if (command === 'tr') {
     let queue = await Queue.findOne({ channel: channel.slice(1) });
+    let chatRespond = queue.replyInChat;
     // console.log(queue.settings);
     if (queue.allowReqs) {
       var request = parsedM.slice(1).join(' ');
@@ -811,7 +1031,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   // Choice selection for polls
   let numRegex = /^[0-9]+$/;
   // Check to see if message is only numbers
-  if (numRegex.test(message) == true) {
+  if (numRegex.test(message) === true) {
     var poll = await Poll.findOne({ active: true });
     if (!poll) {
       // if no poll say nothing because bot will spam
@@ -820,7 +1040,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     // Check if the user has already voted
     if (poll.voters.includes(userstate.username)) {
       // Check if multiple votes are allowed
-      if (poll.allow_multiple_votes == true) {
+      if (poll.allow_multiple_votes === true) {
         var numIndex = message.search(/\d/);
         var int = message[numIndex];
         var choice = parseInt(int, 10);
@@ -933,24 +1153,38 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     );
   }
 
-  // if (command === 'reply' && admins.includes(userstate.username)) {
-  //   if (chatRespond === true) {
-  //     botclient.say(channel, he.decode(`RESPONSES TURNED OFF`));
-  //     chatRespond = !chatRespond;
-  //     console.log(chatRespond);
-  //   } else {
-  //     botclient.say(channel, he.decode(`RESPONSES TURNED ON`));
-  //     console.log(chatRespond);
-  //     chatRespond = !chatRespond;
-  //   }
-  // }
-
   if (command === 'test' && userstate.badges.broadcaster === '1') {
     botclient.say(channel, he.decode(`THIS IS A TEST`));
   }
 });
-// Bot replies
-var chatRespond = true;
+
+// TODO: add follows using PubSub
+
+// const TwitchPS = require('twitchps');
+// // Initial topics are required
+// let init_topics = [
+//   {
+//     topic: 'channel-subscribe-events-v1.opti_21',
+//     token: '',
+//   },
+// ];
+// // Optional reconnect, debug options (Defaults: reconnect: true, debug: false)
+// var ps = new TwitchPS({
+//   init_topics: init_topics,
+//   reconnect: true,
+//   debug: true,
+// });
+// ps.on('stream-up', (data) => {
+//   console.log(data.time, data.channel_name);
+//   // Use data here
+// });
+// ps.on('stream-down', (data) => {
+//   console.log(data.time, data.channel_name);
+//   // Use data here
+// });
+// ps.on('subscribe', (data) => {
+//   console.log(data);
+// });
 
 // Answer for !science
 var answer = '';
@@ -974,33 +1208,3 @@ function makeid(length) {
   }
   return result;
 }
-
-// const TwitchPS = require('twitchps');
-
-// // Initial topics are required
-// let init_topics = [
-//   {
-//     topic: 'channel-subscribe-events-v1.',
-//     token: '',
-//   },
-// ];
-// // Optional reconnect, debug options (Defaults: reconnect: true, debug: false)
-// var ps = new TwitchPS({
-//   init_topics: init_topics,
-//   reconnect: true,
-//   debug: true,
-// });
-
-// ps.on('stream-up', (data) => {
-//   console.log(data.time, data.channel_name);
-//   // Use data here
-// });
-
-// ps.on('stream-down', (data) => {
-//   console.log(data.time, data.channel_name);
-//   // Use data here
-// });
-
-// ps.on('subscribe', (data) => {
-//   console.log(data);
-// });
