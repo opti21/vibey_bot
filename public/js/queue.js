@@ -37,13 +37,38 @@ socket.on('socketConnect', function (data) {
   });
 });
 
-// Get song requests
+// Get queue
 fetch(`/api/queue/${globalChannel}`)
   .then((res) => res.json())
-  .then((requests) => {
-    console.log(requests);
+  .then((queue) => {
+    let status = queue.allowReqs;
+    let currQueue = queue.currQueue;
+    let statusBadge = document.getElementById('status');
+    let statusToggle = document.getElementById('statusToggle');
     let reqDiv = document.getElementById('requests');
-    requests.forEach((request, index) => {
+
+    switch (status) {
+      case true:
+        statusBadge.setAttribute('class', 'badge badge-success');
+        statusBadge.innerHTML = 'Open';
+        statusToggle.setAttribute(
+          'class',
+          'btn btn-danger m-2 queueToggle close-queue'
+        );
+        statusToggle.innerHTML = 'Close Queue';
+        break;
+      case false:
+        statusBadge.setAttribute('class', 'badge badge-danger');
+        statusBadge.innerHTML = 'Closed';
+        statusToggle.setAttribute(
+          'class',
+          'btn btn-success m-2 queueToggle open-queue'
+        );
+        statusToggle.innerHTML = 'Open Queue';
+        break;
+    }
+
+    currQueue.forEach((request, index) => {
       if (request === null) {
         return;
       }
@@ -81,7 +106,180 @@ fetch(`/api/queue/${globalChannel}`)
       //   ease: 'power4.out',
       // });
     });
+  })
+  .catch((err) => {
+    console.error('Error retreving queue');
   });
+
+function createSubGiftNoti(id, username, recipient, senderTotal, animate) {
+  let notiDiv = document.getElementById('noti-container');
+  let notiElem = document.createElement('div');
+  console.log('sub gift');
+  notiElem.setAttribute('id', `noti${id}`);
+  notiElem.setAttribute('class', 'noti rounded-lg p-3 m-2');
+  notiElem.innerHTML = `
+    <p><span><i class="fas fa-gift"></i></span> <b>${username}</b> gifted <b>${recipient}</b> a sub!</p>
+    <p>They've gifted a total of ${senderTotal} sub(s) to the community!</p>
+  `;
+  notiDiv.prepend(notiElem);
+  if (animate) {
+    gsap.from(`#noti${id}`, {
+      x: 100,
+      duration: 1,
+      ease: 'power4.out',
+    });
+  }
+}
+
+function createSMG(id, username, numbOfSubs, senderTotal, subs, animate) {
+  let notiDiv = document.getElementById('noti-container');
+  let notiElem = document.createElement('div');
+  notiElem.setAttribute('id', `noti${id}`);
+  notiElem.setAttribute('class', 'noti rounded-lg p-3 m-2');
+  notiElem.innerHTML = `
+      <h4><span><i class="fas fa-gifts"></i></span> ${username} gifted ${numbOfSubs} subs!</h4>
+      <p>They've gifted a total of ${senderTotal}</p>
+      <a class="btn btn-sm btn-primary" data-toggle="collapse" href="#smgsubs${id}" role="button" aria-expanded="false" aria-controls="smgsubs${id}">
+      See individual subs
+      </a>
+      <div class="collapse border p-2 m-2 rounded" id="smgsubs${id}"></div>
+      `;
+  notiDiv.prepend(notiElem);
+  let smgSubsDiv = document.getElementById(`smgsubs${id}`);
+  subs.forEach((sub) => {
+    let subElem = document.createElement('div');
+    subElem.innerHTML = `<div>${sub.recipient}</div>`;
+    smgSubsDiv.append(subElem);
+  });
+  if (animate) {
+    gsap.from(`#noti${id}`, {
+      x: 100,
+      duration: 1,
+      ease: 'power4.out',
+    });
+  }
+}
+
+function createRaidNoti(id, username, viewers, animate) {
+  let notiDiv = document.getElementById('noti-container');
+  let notiElem = document.createElement('div');
+  notiElem.setAttribute('id', `noti${id}`);
+  notiElem.setAttribute('class', 'noti rounded-lg p-3 m-2');
+  notiElem.innerHTML = `
+      <h4><span><i class="fas fa-parachute-box"></i></span> ${username} has raided with ${viewers} viewers!</h4>
+  `;
+  notiDiv.prepend(notiElem);
+  if (animate) {
+    gsap.from(`#noti${id}`, {
+      x: 100,
+      duration: 1,
+      ease: 'power4.out',
+    });
+  }
+}
+
+// Event notifications
+fetch(`/api/events/${globalChannel}`)
+  .then((res) => res.json())
+  .then((events) => {
+    events.forEach((event) => {
+      let noti = event.data;
+
+      console.log(noti);
+
+      switch (event.type) {
+        case 'mysterysubgift':
+          createSMG(
+            noti._id,
+            noti.userGivingSubs,
+            noti.subsGifted,
+            noti.senderTotal,
+            noti.subs
+          );
+          break;
+        case 'subgift':
+          console.log('sub gift');
+          createSubGiftNoti(
+            noti._id,
+            noti.username,
+            noti.recipient,
+            noti.senderTotal
+          );
+          break;
+        case 'raid':
+          console.log('raid');
+          createRaidNoti(noti._id, noti.username, noti.viewers);
+          break;
+      }
+    });
+  });
+
+// toggle queue status
+document.addEventListener(
+  'click',
+  (e) => {
+    e.preventDefault();
+    if (!e.target.matches('.open-queue')) return;
+    console.log('open');
+    var xhr = new XMLHttpRequest();
+    xhr.open('PUT', `/api/queues/${globalChannel}/status/open`);
+    xhr.onload = function () {
+      let statusBadge = document.getElementById('status');
+      let statusToggle = document.getElementById('statusToggle');
+      if (xhr.status === 200) {
+        statusBadge.setAttribute('class', 'badge badge-success');
+        statusBadge.innerHTML = 'Open';
+        statusToggle.setAttribute(
+          'class',
+          'btn btn-danger m-2 queueToggle close-queue'
+        );
+        statusToggle.innerHTML = 'Close Queue';
+      } else {
+        swal.fire({
+          type: 'error',
+          title: 'Error opening queue!',
+          text: `${xhr.responseText}`,
+        });
+      }
+    };
+    xhr.send();
+  },
+  false
+);
+
+document.addEventListener(
+  'click',
+  (e) => {
+    e.preventDefault();
+    if (!e.target.matches('.close-queue')) return;
+    console.log('close');
+    var xhr = new XMLHttpRequest();
+    xhr.open('PUT', `/api/queues/${globalChannel}/status/close`);
+    xhr.onload = function () {
+      let statusBadge = document.getElementById('status');
+      let statusToggle = document.getElementById('statusToggle');
+      if (xhr.status === 200) {
+        statusBadge.setAttribute('class', 'badge badge-danger');
+        statusBadge.innerHTML = 'Closed';
+        statusToggle.setAttribute(
+          'class',
+          'btn btn-success m-2 queueToggle open-queue'
+        );
+        statusToggle.innerHTML = 'Open Queue';
+      } else {
+        swal.fire({
+          type: 'error',
+          title: 'Error closing queue!',
+          text: `${xhr.responseText}`,
+        });
+      }
+    };
+    xhr.send();
+  },
+  false
+);
+
+// TODO: handle queue status change from chat
 
 // Realtime song request
 socket.on('sr-event', (request) => {
@@ -124,6 +322,39 @@ socket.on('sr-event', (request) => {
     // });
   } catch (err) {
     console.error(err);
+  }
+});
+
+// Realtime notifications
+socket.on('noti', (noti) => {
+  let notiDiv = document.getElementById('noti-container');
+  let notiElem = document.createElement('div');
+  console.log(noti);
+
+  switch (noti.type) {
+    case 'mysterysubgift':
+      createSMG(
+        noti.id,
+        noti.userGivingSubs,
+        noti.subsGifted,
+        noti.senderTotal,
+        noti.subs,
+        true
+      );
+      break;
+
+    case 'subgift':
+      createSubGiftNoti(
+        noti.id,
+        noti.username,
+        noti.recipient,
+        noti.senderTotal,
+        true
+      );
+      break;
+    case 'raid':
+      createRaidNoti(noti._id, noti.username, noti.viewers, true);
+      break;
   }
 });
 
@@ -243,47 +474,7 @@ document.addEventListener(
           //   onComplete: removeDiv,
           //   onCompleteParams: [`sr${srID}`],
           // });
-          Toast.fire({
-            type: 'success',
-            title: 'Song Request removed!',
-          });
-        } catch (err) {
-          console.error(err);
-        }
-      } else {
-        swal.fire({
-          type: 'error',
-          title: 'Error deleting song!',
-          text: `${xhr.responseText}`,
-        });
-      }
-    };
-    xhr.send();
-  },
-  false
-);
-
-// new Delete request from mix
-document.addEventListener(
-  'click',
-  (e) => {
-    if (!e.target.matches('.delMixBtn')) return;
-    e.preventDefault();
-    console.log(e.target.getAttribute('data-srID'));
-    var srID = e.target.getAttribute('data-srID');
-    var xhr = new XMLHttpRequest();
-    xhr.open('DELETE', `/api/mixes/${globalChannel}/delete/${srID}`);
-    xhr.onload = function () {
-      if (xhr.status === 200) {
-        try {
-          // gsap.to(`#mix${srID}`, {
-          //   opacity: 0,
-          //   y: -50,
-          //   duration: 0.5,
-          //   ease: 'power4.out',
-          //   onComplete: removeDiv,
-          //   onCompleteParams: [`mix${srID}`],
-          // });
+          removeDiv(`${srID}`);
           Toast.fire({
             type: 'success',
             title: 'Song Request removed!',
@@ -348,61 +539,6 @@ document.addEventListener(
               Swal.fire(
                 'Uh Oh!',
                 `There was an error clearing the queue. Error: ${xhr.responseText}`,
-                'error'
-              );
-            }
-          };
-          xhr.send();
-        }
-      });
-  },
-  false
-);
-
-// NEW Clear mix
-document.addEventListener(
-  'click',
-  (e) => {
-    if (!e.target.matches('.delete-mix')) return;
-    e.preventDefault();
-    swal
-      .fire({
-        title: `Are you sure you want to clear the queue?`,
-        text: "You won't be able to revert this!",
-        type: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-      })
-      .then((result) => {
-        if (result.value) {
-          var xhr = new XMLHttpRequest();
-          xhr.open('DELETE', `/api/mixes/${globalChannel}/clear`);
-          xhr.onload = function () {
-            if (xhr.status === 200) {
-              Swal.fire({
-                title: 'Cleared!',
-                text: `Queue has been cleared.`,
-                type: 'success',
-                timer: 500,
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                onBeforeOpen: () => {
-                  Swal.showLoading();
-                },
-                onClose: () => {
-                  let songs = document.querySelectorAll('.mix-song');
-                  console.log(songs);
-                  songs.forEach((song) => {
-                    song.remove();
-                  });
-                },
-              });
-            } else {
-              Swal.fire(
-                'Uh Oh!',
-                `There was an error clearing the mix. Error: ${xhr.responseText}`,
                 'error'
               );
             }

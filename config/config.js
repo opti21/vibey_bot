@@ -1,22 +1,22 @@
-require("dotenv").config();
+require('dotenv').config();
 let channel;
 switch (process.env.NODE_ENV) {
-  case "production":
-    channel = "veryhandsomebilly";
+  case 'production':
+    channel = 'veryhandsomebilly';
     break;
 
-  case "staging":
-    channel = "veryhandsomebilly";
+  case 'staging':
+    channel = 'veryhandsomebilly';
     break;
 
-  case "dev":
-    channel = "opti_21";
+  case 'dev':
+    channel = 'opti_21';
 }
 
 const config = {
   twitchChan: [`${channel}`],
   comfyChan: `${channel}`,
-  admins: ["veryhandsomebilly", "vibey_bot", "vibey_dev"],
+  admins: ['veryhandsomebilly', 'vibey_bot', 'vibey_dev', 'opti_21'],
   spotify_playlist: process.env.SPOTIFY_PLAYLIST,
 };
 

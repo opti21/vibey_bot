@@ -1,15 +1,18 @@
 const router = require('express').Router();
+const config = require('../config/config');
+const twitchchan = config.twitchChan;
+const pollsIO = io.of('/polls-namescape');
+const moment = require('moment-timezone');
+const rqs = io.of('/req-namescape');
+const admins = config.admins;
+
 const User = require('../models/users');
 const SongRequest = require('../models/songRequests');
 const Queue = require('../models/queues');
 const mixReqs = require('../models/mixRequests');
 const Poll = require('../models/polls');
 const JoinedChannel = require('../models/joinedChannels');
-const config = require('../config/config');
-const twitchchan = config.twitchChan;
-const pollsIO = io.of('/polls-namescape');
-const moment = require('moment-timezone');
-const rqs = io.of('/req-namescape');
+const ChannelEvent = require('../models/channelEvent');
 
 function loggedIn(req, res, next) {
   if (!req.user) {
@@ -19,16 +22,68 @@ function loggedIn(req, res, next) {
   }
 }
 
+// TODO: Add check that user matches logged in user or admin
+
 router.get('/queue/:channel', loggedIn, async (req, res) => {
-  let queue = await Queue.findOne({ channel: req.params.channel });
-  // console.log(queue.currQueue);
-  res.status(200).send(queue.currQueue);
+  let isAdmin = admins.includes(req.user.login);
+  let isMod;
+  let isAllowed;
+  if (isAdmin || isChannelOwner) {
+    try {
+      let queue = await Queue.findOne({ channel: req.params.channel });
+      // console.log(queue.currQueue);
+      res.status(200).send(queue);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send(err);
+    }
+  } else {
+    res.status(403).send('You are not the channel owner');
+  }
 });
 
 // Mixes
 router.get('/mixes/:channel', loggedIn, async (req, res) => {
   let mixes = await mixReqs.find({ channel: req.params.channel });
   res.status(200).send(mixes);
+});
+
+router.put('/queues/:channel/status/:statusChange', loggedIn, (req, res) => {
+  try {
+    switch (req.params.statusChange) {
+      case 'open':
+        Queue.findOneAndUpdate(
+          { channel: req.params.channel },
+          { allowReqs: true },
+          { new: true, useFindAndModify: false }
+        )
+          .then((doc) => {
+            res.status(200).send('Queue Opened');
+          })
+          .catch((e) => {
+            console.error(e);
+            res.status(500).send('Error opening queue');
+          });
+        break;
+
+      case 'close':
+        Queue.findOneAndUpdate(
+          { channel: req.params.channel },
+          { allowReqs: false },
+          { new: true, useFindAndModify: false }
+        )
+          .then((doc) => {
+            res.status(200).send('Queue closed');
+          })
+          .catch((e) => {
+            console.error(e);
+            res.status(500).send('Error closing queue');
+          });
+        break;
+    }
+  } catch (e) {
+    console.error(e);
+  }
 });
 
 router.put('/queues/:channel/:move/:id', loggedIn, async (req, res) => {
@@ -152,6 +207,20 @@ router.post('/connect', loggedIn, async (req, res) => {
       .catch((e) => {
         console.error(e);
       });
+  }
+});
+
+// Notification Events
+router.get('/events/:channel', loggedIn, async (req, res) => {
+  try {
+    let events = await ChannelEvent.find({ channel: req.params.channel }).limit(
+      10
+    );
+    console.log(events);
+    res.status(200).send(events);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error getting events');
   }
 });
 

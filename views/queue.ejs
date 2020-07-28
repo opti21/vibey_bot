@@ -28,10 +28,13 @@
 					<iframe src="https://open.spotify.com/embed/track/5iFwAOB2TFkPJk8sMlxP8g" width="100%" height="80"
 						frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
         </div>-->
-				  <div>
-						<div class="row">
+				<div>
+					<h2 id="title">Song Requests <span id="status" class="badge badge-secondary">loading</span></h2>
+					<button id="statusToggle" class="btn btn-secondary">loading</button>
+						<div class="queue-container row border-top">
 							<div class="col left">
-								<h2 id="title">Song Requests</h2>
+								<h3 class="mt-2">Queue</h3>
+								
 								<div id="clear-queue">
 									<button class="delete-reqs btn btn-danger btn-sm mb-3"> Clear Queue </button>
 								</div>
@@ -41,7 +44,10 @@
 							</div>
 
 							<div class="col right">
-								<!-- notifications will go here maybe -->
+								<h3 class="mt-2">Notifications</h3>
+								<div id="noti-container">
+									<!-- notifications will go here -->
+								</div>
 								
 							</div>
 						</div>
@@ -61,7 +67,9 @@
 
 			<%- include('./partials/sidebar-js') %>
 
-			<script src="/vendor/jquery/jquery.js"></script>
+			<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+			<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+			<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
 			<% if (isAllowed) { %>
       		<script src="https://cdn.jsdelivr.net/npm/gsap"></script>
 			<script src="/js/moment.min.js"></script>
