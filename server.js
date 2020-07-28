@@ -666,9 +666,9 @@ botclient.on('raided', (channel, username, viewers) => {
   });
 });
 
-ChannelEvent.deleteMany({}).then((doc) => {
-  console.log('EVENTS DELETED');
-});
+// ChannelEvent.deleteMany({}).then((doc) => {
+//   console.log('EVENTS DELETED');
+// });
 
 // Song Requests
 botclient.on('chat', async (channel, userstate, message, self) => {
