@@ -731,7 +731,8 @@ botclient.on('chat', async (channel, userstate, message, self) => {
 
   if (command === 'sr' || command === 'songrequest') {
     let queue = await Queue.findOne({ channel: noHashChan });
-    // console.log(queue.settings);
+    let chatRespond = queue.replyInChat;
+    console.log(queue);
     if (queue.allowReqs) {
       if (URLRegex.test(parsedM[1])) {
         // Spotify link
