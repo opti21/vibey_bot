@@ -36,6 +36,7 @@ const ComfyJS = require('comfy.js');
 const { v4: uuidv4 } = require('uuid');
 const Sentry = require('@sentry/node');
 const helmet = require('helmet');
+const Queue = require('bull');
 
 Sentry.init({
   dsn:
@@ -211,7 +212,7 @@ const User = require('./models/users');
 const SongRequest = require('./models/songRequests');
 const Poll = require('./models/polls');
 const Good = require('./models/goods');
-const Queue = require('./models/queues');
+const channelQueue = require('./models/queues');
 const ChannelEvent = require('./models/channelEvent');
 const SubMysteryGift = require('./models/subMysteryGifts');
 
@@ -243,7 +244,7 @@ passport.use(
                 expireAt: moment().utc().add(8, 'hours'),
               });
               console.log('New user created');
-              let queue = new Queue({
+              let queue = new channelQueue({
                 channel: profile.login,
               });
               queue.save();
@@ -295,7 +296,7 @@ const tmiOptions = {
   connection: {
     secure: true,
     // Test server
-    // server: 'irc.fdgt.dev',
+    server: 'irc.fdgt.dev',
   },
   identity: {
     username: twitchuser,
@@ -478,48 +479,66 @@ ComfyJS.onChat = async (user, command, message, flags, extra) => {
   }
 };
 
-// function sendTest() {
-//   botclient.say(
-//     '#opti_21',
-//     `submysterygift --count ${Math.floor(
-//       Math.random() * 10
-//     )} --username speedrazer`
-//   );
-// }
+// Message Queues
+const subQueue = new Queue('sub event');
+const SMGQueue = new Queue('SMG event');
+const alertQueue = new Queue('Alert');
 
-function sendraid() {
-  botclient.say('#opti_21', `raid`);
-}
+alertQueue.process((job, done) => {
+  switch (job.data.type) {
+    case 'subgift':
+      console.log('sub gift alert queue');
+      rqs.to(`${job.data.channel}`).emit('noti', {
+        id: job.data.id,
+        type: 'subgift',
+        username: job.data.username,
+        recipient: job.data.recipient,
+        // showStreak: showStreak,
+        // streak: streak,
+        senderTotal: job.data.senderTotal,
+      });
+      done();
+      break;
 
-function sendSubGift() {
-  botclient.say('#opti_21', `subgift --tier 1 --username speedrazer`);
-}
+    case 'mysterysubgift':
+      rqs.to(`${job.data.channel}`).emit('noti', {
+        id: job.data.id,
+        type: 'mysterysubgift',
+        userGivingSubs: job.data.userGivingSubs,
+        subsGifted: job.data.subsGifted,
+        senderTotal: job.data.senderTotal,
+        subs: job.data.subs,
+      });
+      done();
+      break;
 
-// setTimeout(sendTest, 10000);
-// setInterval(sendSubGift, 11000);
+    case 'raid':
+      rqs.to(`${job.data.channel}`).emit('noti', {
+        id: job.data.id,
+        type: 'raid',
+        username: job.data.username,
+        viewers: job.data.viewers,
+      });
+      done();
+      break;
+  }
+});
 
-// async function findEvent() {
-//   let event = await ChannelEvent.findById('5f1f98e3d74364296c3a12e4');
-//   console.log(event);
-// }
-// setTimeout(findEvent, 10000);
-
-// individual Subgifts
-botclient.on(
-  'subgift',
-  async (channel, username, streakMonths, recipient, methods, userstate) => {
-    // Total gifted over time
-    let senderCount = ~~userstate['msg-param-sender-count'];
+subQueue.process(async (job, done) => {
+  let noHashChan = job.data.channel.slice(1);
+  if (job.data.type === 'subgift') {
+    let senderCount = ~~job.data.userstate['msg-param-sender-count'];
     // let streak = ~~userstate['msg-param-cumulative-months'];
     // let showStreak = userstate['msg-param-should-share-streak'];
-    let noHashChan = channel.slice(1);
-    console.log(userstate);
+
+    // console.log(userstate);
 
     let activeSMG = await SubMysteryGift.findOne({
       channel: noHashChan,
-      userGivingSubs: username,
+      userGivingSubs: job.data.username,
       active: true,
     });
+
     // console.log(activeSMG);
     if (activeSMG) {
       if (activeSMG.subsLeft > 1) {
@@ -527,7 +546,7 @@ botclient.on(
         let newSubCount = activeSMG.subsLeft - 1;
         // TODO: add more sub data
         let subData = {
-          recipient: recipient,
+          recipient: job.data.recipient,
         };
         newSubArray.push(subData);
         SubMysteryGift.findByIdAndUpdate(
@@ -544,15 +563,16 @@ botclient.on(
           .then((doc) => {
             // console.log('SMG Updated');
             console.log(doc);
+            done();
           })
           .catch((err) => {
-            console.error(err);
+            done(err);
           });
       } else {
         let newSubArray = activeSMG.subs;
         let newSubCount = activeSMG.subsLeft - 1;
         let subData = {
-          recipient: recipient,
+          recipient: job.data.recipient,
         };
         newSubArray.push(subData);
         SubMysteryGift.findByIdAndUpdate(
@@ -568,26 +588,31 @@ botclient.on(
           }
         )
           .then((smgDoc) => {
-            // console.log('SMG Completed');
+            console.log('SMG Completed');
             let newEvent = new ChannelEvent({
               channel: noHashChan,
               type: 'mysterysubgift',
               data: smgDoc,
             });
             newEvent.save((err, eventDoc) => {
-              if (err) console.error(err);
-              rqs.to(`${noHashChan}`).emit('noti', {
+              if (err) {
+                done(err);
+              }
+              alertQueue.add({
                 id: eventDoc._id,
                 type: 'mysterysubgift',
+                channel: noHashChan,
                 userGivingSubs: smgDoc.userGivingSubs,
                 subsGifted: smgDoc.subsGifted,
                 senderTotal: smgDoc.senderTotal,
                 subs: smgDoc.subs,
               });
+
+              done();
             });
           })
           .catch((err) => {
-            console.error(err);
+            done(err);
           });
       }
     } else {
@@ -596,8 +621,8 @@ botclient.on(
         channel: noHashChan,
         type: 'subgift',
         data: {
-          username: username,
-          recipient: recipient,
+          username: job.data.username,
+          recipient: job.data.recipient,
           // showStreak: showStreak,
           // streak: streak,
           totalGifted: senderCount,
@@ -606,18 +631,84 @@ botclient.on(
       newEvent.save((err, doc) => {
         console.log('NEW SUB GIFT');
         console.log(doc._id);
-        if (err) console.error(err);
-        rqs.to(`${noHashChan}`).emit('noti', {
+        if (err) {
+          done(err);
+        }
+        alertQueue.add({
           id: doc._id,
           type: 'subgift',
-          username: username,
-          recipient: recipient,
+          channel: noHashChan,
+          username: job.data.username,
+          recipient: job.data.recipient,
           // showStreak: showStreak,
           // streak: streak,
           senderTotal: senderCount,
         });
+        done();
       });
     }
+  }
+
+  if (job.data.type === 'submysterygift') {
+    console.log('sub queue SMG');
+    let senderCount = ~~job.data.userstate['msg-param-sender-count'];
+
+    let newSMG = new SubMysteryGift({
+      channel: noHashChan,
+      active: true,
+      subsLeft: job.data.numbOfSubs,
+      subsGifted: job.data.numbOfSubs,
+      userGivingSubs: job.data.username,
+      senderTotal: senderCount,
+    });
+    newSMG.save((err, doc) => {
+      if (err) {
+        console.error(err);
+        done(err);
+      }
+      done();
+    });
+  }
+});
+
+function sendTest() {
+  botclient.say(
+    '#opti_21',
+    `submysterygift --count ${Math.floor(
+      Math.random() * 10
+    )} --username speedrazer`
+  );
+}
+
+// function sendraid() {
+//   botclient.say('#opti_21', `raid`);
+// }
+
+function sendSubGift() {
+  botclient.say('#opti_21', `subgift --tier 1 --username speedrazer`);
+}
+
+setTimeout(sendTest, 10000);
+setInterval(sendSubGift, 11000);
+
+// async function findEvent() {
+//   let event = await ChannelEvent.findById('5f1f98e3d74364296c3a12e4');
+//   console.log(event);
+// }
+// setTimeout(findEvent, 10000);
+
+// individual Subgifts
+botclient.on(
+  'subgift',
+  async (channel, username, streakMonths, recipient, methods, userstate) => {
+    subQueue.add({
+      type: 'subgift',
+      channel: channel,
+      username: username,
+      userstate: userstate,
+      recipient: recipient,
+      streakMonths: streakMonths,
+    });
   }
 );
 
@@ -627,19 +718,12 @@ botclient.on(
   (channel, username, numbOfSubs, methods, userstate) => {
     // console.log(userstate);
     // console.log('NEW SMG')
-    let noHashChan = channel.slice(1);
-    let senderCount = ~~userstate['msg-param-sender-count'];
-
-    let newSMG = new SubMysteryGift({
-      channel: noHashChan,
-      active: true,
-      subsLeft: numbOfSubs,
-      subsGifted: numbOfSubs,
-      userGivingSubs: username,
-      senderTotal: senderCount,
-    });
-    newSMG.save((err, doc) => {
-      if (err) console.error(err);
+    subQueue.add({
+      type: 'submysterygift',
+      channel: channel,
+      userstate: userstate,
+      numbOfSubs: numbOfSubs,
+      username: username,
     });
   }
 );
@@ -657,18 +741,21 @@ botclient.on('raided', (channel, username, viewers) => {
   });
   newEvent.save((err, doc) => {
     if (err) console.error(err);
-    rqs.to(`${noHashChan}`).emit('noti', {
+    alertQueue.add({
       id: doc._id,
       type: 'raid',
       username: username,
       viewers: viewers,
+      channel: noHashChan,
     });
   });
 });
 
-// ChannelEvent.deleteMany({}).then((doc) => {
-//   console.log('EVENTS DELETED');
-// });
+alertQueue.empty();
+subQueue.empty();
+ChannelEvent.deleteMany({}).then((doc) => {
+  console.log('EVENTS DELETED');
+});
 
 // Song Requests
 botclient.on('chat', async (channel, userstate, message, self) => {
@@ -681,7 +768,8 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   // TODO: Combine open and closing commands
   if (command === 'closesr') {
     if (userstate.badges.broadcaster === '1' || userstate.mod === true) {
-      Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: false })
+      channelQueue
+        .updateOne({ channel: channel.slice(1) }, { allowReqs: false })
         .then((doc) => {
           botclient.say(channel, 'Requests are now closed');
         })
@@ -693,7 +781,8 @@ botclient.on('chat', async (channel, userstate, message, self) => {
 
   if (command === 'opensr') {
     if (userstate.badges.broadcaster === '1' || userstate.mod === true) {
-      Queue.updateOne({ channel: channel.slice(1) }, { allowReqs: true })
+      channelQueue
+        .updateOne({ channel: channel.slice(1) }, { allowReqs: true })
         .then((doc) => {
           botclient.say(channel, 'Requests are now open');
         })
@@ -703,7 +792,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     }
   }
 
-  if (command === 'replies') {
+  if (command === 'devreplies') {
     if (userstate.badges.broadcaster === '1' || userstate.mod === true) {
       let allowed = ['off', 'on'];
       let setting = parsedM[1];
@@ -719,7 +808,8 @@ botclient.on('chat', async (channel, userstate, message, self) => {
         settingBool = true;
       }
 
-      Queue.updateOne({ channel: noHashChan }, { replyInChat: settingBool })
+      channelQueue
+        .updateOne({ channel: noHashChan }, { replyInChat: settingBool })
         .then((doc) => {
           botclient.say(channel, `Replies are now ${setting}`);
         })
@@ -730,7 +820,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   }
 
   if (command === 'sr' || command === 'songrequest') {
-    let queue = await Queue.findOne({ channel: noHashChan });
+    let queue = await channelQueue.findOne({ channel: noHashChan });
     let chatRespond = queue.replyInChat;
     console.log(queue);
     if (queue.allowReqs) {
@@ -760,11 +850,12 @@ botclient.on('chat', async (channel, userstate, message, self) => {
               queue.currQueue.push(newSr);
               let newQueue = queue.currQueue;
               // console.log(queue);
-              Queue.findOneAndUpdate(
-                { channel: noHashChan },
-                { currQueue: newQueue },
-                { new: true, useFindAndModify: false }
-              )
+              channelQueue
+                .findOneAndUpdate(
+                  { channel: noHashChan },
+                  { currQueue: newQueue },
+                  { new: true, useFindAndModify: false }
+                )
                 .then((queueDoc) => {
                   // Real time data push to front end
                   // console.log(doc);
@@ -812,11 +903,12 @@ botclient.on('chat', async (channel, userstate, message, self) => {
             queue.currQueue.push(newSr);
             let newQueue = queue.currQueue;
             // console.log(queue);
-            Queue.findOneAndUpdate(
-              { channel: noHashChan },
-              { currQueue: newQueue },
-              { new: true, useFindAndModify: false }
-            )
+            channelQueue
+              .findOneAndUpdate(
+                { channel: noHashChan },
+                { currQueue: newQueue },
+                { new: true, useFindAndModify: false }
+              )
               .then((queueDoc) => {
                 // Real time data push to front end
                 // console.log(doc);
@@ -883,11 +975,12 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                     queue.currQueue.push(newSr);
                     let newQueue = queue.currQueue;
                     // console.log(queue);
-                    Queue.findOneAndUpdate(
-                      { channel: noHashChan },
-                      { currQueue: newQueue },
-                      { new: true, useFindAndModify: false }
-                    )
+                    channelQueue
+                      .findOneAndUpdate(
+                        { channel: noHashChan },
+                        { currQueue: newQueue },
+                        { new: true, useFindAndModify: false }
+                      )
                       .then((queueDoc) => {
                         // Real time data push to front end
                         // console.log(doc);
@@ -934,11 +1027,12 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                 queue.currQueue.push(newSr);
                 let newQueue = queue.currQueue;
                 // console.log(queue);
-                Queue.findOneAndUpdate(
-                  { channel: noHashChan },
-                  { currQueue: newQueue },
-                  { new: true, useFindAndModify: false }
-                )
+                channelQueue
+                  .findOneAndUpdate(
+                    { channel: noHashChan },
+                    { currQueue: newQueue },
+                    { new: true, useFindAndModify: false }
+                  )
                   .then((queueDoc) => {
                     // Real time data push to front end
                     // console.log(doc);
@@ -976,7 +1070,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   }
 
   if (command === 'tr') {
-    let queue = await Queue.findOne({ channel: channel.slice(1) });
+    let queue = await channelQueue.findOne({ channel: channel.slice(1) });
     let chatRespond = queue.replyInChat;
     // console.log(queue.settings);
     if (queue.allowReqs) {
@@ -996,11 +1090,12 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       queue.currQueue.push(newSr);
       let newQueue = queue.currQueue;
       // console.log(queue);
-      Queue.findOneAndUpdate(
-        { channel: noHashChan },
-        { currQueue: newQueue },
-        { new: true, useFindAndModify: false }
-      )
+      channelQueue
+        .findOneAndUpdate(
+          { channel: noHashChan },
+          { currQueue: newQueue },
+          { new: true, useFindAndModify: false }
+        )
         .then((queueDoc) => {
           // Real time data push to front end
           // console.log(doc);
