@@ -296,7 +296,7 @@ const tmiOptions = {
   connection: {
     secure: true,
     // Test server
-    server: 'irc.fdgt.dev',
+    // server: 'irc.fdgt.dev',
   },
   identity: {
     username: twitchuser,
@@ -478,6 +478,13 @@ ComfyJS.onChat = async (user, command, message, flags, extra) => {
     }
   }
 };
+
+// Test
+// alertQueue.empty();
+// subQueue.empty();
+// ChannelEvent.deleteMany({}).then((doc) => {
+//   console.log('EVENTS DELETED');
+// });
 
 // Message Queues
 const subQueue = new Queue('sub event');
@@ -684,12 +691,12 @@ function sendTest() {
 //   botclient.say('#opti_21', `raid`);
 // }
 
-function sendSubGift() {
-  botclient.say('#opti_21', `subgift --tier 1 --username speedrazer`);
-}
+// function sendSubGift() {
+//   botclient.say('#opti_21', `subgift --tier 1 --username speedrazer`);
+// }
 
-setTimeout(sendTest, 10000);
-setInterval(sendSubGift, 11000);
+// setTimeout(sendTest, 10000);
+// setInterval(sendSubGift, 11000);
 
 // async function findEvent() {
 //   let event = await ChannelEvent.findById('5f1f98e3d74364296c3a12e4');
@@ -749,12 +756,6 @@ botclient.on('raided', (channel, username, viewers) => {
       channel: noHashChan,
     });
   });
-});
-
-alertQueue.empty();
-subQueue.empty();
-ChannelEvent.deleteMany({}).then((doc) => {
-  console.log('EVENTS DELETED');
 });
 
 // Song Requests
