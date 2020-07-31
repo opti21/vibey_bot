@@ -108,7 +108,7 @@ module.exports = async (job) => {
         .then((doc) => {
           // console.log('SMG Updated');
           // console.log(doc);
-          return Promise.resolve('added to SMG');
+          return Promise.resolve();
         })
         .catch((err) => {
           return Promise.reject(err);

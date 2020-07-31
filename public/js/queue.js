@@ -295,7 +295,7 @@ socket.on('sr-event', (request) => {
       artist = '';
     }
     reqElem.setAttribute('class', 'song mb-3 border');
-    reqElem.setAttribute('id', `${request.id}`);
+    reqElem.setAttribute('id', `req${request.id}`);
     reqElem.innerHTML = `
       <div class="song-top p-2">
         <div class="d-flex flex-column">
@@ -305,21 +305,21 @@ socket.on('sr-event', (request) => {
       </div>
       <div class="reqBy p-2"><i class="far fa-user ml-2 mr-2"></i>${request.reqBy}</div>
       <div class="song-ctrl d-flex p-2">
-        <a href="#" data-srID="${request.id}" class="reqDelBtn p-1 flex-fill text-center">
+        <a href="#" data-srID="req${request.id}" class="reqDelBtn p-1 flex-fill text-center">
           Delete
         </a>
-        <a href="#" data-srID="${request.id}" data-move="down" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-down"></i></a>
-        <a href="#" data-srID="${request.id}" data-move="up" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-up"></i></a>
+        <a href="#" data-srID="req${request.id}" data-move="down" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-down"></i></a>
+        <a href="#" data-srID="req${request.id}" data-move="up" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-up"></i></a>
         <!--<a href="#" data-uri="${request.uri}" class="playBtn p-1 flex-fill text-center">Play <i class="fas fa-play-circle"></i></a>-->
       </div>
     `;
     reqDiv.prepend(reqElem);
-    // gsap.from(`#${request.id}`, {
-    //   opacity: 0,
-    //   y: -50,
-    //   duration: 0.5,
-    //   ease: 'power4.out',
-    // });
+    gsap.from(`#req${request.id}`, {
+      opacity: 0,
+      y: -50,
+      duration: 0.5,
+      ease: 'power4.out',
+    });
   } catch (err) {
     console.error(err);
   }
@@ -419,11 +419,11 @@ document.addEventListener(
               </div>
               <div class="reqBy p-2 border-bottom"><i class="far fa-user ml-2 mr-2"></i>${request.requestedBy}</div>
               <div class="song-ctrl d-flex p-2">
-                <a href="#" data-srID="${request.id}" class="reqDelBtn p-1 flex-fill text-center rounded">
+                <a href="#" data-srID="req${request.id}" class="reqDelBtn p-1 flex-fill text-center rounded">
                   Delete
                 </a>
-                <a href="#" data-srID="${request.id}" data-move="down" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-down"></i></a>
-                <a href="#" data-srID="${request.id}" data-move="up" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-up"></i></a>
+                <a href="#" data-srID="req${request.id}" data-move="down" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-down"></i></a>
+                <a href="#" data-srID="req${request.id}" data-move="up" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-up"></i></a>
                 <!--<a href="#" data-uri="${request.track.uri}" class="playBtn p-1 flex-fill text-center">Play <i class="fas fa-play-circle"></i></a>-->
               </div>
             `;
