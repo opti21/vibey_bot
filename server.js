@@ -512,6 +512,13 @@ ComfyJS.onChat = async (user, command, message, flags, extra) => {
 // Message Queues
 const subQueue = new Queue('sub event');
 const alertQueue = new Queue('Alert');
+const commandQueue = new Queue('Command', {
+  limiter: {
+    max: 5,
+    duration: 5000,
+    bounceBack: true, // important
+  },
+});
 
 // Clear events
 if (process.argv.includes('-clearevents')) {
@@ -745,6 +752,9 @@ subQueue.on('completed', (job, result) => {
   //   senderTotal: senderCount,
   // });
 });
+
+// Command Process
+commandQueue.process((job, done) => {});
 
 // individual Subgifts
 botclient.on(
@@ -1386,12 +1396,22 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   }
 
   let allowedChans = ['veryhandsomebilly', 'opti_21'];
-  if (command === 'otamadance' && allowedChans.includes(noHashChan)) {
-    widgets.emit('otama-dance');
+  if (command === 'otamawiggle' && allowedChans.includes(noHashChan)) {
+    widgets.emit('otama', {
+      type: 'wiggle',
+    });
   }
 
   if (command === 'otamaheart' && allowedChans.includes(noHashChan)) {
-    widgets.emit('otama-heart');
+    widgets.emit('otama', {
+      type: 'heart',
+    });
+  }
+
+  if (command === 'otamadance' && allowedChans.includes(noHashChan)) {
+    widgets.emit('otama', {
+      type: 'dance',
+    });
   }
 });
 

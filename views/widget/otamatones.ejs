@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tony control</title>
+    <title>Otamatone control</title>
     <style>
       .otamtatone {
         position: absolute;
@@ -42,6 +42,20 @@
       alt=""
     />
     <img
+      class="dance"
+      style="position: absolute; top: 0px; left: 0; z-index: 1; opacity: 0;"
+      id="theo-hearts"
+      src="/img/otamatones/DanceTony.gif"
+      alt=""
+    />
+    <img
+      class="dance"
+      style="position: absolute; top: -20px; left: 0; z-index: 1; opacity: 0;"
+      id="theo-hearts"
+      src="/img/otamatones/DanceTheo.gif"
+      alt=""
+    />
+    <img
       class="still"
       style="position: absolute; top: 0; left: 0; z-index: 1;"
       id="tony-still"
@@ -57,7 +71,8 @@
     />
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/Browser-Queue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap"></script>
-    <script src="/js/tony.js"></script>
+    <script src="/js/otamatones.js"></script>
   </body>
 </html>
