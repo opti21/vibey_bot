@@ -89,6 +89,7 @@ async function getTwitchCreds() {
 // Real time data
 const rqs = io.of('/req-namescape');
 const polls = io.of('/polls-namescape');
+const widgets = io.of('/widgets');
 
 rqs.on('connection', function (socket) {
   // Create room and
@@ -582,7 +583,153 @@ alertQueue.process((job, done) => {
   }
 });
 
-subQueue.process(__dirname + '/procs/subQueue.js');
+// subQueue.process(__dirname + '/procs/subQueue.js')
+subQueue.process(async (job, done) => {
+  let noHashChan = job.data.channel.slice(1);
+  if (job.data.type === 'subgift') {
+    let senderCount = ~~job.data.userstate['msg-param-sender-count'];
+    // let streak = ~~userstate['msg-param-cumulative-months'];
+    // let showStreak = userstate['msg-param-should-share-streak'];
+
+    // console.log(userstate);
+
+    let activeSMG = await SubMysteryGift.findOne({
+      channel: noHashChan,
+      userGivingSubs: job.data.username,
+      active: true,
+    });
+
+    // console.log(activeSMG);
+    if (activeSMG) {
+      if (activeSMG.subsLeft > 1) {
+        let newSubArray = activeSMG.subs;
+        let newSubCount = activeSMG.subsLeft - 1;
+        // TODO: add more sub data
+        let subData = {
+          recipient: job.data.recipient,
+        };
+        newSubArray.push(subData);
+        SubMysteryGift.findByIdAndUpdate(
+          activeSMG._id,
+          {
+            subs: newSubArray,
+            subsLeft: newSubCount,
+          },
+          {
+            new: true,
+            useFindAndModify: false,
+          }
+        )
+          .then((doc) => {
+            // console.log('SMG Updated');
+            console.log(doc);
+            done();
+          })
+          .catch((err) => {
+            done(err);
+          });
+      } else {
+        let newSubArray = activeSMG.subs;
+        let newSubCount = activeSMG.subsLeft - 1;
+        let subData = {
+          recipient: job.data.recipient,
+        };
+        newSubArray.push(subData);
+        SubMysteryGift.findByIdAndUpdate(
+          activeSMG._id,
+          {
+            subs: newSubArray,
+            subsLeft: newSubCount,
+            active: false,
+          },
+          {
+            new: true,
+            useFindAndModify: false,
+          }
+        )
+          .then((smgDoc) => {
+            console.log('SMG Completed');
+            let newEvent = new ChannelEvent({
+              channel: noHashChan,
+              type: 'mysterysubgift',
+              data: smgDoc,
+            });
+            newEvent.save((err, eventDoc) => {
+              if (err) {
+                done(err);
+              }
+              alertQueue.add({
+                id: eventDoc._id,
+                type: 'mysterysubgift',
+                channel: noHashChan,
+                userGivingSubs: smgDoc.userGivingSubs,
+                subsGifted: smgDoc.subsGifted,
+                senderTotal: smgDoc.senderTotal,
+                subs: smgDoc.subs,
+              });
+
+              done();
+            });
+          })
+          .catch((err) => {
+            done(err);
+          });
+      }
+    } else {
+      // console.log('No active SMG');
+      let newEvent = new ChannelEvent({
+        channel: noHashChan,
+        type: 'subgift',
+        data: {
+          username: job.data.username,
+          recipient: job.data.recipient,
+          // showStreak: showStreak,
+          // streak: streak,
+          totalGifted: senderCount,
+        },
+      });
+      newEvent.save((err, doc) => {
+        console.log('NEW SUB GIFT');
+        console.log(doc._id);
+        if (err) {
+          done(err);
+        }
+        alertQueue.add({
+          id: doc._id,
+          type: 'subgift',
+          channel: noHashChan,
+          username: job.data.username,
+          recipient: job.data.recipient,
+          // showStreak: showStreak,
+          // streak: streak,
+          senderTotal: senderCount,
+        });
+        done();
+      });
+    }
+  }
+
+  if (job.data.type === 'submysterygift') {
+    console.log('sub queue SMG');
+    let senderCount = ~~job.data.userstate['msg-param-sender-count'];
+
+    let newSMG = new SubMysteryGift({
+      channel: noHashChan,
+      active: true,
+      subsLeft: job.data.numbOfSubs,
+      subsGifted: job.data.numbOfSubs,
+      userGivingSubs: job.data.username,
+      senderTotal: senderCount,
+    });
+    newSMG.save((err, doc) => {
+      if (err) {
+        console.error(err);
+        done(err);
+      }
+      done();
+    });
+  }
+});
 
 subQueue.on('completed', (job, result) => {
   console.log('sub job completed');
@@ -603,14 +750,19 @@ subQueue.on('completed', (job, result) => {
 botclient.on(
   'subgift',
   async (channel, username, streakMonths, recipient, methods, userstate) => {
-    subQueue.add({
-      type: 'subgift',
-      channel: channel,
-      username: username,
-      userstate: userstate,
-      recipient: recipient,
-      streakMonths: streakMonths,
-    });
+    subQueue.add(
+      {
+        type: 'subgift',
+        channel: channel,
+        username: username,
+        userstate: userstate,
+        recipient: recipient,
+        streakMonths: streakMonths,
+      },
+      {
+        delay: 500,
+      }
+    );
   }
 );
 
@@ -620,13 +772,18 @@ botclient.on(
   (channel, username, numbOfSubs, methods, userstate) => {
     // console.log(userstate);
     // console.log('NEW SMG')
-    subQueue.add({
-      type: 'submysterygift',
-      channel: channel,
-      userstate: userstate,
-      numbOfSubs: numbOfSubs,
-      username: username,
-    });
+    subQueue.add(
+      {
+        type: 'submysterygift',
+        channel: channel,
+        userstate: userstate,
+        numbOfSubs: numbOfSubs,
+        username: username,
+      },
+      {
+        delay: 500,
+      }
+    );
   }
 );
 
@@ -1226,6 +1383,15 @@ botclient.on('chat', async (channel, userstate, message, self) => {
         }
       })
       .catch((err) => console.error(err));
+  }
+
+  let allowedChans = ['veryhandsomebilly', 'opti_21'];
+  if (command === 'otamadance' && allowedChans.includes(noHashChan)) {
+    widgets.emit('otama-dance');
+  }
+
+  if (command === 'otamaheart' && allowedChans.includes(noHashChan)) {
+    widgets.emit('otama-heart');
   }
 });
 

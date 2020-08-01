@@ -1,4 +1,4 @@
-modules.export = function (object, property, value) {
+module.export = function (object, property, value) {
   return (
     object[property] === value ||
     Object.keys(object).some(function (k) {

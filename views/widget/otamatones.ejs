@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tony control</title>
+    <style>
+      .otamtatone {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <img
+      class="wiggle"
+      style="position: absolute; top: 0; left: 0; z-index: 1; opacity: 0;"
+      id="tony-wiggle"
+      src="/img/otamatones/WiggleTony.gif"
+      alt=""
+    />
+    <img
+      class="wiggle"
+      style="position: absolute; top: -20px; left: 0; z-index: 1; opacity: 0;"
+      id="theo-wiggle"
+      src="/img/otamatones/WiggleTheo.gif"
+      alt=""
+    />
+    <img
+      class="heart"
+      style="position: absolute; top: 0; left: 0; z-index: 1; opacity: 0;"
+      id="tony-hearts"
+      src="/img/otamatones/HEARTS_TONY.gif"
+      alt=""
+    />
+    <img
+      class="heart"
+      style="position: absolute; top: -20px; left: 0; z-index: 1; opacity: 0;"
+      id="theo-hearts"
+      src="/img/otamatones/HEARTS_THEO.gif"
+      alt=""
+    />
+    <img
+      class="still"
+      style="position: absolute; top: 0; left: 0; z-index: 1;"
+      id="tony-still"
+      src="/img/otamatones/Tony_STILL.gif"
+      alt=""
+    />
+    <img
+      class="still"
+      style="position: absolute; top: -20px; left: 0; z-index: 1;"
+      id="theo-still"
+      src="/img/otamatones/Theo_STILL.gif"
+      alt=""
+    />
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap"></script>
+    <script src="/js/tony.js"></script>
+  </body>
+</html>

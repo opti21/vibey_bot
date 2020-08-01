@@ -206,7 +206,7 @@ module.exports = (job) => {
         console.error(err);
         return Promise.resolve(err);
       }
-      return Promise.resolve(null, doc);
+      return Promise.resolve(doc);
     });
   }
 };
