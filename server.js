@@ -908,7 +908,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     }
   }
 
-  if (command === 'devreplies') {
+  if (command === 'replies') {
     if (userstate.badges.broadcaster === '1' || userstate.mod === true) {
       let allowed = ['off', 'on'];
       let setting = parsedM[1];
