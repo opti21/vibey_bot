@@ -1,6 +1,13 @@
 require('dotenv').config();
 require('sqreen');
 
+const Sentry = require('@sentry/node');
+Sentry.init({
+  dsn:
+    'https://a5bf8cfe7372430196e59f7dac579ff3@o421094.ingest.sentry.io/5340340',
+  environment: process.env.NODE_ENV,
+});
+
 const config = require('./config/config');
 const version = require('project-version');
 console.log('Version: ' + version);
@@ -34,15 +41,11 @@ const JoinedChannel = require('./models/joinedChannels');
 const qs = require('querystring');
 const ComfyJS = require('comfy.js');
 const { v4: uuidv4 } = require('uuid');
-const Sentry = require('@sentry/node');
 const helmet = require('helmet');
 const Queue = require('bull');
-
-Sentry.init({
-  dsn:
-    'https://a5bf8cfe7372430196e59f7dac579ff3@o421094.ingest.sentry.io/5340340',
-  environment: process.env.NODE_ENV,
-});
+const { nanoid } = require('nanoid');
+require('./utils/StreamElements')(io);
+const findURI = require('./utils/findURI');
 
 // ComfyJS.Init(config.comfyChan);
 
@@ -86,7 +89,7 @@ async function getTwitchCreds() {
 // Real time data
 const rqs = io.of('/req-namescape');
 const polls = io.of('/polls-namescape');
-const hellos = io.of('/hellos-namescape');
+const widgets = io.of('/widgets');
 
 rqs.on('connection', function (socket) {
   // Create room and
@@ -288,16 +291,27 @@ const twitchclientid = process.env.TWITCH_CLIENTID;
 const twitchuser = process.env.TWITCH_USER;
 const twitchpass = process.env.TWITCH_PASS;
 
-const tmiOptions = {
+console.log(process.argv);
+let connectConfig;
+
+if (process.argv.includes('-testserv')) {
+  connectConfig = {
+    secure: true,
+    // Test server
+    server: 'irc.fdgt.dev',
+  };
+} else {
+  connectConfig = {
+    secure: true,
+  };
+}
+
+tmiOptions = {
   options: {
     debug: true,
     clientId: twitchclientid,
   },
-  connection: {
-    secure: true,
-    // Test server
-    // server: 'irc.fdgt.dev',
-  },
+  connection: connectConfig,
   identity: {
     username: twitchuser,
     password: twitchpass,
@@ -318,9 +332,38 @@ JoinedChannel.find({}).then((res) => {
   });
 });
 
-// Bot says hello on connect
+// Test functions
+function sendSubs() {
+  botclient.say('#opti_21', `subgift --tier 1 --username speedrazer`);
+}
+
+function sendSMG() {
+  botclient.say(
+    '#opti_21',
+    `submysterygift --count ${Math.floor(
+      Math.random() * 10
+    )} --username speedrazer`
+  );
+}
+
+function sendraid() {
+  botclient.say('#opti_21', `raid`);
+}
+
+if (process.argv.includes('-sendsmg')) {
+  setInterval(sendSMG, 11000);
+}
+
+if (process.argv.includes('-sendsubs')) {
+  setInterval(sendSubs, 11000);
+}
+
+if (process.argv.includes('-sendraid')) {
+  setInterval(sendraid, 11000);
+}
+
+// Bot connected to IRC server
 botclient.on('connected', (address, port) => {
-  // botclient.say(channel, `Hey Chat! Send me those vibes`)
   console.log('connected to twitch chat client');
   console.log(address);
 });
@@ -329,19 +372,6 @@ botclient.on('connected', (address, port) => {
 const URLRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
 const spRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:track\/|\?uri=spotify:track:)((\w|-){22})/;
 const ytRegex = /(?:https?:\/\/)?(?:(?:(?:www\.?)?youtube\.com(?:\/(?:(?:watch\?.*?(v=[^&\s]+).*)|(?:v(\/.*))|(channel\/.+)|(?:user\/(.+))|(?:results\?(search_query=.+))))?)|(?:youtu\.be(\/.*)?))/;
-
-function findURI(object, property, value) {
-  return (
-    object[property] === value ||
-    Object.keys(object).some(function (k) {
-      return (
-        object[k] &&
-        typeof object[k] === 'object' &&
-        findURI(object[k], property, value)
-      );
-    })
-  );
-}
 
 function refreshTokenThenAdd(user, uri) {
   let cb_url = process.env.SPOTIFY_CALLBACK_URL;
@@ -479,17 +509,25 @@ ComfyJS.onChat = async (user, command, message, flags, extra) => {
   }
 };
 
-// Test
-// alertQueue.empty();
-// subQueue.empty();
-// ChannelEvent.deleteMany({}).then((doc) => {
-//   console.log('EVENTS DELETED');
-// });
-
 // Message Queues
 const subQueue = new Queue('sub event');
-const SMGQueue = new Queue('SMG event');
 const alertQueue = new Queue('Alert');
+const commandQueue = new Queue('Command', {
+  limiter: {
+    max: 5,
+    duration: 5000,
+    bounceBack: true, // important
+  },
+});
+
+// Clear events
+if (process.argv.includes('-clearevents')) {
+  alertQueue.empty();
+  subQueue.empty();
+  ChannelEvent.deleteMany({}).then((doc) => {
+    console.log('EVENTS DELETED');
+  });
+}
 
 alertQueue.process((job, done) => {
   switch (job.data.type) {
@@ -528,9 +566,31 @@ alertQueue.process((job, done) => {
       });
       done();
       break;
+
+    case 'giftpaidupgrade':
+      rqs.to(`${job.data.channel}`).emit('noti', {
+        id: job.data.id,
+        type: 'giftpaidupgrade',
+        username: job.data.username,
+        sender: job.data.sender,
+      });
+      done();
+      break;
+
+    case 'resub':
+      rqs.to(`${job.data.channel}`).emit('noti', {
+        id: job.data.id,
+        type: 'resub',
+        username: job.data.username,
+        months: job.data.months,
+        message: job.data.message,
+      });
+      done();
+      break;
   }
 });
 
+// subQueue.process(__dirname + '/procs/subQueue.js')
 subQueue.process(async (job, done) => {
   let noHashChan = job.data.channel.slice(1);
   if (job.data.type === 'subgift') {
@@ -678,44 +738,41 @@ subQueue.process(async (job, done) => {
   }
 });
 
-function sendTest() {
-  botclient.say(
-    '#opti_21',
-    `submysterygift --count ${Math.floor(
-      Math.random() * 10
-    )} --username speedrazer`
-  );
-}
+subQueue.on('completed', (job, result) => {
+  console.log('sub job completed');
+  console.log(result);
+  // alertQueue.add({
+  //   id: doc._id,
+  //   type: 'subgift',
+  //   channel: noHashChan,
+  //   username: job.data.username,
+  //   recipient: job.data.recipient,
+  //   // showStreak: showStreak,
+  //   // streak: streak,
+  //   senderTotal: senderCount,
+  // });
+});
 
-// function sendraid() {
-//   botclient.say('#opti_21', `raid`);
-// }
-
-// function sendSubGift() {
-//   botclient.say('#opti_21', `subgift --tier 1 --username speedrazer`);
-// }
-
-// setTimeout(sendTest, 10000);
-// setInterval(sendSubGift, 11000);
-
-// async function findEvent() {
-//   let event = await ChannelEvent.findById('5f1f98e3d74364296c3a12e4');
-//   console.log(event);
-// }
-// setTimeout(findEvent, 10000);
+// Command Process
+commandQueue.process((job, done) => {});
 
 // individual Subgifts
 botclient.on(
   'subgift',
   async (channel, username, streakMonths, recipient, methods, userstate) => {
-    subQueue.add({
-      type: 'subgift',
-      channel: channel,
-      username: username,
-      userstate: userstate,
-      recipient: recipient,
-      streakMonths: streakMonths,
-    });
+    subQueue.add(
+      {
+        type: 'subgift',
+        channel: channel,
+        username: username,
+        userstate: userstate,
+        recipient: recipient,
+        streakMonths: streakMonths,
+      },
+      {
+        delay: 500,
+      }
+    );
   }
 );
 
@@ -725,13 +782,18 @@ botclient.on(
   (channel, username, numbOfSubs, methods, userstate) => {
     // console.log(userstate);
     // console.log('NEW SMG')
-    subQueue.add({
-      type: 'submysterygift',
-      channel: channel,
-      userstate: userstate,
-      numbOfSubs: numbOfSubs,
-      username: username,
-    });
+    subQueue.add(
+      {
+        type: 'submysterygift',
+        channel: channel,
+        userstate: userstate,
+        numbOfSubs: numbOfSubs,
+        username: username,
+      },
+      {
+        delay: 500,
+      }
+    );
   }
 );
 
@@ -757,6 +819,59 @@ botclient.on('raided', (channel, username, viewers) => {
     });
   });
 });
+
+botclient.on('giftpaidupgrade', (channel, username, sender, userstate) => {
+  let noHashChan = channel.slice(1);
+
+  let newEvent = new ChannelEvent({
+    channel: noHashChan,
+    type: 'giftpaidupgrade',
+    data: {
+      username: username,
+      viewers: viewers,
+      userstate: userstate,
+    },
+  });
+  newEvent.save((err, doc) => {
+    if (err) console.error(err);
+    alertQueue.add({
+      id: doc._id,
+      type: 'giftpaidupgrade',
+      username: username,
+      sender: sender,
+      channel: noHashChan,
+    });
+  });
+});
+
+botclient.on(
+  'resub',
+  (channel, username, months, message, userstate, methods) => {
+    let noHashChan = channel.slice(1);
+
+    let newEvent = new ChannelEvent({
+      channel: noHashChan,
+      type: 'resub',
+      data: {
+        username: username,
+        months: months,
+        message: message,
+        userstate: userstate,
+      },
+    });
+    newEvent.save((err, doc) => {
+      if (err) console.error(err);
+      alertQueue.add({
+        id: doc._id,
+        type: 'resub',
+        channel: noHashChan,
+        username: username,
+        months: months,
+        message: message,
+      });
+    });
+  }
+);
 
 // Song Requests
 botclient.on('chat', async (channel, userstate, message, self) => {
@@ -823,7 +938,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   if (command === 'sr' || command === 'songrequest') {
     let queue = await channelQueue.findOne({ channel: noHashChan });
     let chatRespond = queue.replyInChat;
-    console.log(queue);
+    console.log(queue.replyInChat);
     if (queue.allowReqs) {
       if (URLRegex.test(parsedM[1])) {
         // Spotify link
@@ -1066,7 +1181,9 @@ botclient.on('chat', async (channel, userstate, message, self) => {
         }
       }
     } else {
-      botclient.say(channel, 'Requests are closed');
+      if (chatRespond) {
+        botclient.say(channel, 'Requests are closed');
+      }
     }
   }
 
@@ -1121,7 +1238,9 @@ botclient.on('chat', async (channel, userstate, message, self) => {
           console.error(e);
         });
     } else {
-      botclient.say(channel, 'Requests are closed');
+      if (chatRespond) {
+        botclient.say(channel, 'Requests are closed');
+      }
     }
   }
 
@@ -1252,6 +1371,47 @@ botclient.on('chat', async (channel, userstate, message, self) => {
 
   if (command === 'test' && userstate.badges.broadcaster === '1') {
     botclient.say(channel, he.decode(`THIS IS A TEST`));
+  }
+
+  if (command === 'yearfact') {
+    let year = parsedM[1];
+    axios
+      .get(
+        `https://us-central1-history-lookup.cloudfunctions.net/api/v1/${year}?random=true&limit=1`
+      )
+      .then((response) => {
+        console.log(response.data);
+
+        if (response.data.items.length > 0) {
+          let fact = response.data.items[0];
+          botclient.say(
+            noHashChan,
+            `Here's a random fact about the year ${year}: Date: ${fact.date} - Topic: ${fact.topic} - ${fact.text}`
+          );
+        } else {
+          botclient.say(noHashChan, `No facts returned from API`);
+        }
+      })
+      .catch((err) => console.error(err));
+  }
+
+  let allowedChans = ['veryhandsomebilly', 'opti_21'];
+  if (command === 'otamawiggle' && allowedChans.includes(noHashChan)) {
+    widgets.emit('otama', {
+      type: 'wiggle',
+    });
+  }
+
+  if (command === 'otamaheart' && allowedChans.includes(noHashChan)) {
+    widgets.emit('otama', {
+      type: 'heart',
+    });
+  }
+
+  if (command === 'otamadance' && allowedChans.includes(noHashChan)) {
+    widgets.emit('otama', {
+      type: 'dance',
+    });
   }
 });
 
