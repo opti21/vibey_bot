@@ -215,7 +215,7 @@ socket.on('otama', (data) => {
         if (aniStatus === 'playing') {
           queue.enqueue('otama-dance');
         } else {
-          heartTL.play();
+          danceTL.play();
         }
       } else {
         queue.enqueue('otama-dance');
