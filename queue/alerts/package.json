@@ -1,0 +1,20 @@
+{
+  "name": "queue",
+  "version": "1.0.0",
+  "description": "",
+  "main": "alerts.js",
+  "scripts": {
+    "start": "node alerts.js",
+    "dev": "nodemon alerts.js "
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bee-queue": "^1.2.3",
+    "ioredis": "^4.17.3",
+    "mongoose": "^5.9.27",
+    "pg": "^8.3.3",
+    "redis": "^3.0.2",
+    "redis-smq": "^2.0.0"
+  }
+}
