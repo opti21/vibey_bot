@@ -17,15 +17,6 @@ let enviroment = document
   .getElementById('pageInfo')
   .getAttribute('data-enviroment');
 
-Sentry.init({
-  dsn:
-    'https://32998bbe6f964551a6680d9343ae5270@o421094.ingest.sentry.io/5340398',
-  enviroment: enviroment,
-});
-Sentry.configureScope(function (scope) {
-  scope.setUser({ username: `loggedInUser` });
-});
-
 var socket = io('/req-namescape');
 
 socket.emit('create', `${globalChannel}`);
