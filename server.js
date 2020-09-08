@@ -1,6 +1,4 @@
 require('dotenv').config();
-require('sqreen');
-
 const Sentry = require('@sentry/node');
 Sentry.init({
   dsn:
@@ -34,7 +32,6 @@ const fetchJson = require('fetch-json');
 const ComfyDiscord = require('comfydiscord');
 const admins = config.admins;
 const he = require('he');
-const sgMail = require('@sendgrid/mail');
 const fs = require('fs');
 const axios = require('axios');
 const JoinedChannel = require('./models/joinedChannels');
@@ -42,20 +39,19 @@ const qs = require('querystring');
 const ComfyJS = require('comfy.js');
 const { v4: uuidv4 } = require('uuid');
 const helmet = require('helmet');
-const Queue = require('bull');
 const { nanoid } = require('nanoid');
-require('./utils/StreamElements')(io);
+// require('./utils/StreamElements')(io);
 const findURI = require('./utils/findURI');
+const { Message, Producer } = require('redis-smq');
+const Redis = require('ioredis');
+const redis = new Redis({password: process.env.REDIS_PASS});
 
 // ComfyJS.Init(config.comfyChan);
-
-// SendGrid Emails
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Discord Init
 ComfyDiscord.Init(process.env.DISCORDTOKEN);
 
-// Tiwtch Creds for App
+// Twitch Creds for App
 const TwitchCreds = require('./models/twitchCreds');
 
 getTwitchCreds();
@@ -83,9 +79,6 @@ async function getTwitchCreds() {
   }
 }
 
-//Test Message
-// errTxt("REALLY BAD ERROR");
-
 // Real time data
 const rqs = io.of('/req-namescape');
 const polls = io.of('/polls-namescape');
@@ -111,7 +104,11 @@ app.set('view engine', 'ejs');
 
 app.use(helmet());
 app.use(express.static('public'));
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
 app.use(bodyParser.json());
 app.use(
   cookieSession({
@@ -230,7 +227,9 @@ passport.use(
     },
     async function (accessToken, refreshToken, profile, done) {
       try {
-        User.findOne({ twitch_id: profile.id })
+        User.findOne({
+          twitch_id: profile.id,
+        })
           .exec()
           .then(function (UserSearch) {
             if (UserSearch === null) {
@@ -308,7 +307,7 @@ if (process.argv.includes('-testserv')) {
 
 tmiOptions = {
   options: {
-    debug: true,
+    debug: false,
     clientId: twitchclientid,
   },
   connection: connectConfig,
@@ -333,16 +332,31 @@ JoinedChannel.find({}).then((res) => {
 });
 
 // Test functions
+function subDelay() {
+  setTimeout(sendSubs, 15000);
+}
+
 function sendSubs() {
   botclient.say('#opti_21', `subgift --tier 1 --username speedrazer`);
+  // botclient.say('#opti_21', `subgift --tier 1 --username charlierose`);
+  // botclient.say('#opti_21', `subgift --tier 1 --username marothon`);
+  // botclient.say('#opti_21', `subgift --tier 1 --username speedrazer`);
+  // botclient.say('#opti_21', `subgift --tier 1 --username speedrazer`);
 }
 
 function sendSMG() {
   botclient.say(
     '#opti_21',
     `submysterygift --count ${Math.floor(
-      Math.random() * 10
+      Math.random() * (10 - 5) + 5
     )} --username speedrazer`
+  );
+}
+
+function sendBits() {
+  botclient.say(
+    '#opti_21',
+    `bits --bitscount ${Math.floor(Math.random() * (1000 - 5) + 5)}`
   );
 }
 
@@ -351,11 +365,16 @@ function sendraid() {
 }
 
 if (process.argv.includes('-sendsmg')) {
-  setInterval(sendSMG, 11000);
+  setInterval(sendSMG, 10000);
+}
+
+if (process.argv.includes('-sendbits')) {
+  setInterval(sendBits, 5000);
 }
 
 if (process.argv.includes('-sendsubs')) {
-  setInterval(sendSubs, 11000);
+  setInterval(sendSubs, 10000);
+  // subDelay();
 }
 
 if (process.argv.includes('-sendraid')) {
@@ -399,7 +418,9 @@ function refreshTokenThenAdd(user, uri) {
       console.log(code_res.data);
       try {
         User.findOneAndUpdate(
-          { twitch_id: user.twitch_id },
+          {
+            twitch_id: user.twitch_id,
+          },
           {
             spotify: {
               access_token: code_res.data.access_token,
@@ -411,7 +432,9 @@ function refreshTokenThenAdd(user, uri) {
               scope: code_res.data.scope,
             },
           },
-          { new: true }
+          {
+            new: true,
+          }
         ).then((update_res) => {
           console.log(update_res);
           console.log('spotify token refreshed');
@@ -487,7 +510,9 @@ ComfyJS.onChat = async (user, command, message, flags, extra) => {
     if (spRegex.test(song)) {
       var spID = spotifyUri.parse(song);
       var spURI = spotifyUri.formatURI(song);
-      let user = await User.findOne({ username: extra.channel });
+      let user = await User.findOne({
+        username: extra.channel,
+      });
       let user_token = user.spotify.access_token;
       let tokenExpire = user.spotify.expires_in;
 
@@ -509,270 +534,79 @@ ComfyJS.onChat = async (user, command, message, flags, extra) => {
   }
 };
 
-// Message Queues
-const subQueue = new Queue('sub event');
-const alertQueue = new Queue('Alert');
-const commandQueue = new Queue('Command', {
-  limiter: {
-    max: 5,
-    duration: 5000,
-    bounceBack: true, // important
-  },
-});
-
 // Clear events
-if (process.argv.includes('-clearevents')) {
-  alertQueue.empty();
-  subQueue.empty();
-  ChannelEvent.deleteMany({}).then((doc) => {
-    console.log('EVENTS DELETED');
-  });
-}
+// if (process.argv.includes('-clearevents')) {
+//   ChannelEvent.deleteMany({}).then((doc) => {
+//     console.log('EVENTS DELETED');
+//   });
+// }
 
-alertQueue.process((job, done) => {
-  switch (job.data.type) {
-    case 'subgift':
-      console.log('sub gift alert queue');
-      rqs.to(`${job.data.channel}`).emit('noti', {
-        id: job.data.id,
-        type: 'subgift',
-        username: job.data.username,
-        recipient: job.data.recipient,
-        // showStreak: showStreak,
-        // streak: streak,
-        senderTotal: job.data.senderTotal,
-      });
-      done();
-      break;
-
-    case 'mysterysubgift':
-      rqs.to(`${job.data.channel}`).emit('noti', {
-        id: job.data.id,
-        type: 'mysterysubgift',
-        userGivingSubs: job.data.userGivingSubs,
-        subsGifted: job.data.subsGifted,
-        senderTotal: job.data.senderTotal,
-        subs: job.data.subs,
-      });
-      done();
-      break;
-
-    case 'raid':
-      rqs.to(`${job.data.channel}`).emit('noti', {
-        id: job.data.id,
-        type: 'raid',
-        username: job.data.username,
-        viewers: job.data.viewers,
-      });
-      done();
-      break;
-
-    case 'giftpaidupgrade':
-      rqs.to(`${job.data.channel}`).emit('noti', {
-        id: job.data.id,
-        type: 'giftpaidupgrade',
-        username: job.data.username,
-        sender: job.data.sender,
-      });
-      done();
-      break;
-
-    case 'resub':
-      rqs.to(`${job.data.channel}`).emit('noti', {
-        id: job.data.id,
-        type: 'resub',
-        username: job.data.username,
-        months: job.data.months,
-        message: job.data.message,
-      });
-      done();
-      break;
-  }
-});
-
-// subQueue.process(__dirname + '/procs/subQueue.js')
-subQueue.process(async (job, done) => {
-  let noHashChan = job.data.channel.slice(1);
-  if (job.data.type === 'subgift') {
-    let senderCount = ~~job.data.userstate['msg-param-sender-count'];
-    // let streak = ~~userstate['msg-param-cumulative-months'];
-    // let showStreak = userstate['msg-param-should-share-streak'];
-
-    // console.log(userstate);
-
-    let activeSMG = await SubMysteryGift.findOne({
-      channel: noHashChan,
-      userGivingSubs: job.data.username,
-      active: true,
-    });
-
-    // console.log(activeSMG);
-    if (activeSMG) {
-      if (activeSMG.subsLeft > 1) {
-        let newSubArray = activeSMG.subs;
-        let newSubCount = activeSMG.subsLeft - 1;
-        // TODO: add more sub data
-        let subData = {
-          recipient: job.data.recipient,
-        };
-        newSubArray.push(subData);
-        SubMysteryGift.findByIdAndUpdate(
-          activeSMG._id,
-          {
-            subs: newSubArray,
-            subsLeft: newSubCount,
-          },
-          {
-            new: true,
-            useFindAndModify: false,
-          }
-        )
-          .then((doc) => {
-            // console.log('SMG Updated');
-            console.log(doc);
-            done();
-          })
-          .catch((err) => {
-            done(err);
-          });
-      } else {
-        let newSubArray = activeSMG.subs;
-        let newSubCount = activeSMG.subsLeft - 1;
-        let subData = {
-          recipient: job.data.recipient,
-        };
-        newSubArray.push(subData);
-        SubMysteryGift.findByIdAndUpdate(
-          activeSMG._id,
-          {
-            subs: newSubArray,
-            subsLeft: newSubCount,
-            active: false,
-          },
-          {
-            new: true,
-            useFindAndModify: false,
-          }
-        )
-          .then((smgDoc) => {
-            console.log('SMG Completed');
-            let newEvent = new ChannelEvent({
-              channel: noHashChan,
-              type: 'mysterysubgift',
-              data: smgDoc,
-            });
-            newEvent.save((err, eventDoc) => {
-              if (err) {
-                done(err);
-              }
-              alertQueue.add({
-                id: eventDoc._id,
-                type: 'mysterysubgift',
-                channel: noHashChan,
-                userGivingSubs: smgDoc.userGivingSubs,
-                subsGifted: smgDoc.subsGifted,
-                senderTotal: smgDoc.senderTotal,
-                subs: smgDoc.subs,
-              });
-
-              done();
-            });
-          })
-          .catch((err) => {
-            done(err);
-          });
-      }
-    } else {
-      // console.log('No active SMG');
-      let newEvent = new ChannelEvent({
-        channel: noHashChan,
-        type: 'subgift',
-        data: {
-          username: job.data.username,
-          recipient: job.data.recipient,
-          // showStreak: showStreak,
-          // streak: streak,
-          totalGifted: senderCount,
-        },
-      });
-      newEvent.save((err, doc) => {
-        console.log('NEW SUB GIFT');
-        console.log(doc._id);
-        if (err) {
-          done(err);
-        }
-        alertQueue.add({
-          id: doc._id,
-          type: 'subgift',
-          channel: noHashChan,
-          username: job.data.username,
-          recipient: job.data.recipient,
-          // showStreak: showStreak,
-          // streak: streak,
-          senderTotal: senderCount,
-        });
-        done();
-      });
+const redisOpts = {
+  redis: {
+    driver: 'ioredis',
+    options: {
+      password: process.env.REDIS_PASS
     }
-  }
+  },
+};
 
-  if (job.data.type === 'submysterygift') {
-    console.log('sub queue SMG');
-    let senderCount = ~~job.data.userstate['msg-param-sender-count'];
+const subProducer = new Producer('sub_queue', redisOpts);
 
-    let newSMG = new SubMysteryGift({
+const alertProducer = new Producer('alerts', redisOpts);
+
+// Channel Events
+botclient.on(
+  'subscription',
+  (channel, username, method, message, userstate) => {
+    let noHashChan = channel.slice(1);
+
+    let newAlert = {
       channel: noHashChan,
-      active: true,
-      subsLeft: job.data.numbOfSubs,
-      subsGifted: job.data.numbOfSubs,
-      userGivingSubs: job.data.username,
-      senderTotal: senderCount,
-    });
-    newSMG.save((err, doc) => {
-      if (err) {
-        console.error(err);
-        done(err);
-      }
-      done();
+      type: 'sub',
+      data: {
+        username: username,
+        method: method,
+        message: message,
+        userstate: userstate,
+      },
+    };
+
+    const alertMessage = new Message();
+
+    alertMessage.setBody(newAlert);
+
+    alertProducer.produceMessage(alertMessage, (err) => {
+      if (err) console.log(err);
+      else console.log('Sub Successfully produced');
     });
   }
-});
+);
 
-subQueue.on('completed', (job, result) => {
-  console.log('sub job completed');
-  console.log(result);
-  // alertQueue.add({
-  //   id: doc._id,
-  //   type: 'subgift',
-  //   channel: noHashChan,
-  //   username: job.data.username,
-  //   recipient: job.data.recipient,
-  //   // showStreak: showStreak,
-  //   // streak: streak,
-  //   senderTotal: senderCount,
-  // });
-});
-
-// Command Process
-commandQueue.process((job, done) => {});
-
-// individual Subgifts
 botclient.on(
   'subgift',
   async (channel, username, streakMonths, recipient, methods, userstate) => {
-    subQueue.add(
-      {
-        type: 'subgift',
-        channel: channel,
-        username: username,
+    let noHashChan = channel.slice(1);
+    let senderCount = ~~userstate['msg-param-sender-count'];
+    const jobData = {
+      type: 'subgift',
+      data: {
+        channel: noHashChan,
+        userGivingSubs: username,
         userstate: userstate,
         recipient: recipient,
         streakMonths: streakMonths,
+        senderCount: senderCount,
       },
-      {
-        delay: 500,
-      }
-    );
+    };
+
+    const subMessage = new Message();
+
+    subMessage.setBody(jobData);
+
+    subProducer.produceMessage(subMessage, (err) => {
+      if (err) console.log(err);
+      else console.log('SUB gift Successfully produced');
+    });
   }
 );
 
@@ -780,67 +614,73 @@ botclient.on(
 botclient.on(
   'submysterygift',
   (channel, username, numbOfSubs, methods, userstate) => {
+    let noHashChan = channel.slice(1);
+    console.log(numbOfSubs);
+
     // console.log(userstate);
     // console.log('NEW SMG')
-    subQueue.add(
-      {
-        type: 'submysterygift',
-        channel: channel,
-        userstate: userstate,
-        numbOfSubs: numbOfSubs,
-        username: username,
-      },
-      {
-        delay: 500,
-      }
-    );
+    // Do not change this job structure
+    let SMGjob = {
+      type: 'submysterygift',
+      channel: noHashChan,
+      userstate: userstate,
+      numbOfSubs: numbOfSubs,
+      userGivingSubs: username,
+      userstate: userstate,
+    };
+    const subMessage = new Message();
+
+    subMessage.setBody(SMGjob);
+
+    subProducer.produceMessage(subMessage, (err) => {
+      if (err) console.log(err);
+      console.log('----------SMG PRODUCED----------');
+    });
   }
 );
 
 botclient.on('raided', (channel, username, viewers) => {
   let noHashChan = channel.slice(1);
 
-  let newEvent = new ChannelEvent({
+  let newAlert = {
     channel: noHashChan,
     type: 'raid',
     data: {
       username: username,
       viewers: viewers,
     },
-  });
-  newEvent.save((err, doc) => {
-    if (err) console.error(err);
-    alertQueue.add({
-      id: doc._id,
-      type: 'raid',
-      username: username,
-      viewers: viewers,
-      channel: noHashChan,
-    });
+  };
+
+  const alertMessage = new Message();
+
+  alertMessage.setBody(newAlert);
+
+  alertProducer.produceMessage(alertMessage, (err) => {
+    if (err) console.log(err);
+    else console.log('Raid Successfully produced');
   });
 });
 
 botclient.on('giftpaidupgrade', (channel, username, sender, userstate) => {
   let noHashChan = channel.slice(1);
 
-  let newEvent = new ChannelEvent({
+  let newAlert = {
     channel: noHashChan,
     type: 'giftpaidupgrade',
     data: {
       username: username,
-      viewers: viewers,
+      sender: sender,
       userstate: userstate,
     },
-  });
-  newEvent.save((err, doc) => {
-    if (err) console.error(err);
-    alertQueue.add({
-      id: doc._id,
-      type: 'giftpaidupgrade',
-      username: username,
-      sender: sender,
-      channel: noHashChan,
-    });
+  };
+
+  const alertMessage = new Message();
+
+  alertMessage.setBody(newAlert);
+
+  alertProducer.produceMessage(alertMessage, (err) => {
+    if (err) console.log(err);
+    else console.log('Giftpaidupgrade Successfully produced');
   });
 });
 
@@ -849,7 +689,7 @@ botclient.on(
   (channel, username, months, message, userstate, methods) => {
     let noHashChan = channel.slice(1);
 
-    let newEvent = new ChannelEvent({
+    let newAlert = {
       channel: noHashChan,
       type: 'resub',
       data: {
@@ -858,34 +698,88 @@ botclient.on(
         message: message,
         userstate: userstate,
       },
-    });
-    newEvent.save((err, doc) => {
-      if (err) console.error(err);
-      alertQueue.add({
-        id: doc._id,
-        type: 'resub',
-        channel: noHashChan,
-        username: username,
-        months: months,
-        message: message,
-      });
+    };
+
+    const alertMessage = new Message();
+
+    alertMessage.setBody(newAlert);
+
+    alertProducer.produceMessage(alertMessage, (err) => {
+      if (err) console.log(err);
+      else console.log('Resub Successfully produced');
     });
   }
 );
 
+botclient.on('cheer', (channel, userstate, message) => {
+  let noHashChan = channel.slice(1);
+
+  let newAlert = {
+    channel: noHashChan,
+    type: 'cheer',
+    data: {
+      username: userstate.login,
+      message: message,
+      userstate: userstate,
+    },
+  };
+
+  const alertMessage = new Message();
+
+  alertMessage.setBody(newAlert);
+
+  alertProducer.produceMessage(alertMessage, (err) => {
+    if (err) console.log(err);
+    else console.log('Cheer Successfully produced');
+  });
+});
+
+// TODO: Add the rest of the events
+
+// Publish alerts to the front end
+redis.subscribe('wsalerts', (err) => {
+  if (err) console.error(err);
+  console.log('Subscribed to alerts redis');
+});
+
+redis.on('message', (channel, message) => {
+  switch (channel) {
+    case 'wsalerts':
+      {
+        console.log('WS Alert ' + JSON.parse(message).type);
+        let parsedM = JSON.parse(message);
+        rqs.to(parsedM.channel).emit('noti', parsedM);
+      }
+      break;
+  }
+});
+
 // Song Requests
 botclient.on('chat', async (channel, userstate, message, self) => {
   if (self) return;
+  let noHashChan = channel.slice(1);
+  if (message === 'boop') {
+    rqs.to(noHashChan).emit('noti', {
+      type: 'test',
+      msg: 'Test noti',
+    });
+  }
   if (message[0] !== '!') return;
   let parsedM = message.trim().split(' ');
   let command = parsedM[0].slice(1).toLowerCase();
-  let noHashChan = channel.slice(1);
 
   // TODO: Combine open and closing commands
   if (command === 'closesr') {
     if (userstate.badges.broadcaster === '1' || userstate.mod === true) {
       channelQueue
-        .updateOne({ channel: channel.slice(1) }, { allowReqs: false })
+        .updateOne(
+          {
+            channel: channel.slice(1),
+          },
+          {
+            allowReqs: false,
+          }
+        )
         .then((doc) => {
           botclient.say(channel, 'Requests are now closed');
         })
@@ -898,7 +792,14 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   if (command === 'opensr') {
     if (userstate.badges.broadcaster === '1' || userstate.mod === true) {
       channelQueue
-        .updateOne({ channel: channel.slice(1) }, { allowReqs: true })
+        .updateOne(
+          {
+            channel: channel.slice(1),
+          },
+          {
+            allowReqs: true,
+          }
+        )
         .then((doc) => {
           botclient.say(channel, 'Requests are now open');
         })
@@ -925,7 +826,14 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       }
 
       channelQueue
-        .updateOne({ channel: noHashChan }, { replyInChat: settingBool })
+        .updateOne(
+          {
+            channel: noHashChan,
+          },
+          {
+            replyInChat: settingBool,
+          }
+        )
         .then((doc) => {
           botclient.say(channel, `Replies are now ${setting}`);
         })
@@ -936,7 +844,9 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   }
 
   if (command === 'sr' || command === 'songrequest') {
-    let queue = await channelQueue.findOne({ channel: noHashChan });
+    let queue = await channelQueue.findOne({
+      channel: noHashChan,
+    });
     let chatRespond = queue.replyInChat;
     console.log(queue.replyInChat);
     if (queue.allowReqs) {
@@ -968,9 +878,16 @@ botclient.on('chat', async (channel, userstate, message, self) => {
               // console.log(queue);
               channelQueue
                 .findOneAndUpdate(
-                  { channel: noHashChan },
-                  { currQueue: newQueue },
-                  { new: true, useFindAndModify: false }
+                  {
+                    channel: noHashChan,
+                  },
+                  {
+                    currQueue: newQueue,
+                  },
+                  {
+                    new: true,
+                    useFindAndModify: false,
+                  }
                 )
                 .then((queueDoc) => {
                   // Real time data push to front end
@@ -1009,7 +926,10 @@ botclient.on('chat', async (channel, userstate, message, self) => {
           youtube.getVideo(parsedM[1]).then((video) => {
             let newSr = {
               id: uuidv4(),
-              track: { name: video.title, link: parsedM[1] },
+              track: {
+                name: video.title,
+                link: parsedM[1],
+              },
               requestedBy: userstate.username,
               timeOfReq: moment.utc().format(),
               source: 'youtube',
@@ -1021,9 +941,16 @@ botclient.on('chat', async (channel, userstate, message, self) => {
             // console.log(queue);
             channelQueue
               .findOneAndUpdate(
-                { channel: noHashChan },
-                { currQueue: newQueue },
-                { new: true, useFindAndModify: false }
+                {
+                  channel: noHashChan,
+                },
+                {
+                  currQueue: newQueue,
+                },
+                {
+                  new: true,
+                  useFindAndModify: false,
+                }
               )
               .then((queueDoc) => {
                 // Real time data push to front end
@@ -1066,7 +993,11 @@ botclient.on('chat', async (channel, userstate, message, self) => {
           // var ytQuery = parsedM.slice(1).join('+');
           // var ytSearch = `https://www.youtube.com/results?search_query=${ytQuery}`;
           spotify.search(
-            { type: 'track', query: `${request}`, limit: 1 },
+            {
+              type: 'track',
+              query: `${request}`,
+              limit: 1,
+            },
             function (err, data) {
               if (err) {
                 console.error(err);
@@ -1093,9 +1024,16 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                     // console.log(queue);
                     channelQueue
                       .findOneAndUpdate(
-                        { channel: noHashChan },
-                        { currQueue: newQueue },
-                        { new: true, useFindAndModify: false }
+                        {
+                          channel: noHashChan,
+                        },
+                        {
+                          currQueue: newQueue,
+                        },
+                        {
+                          new: true,
+                          useFindAndModify: false,
+                        }
                       )
                       .then((queueDoc) => {
                         // Real time data push to front end
@@ -1145,9 +1083,16 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                 // console.log(queue);
                 channelQueue
                   .findOneAndUpdate(
-                    { channel: noHashChan },
-                    { currQueue: newQueue },
-                    { new: true, useFindAndModify: false }
+                    {
+                      channel: noHashChan,
+                    },
+                    {
+                      currQueue: newQueue,
+                    },
+                    {
+                      new: true,
+                      useFindAndModify: false,
+                    }
                   )
                   .then((queueDoc) => {
                     // Real time data push to front end
@@ -1188,7 +1133,9 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   }
 
   if (command === 'tr') {
-    let queue = await channelQueue.findOne({ channel: channel.slice(1) });
+    let queue = await channelQueue.findOne({
+      channel: channel.slice(1),
+    });
     let chatRespond = queue.replyInChat;
     // console.log(queue.settings);
     if (queue.allowReqs) {
@@ -1210,9 +1157,16 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       // console.log(queue);
       channelQueue
         .findOneAndUpdate(
-          { channel: noHashChan },
-          { currQueue: newQueue },
-          { new: true, useFindAndModify: false }
+          {
+            channel: noHashChan,
+          },
+          {
+            currQueue: newQueue,
+          },
+          {
+            new: true,
+            useFindAndModify: false,
+          }
         )
         .then((queueDoc) => {
           // Real time data push to front end
@@ -1248,7 +1202,9 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   let numRegex = /^[0-9]+$/;
   // Check to see if message is only numbers
   if (numRegex.test(message) === true) {
-    var poll = await Poll.findOne({ active: true });
+    var poll = await Poll.findOne({
+      active: true,
+    });
     if (!poll) {
       // if no poll say nothing because bot will spam
       return;
@@ -1267,9 +1223,22 @@ botclient.on('chat', async (channel, userstate, message, self) => {
         var tUser = userstate.username;
 
         await Poll.findOneAndUpdate(
-          { _id: poll.id, 'choices.id': cID },
-          { $addToSet: { voters: tUser }, $set: { 'choices.$.votes': i } },
-          { useFindAndModify: false, new: true },
+          {
+            _id: poll.id,
+            'choices.id': cID,
+          },
+          {
+            $addToSet: {
+              voters: tUser,
+            },
+            $set: {
+              'choices.$.votes': i,
+            },
+          },
+          {
+            useFindAndModify: false,
+            new: true,
+          },
           (err, doc) => {
             // console.log(doc.choices[cIndex].votes);
             // console.log(doc);
@@ -1292,9 +1261,22 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       var i = currV + 1;
       var tUser = userstate.username;
       await Poll.findOneAndUpdate(
-        { _id: poll.id, 'choices.id': cID },
-        { $addToSet: { voters: tUser }, $set: { 'choices.$.votes': i } },
-        { useFindAndModify: false, new: true },
+        {
+          _id: poll.id,
+          'choices.id': cID,
+        },
+        {
+          $addToSet: {
+            voters: tUser,
+          },
+          $set: {
+            'choices.$.votes': i,
+          },
+        },
+        {
+          useFindAndModify: false,
+          new: true,
+        },
         (err, doc) => {
           // console.log(doc.choices[cIndex].votes);
           // console.log(doc);

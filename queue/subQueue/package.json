@@ -1,0 +1,21 @@
+{
+  "name": "queue",
+  "version": "1.0.0",
+  "description": "",
+  "main": "subQueue.js",
+  "scripts": {
+    "start": "node subQueue.js",
+    "dev": "nodemon subQueue.js "
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bee-queue": "^1.2.3",
+    "ioredis": "^4.17.3",
+    "mongoose": "^5.9.27",
+    "redis": "^3.0.2",
+    "redis-smq": "^2.0.0",
+    "rsmq": "^0.12.2",
+    "uuid": "^8.3.0"
+  }
+}
