@@ -212,15 +212,20 @@ router.post('/connect', loggedIn, async (req, res) => {
 
 // Notification Events
 router.get('/events/:channel', loggedIn, async (req, res) => {
-  try {
-    let events = await ChannelEvent.find({ channel: req.params.channel }).limit(
-      10
-    );
-    console.log(events);
-    res.status(200).send(events);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error getting events');
+  let isAdmin = admins.includes(req.user.login);
+  let isMod;
+  let isAllowed;
+  if (isAdmin || isChannelOwner) {
+    try {
+      let events = await ChannelEvent.find({channel: req.params.channel})
+      //console.log(events);
+      res.status(200).send(events);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Error getting events');
+    }
+  } else {
+    res.status(403).send('Nah ah ah, you naughty naughty');
   }
 });
 
