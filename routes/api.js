@@ -27,7 +27,10 @@ function loggedIn(req, res, next) {
 router.get('/queue/:channel', loggedIn, async (req, res) => {
   let isAdmin = admins.includes(req.user.login);
   let isMod;
-  let isAllowed;
+  let isChannelOwner = false;
+  if (req.user.login === req.params.channel) {
+    isChannelOwner = true;
+  }
   if (isAdmin || isChannelOwner) {
     try {
       let queue = await Queue.findOne({ channel: req.params.channel });
@@ -42,47 +45,49 @@ router.get('/queue/:channel', loggedIn, async (req, res) => {
   }
 });
 
-// Mixes
-router.get('/mixes/:channel', loggedIn, async (req, res) => {
-  let mixes = await mixReqs.find({ channel: req.params.channel });
-  res.status(200).send(mixes);
-});
-
 router.put('/queues/:channel/status/:statusChange', loggedIn, (req, res) => {
-  try {
-    switch (req.params.statusChange) {
-      case 'open':
-        Queue.findOneAndUpdate(
-          { channel: req.params.channel },
-          { allowReqs: true },
-          { new: true, useFindAndModify: false }
-        )
-          .then((doc) => {
-            res.status(200).send('Queue Opened');
-          })
-          .catch((e) => {
-            console.error(e);
-            res.status(500).send('Error opening queue');
-          });
-        break;
+  let isAdmin = admins.includes(req.user.login);
+  let isMod;
+  let isChannelOwner = false;
+  if (req.user.login === req.params.channel) {
+    isChannelOwner = true;
+  }
+  if (isAdmin || isChannelOwner) {
+    try {
+      switch (req.params.statusChange) {
+        case 'open':
+          Queue.findOneAndUpdate(
+            { channel: req.params.channel },
+            { allowReqs: true },
+            { new: true, useFindAndModify: false }
+          )
+            .then((doc) => {
+              res.status(200).send('Queue Opened');
+            })
+            .catch((e) => {
+              console.error(e);
+              res.status(500).send('Error opening queue');
+            });
+          break;
 
-      case 'close':
-        Queue.findOneAndUpdate(
-          { channel: req.params.channel },
-          { allowReqs: false },
-          { new: true, useFindAndModify: false }
-        )
-          .then((doc) => {
-            res.status(200).send('Queue closed');
-          })
-          .catch((e) => {
-            console.error(e);
-            res.status(500).send('Error closing queue');
-          });
-        break;
+        case 'close':
+          Queue.findOneAndUpdate(
+            { channel: req.params.channel },
+            { allowReqs: false },
+            { new: true, useFindAndModify: false }
+          )
+            .then((doc) => {
+              res.status(200).send('Queue closed');
+            })
+            .catch((e) => {
+              console.error(e);
+              res.status(500).send('Error closing queue');
+            });
+          break;
+      }
+    } catch (e) {
+      console.error(e);
     }
-  } catch (e) {
-    console.error(e);
   }
 });
 
@@ -111,6 +116,8 @@ router.put('/queues/:channel/:move/:id', loggedIn, async (req, res) => {
     queue.currQueue.splice(songIndex, 1);
 
     // put song into new position
+    console.log(newIndex);
+    console.log(song);
     queue.currQueue.splice(newIndex, 0, song);
 
     Queue.findOneAndUpdate(
@@ -119,6 +126,7 @@ router.put('/queues/:channel/:move/:id', loggedIn, async (req, res) => {
       { new: true, useFindAndModify: false }
     )
       .then((queueDoc) => {
+        // Send updated queue as response
         res.status(200).send(queue.currQueue);
       })
       .catch((err) => {
@@ -181,27 +189,90 @@ router.get('/polls', loggedIn, async (req, res) => {
   }
 });
 
-router.post('/connect', loggedIn, async (req, res) => {
-  let channel = req.query.channel;
-  let exists = await JoinedChannel.exists({ channel: channel });
-  if (exists) {
-    res.status(409).send('Channel is already joined');
+router.get('/connect/:channel', loggedIn, async (req, res) => {
+  let channel = req.params.channel;
+  let alreadyJoined = await JoinedChannel.exists({ channel: channel });
+  let isAdmin = admins.includes(req.user.login);
+  let isMod;
+  let isChannelOwner = false;
+  if (req.user.login === req.params.channel) {
+    isChannelOwner = true;
+  }
+  if (isAdmin || isChannelOwner) {
+    if (alreadyJoined) {
+      res.status(409).send('Channel is already joined');
+      res.redirect('/dashboard');
+    } else {
+      let joinedChannel = new JoinedChannel({
+        channel: channel,
+      });
+      joinedChannel
+        .save()
+        .then((doc) => {
+          botclient
+            .join(`${channel}`)
+            .then((data) => {
+              console.log(data);
+              res.redirect(
+                `/u/${channel}/dashboard?success=${encodeURIComponent(
+                  `Channel Connected successfully`
+                )}`
+              );
+            })
+            .catch((err) => {
+              console.error(err);
+              res.redirect(
+                `/u/${channel}/dashboard?e=${encodeURIComponent(
+                  `Error Joining Channel`
+                )}`
+              );
+            });
+        })
+        .catch((e) => {
+          console.error(e);
+        });
+    }
   } else {
-    let joinedChannel = new JoinedChannel({
+    res.redirect(
+      `/u/${req.user.login}/dashboard?e=${encodeURIComponent(
+        `You don't have permissions for that channel`
+      )}`
+    );
+  }
+});
+
+// Disconnect chat client
+router.get('/disconnect/:channel', loggedIn, (req, res) => {
+  let isAdmin = admins.includes(req.user.login);
+  let isMod;
+  let isChannelOwner = false;
+  if (req.user.login === req.params.channel) {
+    isChannelOwner = true;
+  }
+  if (isAdmin || isChannelOwner) {
+    let channel = req.params.channel;
+    JoinedChannel.findOneAndDelete({
       channel: channel,
-    });
-    joinedChannel
-      .save()
-      .then((doc) => {
+    })
+      .then((response) => {
+        console.log('Channel Document deleted');
         botclient
-          .join(`${channel}`)
+          .part(`${channel}`)
           .then((data) => {
             console.log(data);
-            res.status(200).send('Channel joined successfully!');
+            res.redirect(
+              `/u/${channel}/dashboard?success=${encodeURIComponent(
+                `Channel disconnected successfully`
+              )}`
+            );
           })
           .catch((err) => {
             console.error(err);
-            res.status(500).send('Error Joining channel');
+            res.redirect(
+              `/u/${channel}/dashboard?e=${encodeURIComponent(
+                `Error Joining Channel`
+              )}`
+            );
           });
       })
       .catch((e) => {
@@ -214,10 +285,13 @@ router.post('/connect', loggedIn, async (req, res) => {
 router.get('/events/:channel', loggedIn, async (req, res) => {
   let isAdmin = admins.includes(req.user.login);
   let isMod;
-  let isAllowed;
+  let isChannelOwner = false;
+  if (req.user.login === req.params.channel) {
+    isChannelOwner = true;
+  }
   if (isAdmin || isChannelOwner) {
     try {
-      let events = await ChannelEvent.find({channel: req.params.channel})
+      let events = await ChannelEvent.find({ channel: req.params.channel });
       //console.log(events);
       res.status(200).send(events);
     } catch (err) {
@@ -227,29 +301,6 @@ router.get('/events/:channel', loggedIn, async (req, res) => {
   } else {
     res.status(403).send('Nah ah ah, you naughty naughty');
   }
-});
-
-router.delete('/disconnect', loggedIn, (req, res) => {
-  let channel = req.query.channel;
-  JoinedChannel.findOneAndDelete({
-    channel: channel,
-  })
-    .then((response) => {
-      console.log('Channel Document deleted');
-      botclient
-        .part(`${channel}`)
-        .then((data) => {
-          console.log(data);
-          res.status(200).send('Channel joined successfully!');
-        })
-        .catch((err) => {
-          console.error(err);
-          res.status(500).send('Error Joining channel');
-        });
-    })
-    .catch((e) => {
-      console.error(e);
-    });
 });
 
 router.post('/polls/newpoll', loggedIn, async (req, res) => {

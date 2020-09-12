@@ -35,22 +35,22 @@
 							<div id="connected" style="width: 100%; text-align: center;">
 								<img src="/img/undraw_joyride_hnno.svg" width="200px" height="200px" alt="Sad face">
 								<p style="font-size: 20px;" >Vibey is connected to your chat :D</p>
-								<a id="disconnect-btn" class="btn btn-danger" href="#" >Disconnect Vibey</a>
+                <a id="disconnect-btn" class="btn btn-danger" href="/api/disconnect/<%= loggedInUser %>" >Disconnect Vibey</a>
 							</div>
 						
 						<% } else { %>
 						<div id="not-connected" style="width: 100%; text-align: center;">
 							<img src="/img/undraw_feeling_blue_4b7q.svg" width="200px" height="200px" alt="Sad face">
 							<p style="font-size: 20px;" >Vibey is not connected to your chat :(</p>
-							<a id="connect-btn" class="btn btn-info" href="#" >Connect Vibey</a>
+              <a id="connect-btn" class="btn btn-info" href="/api/connect/<%= loggedInUser %>" >Connect Vibey</a>
 						</div>
 						<% } %> 
 					</div>
-					<div class="bot-status vibey-card dark-bg p-3 m-2 float-left" style="width: 300px; height: 400px;">
-						<h3 style="text-align: center;">Connect to Nightbot</h3>
-						<a id="se-connect-btn" class="btn btn-info" href="/auth/nightbot" >Connect</a>
-					</div>
-				</div>
+					<!--<div class="bot-status vibey-card dark-bg p-3 m-2 float-left" style="width: 300px; height: 400px;">-->
+						<!--<h3 style="text-align: center;">Connect to Nightbot</h3>-->
+						<!--<a id="se-connect-btn" class="btn btn-info" href="/auth/nightbot" >Connect</a>-->
+					<!--</div>-->
+				<!--</div>-->
 				
 				<% } else { %>
 					<%- include('./partials/noAccess') %>
