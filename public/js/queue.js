@@ -42,19 +42,15 @@ fetch(`/api/queue/${globalChannel}`)
       case true:
         statusBadge.setAttribute('class', 'badge badge-success');
         statusBadge.innerHTML = 'Open';
-        statusToggle.setAttribute(
-          'class',
-          'btn btn-danger m-2 queueToggle close-queue'
-        );
+        statusToggle.setAttribute('class', 'btn btn-danger m-2 queueToggle');
+        statusToggle.setAttribute('data-action', 'close-queue');
         statusToggle.innerHTML = 'Close Queue';
         break;
       case false:
         statusBadge.setAttribute('class', 'badge badge-danger');
         statusBadge.innerHTML = 'Closed';
-        statusToggle.setAttribute(
-          'class',
-          'btn btn-success m-2 queueToggle open-queue'
-        );
+        statusToggle.setAttribute('class', 'btn btn-success m-2 queueToggle');
+        statusToggle.setAttribute('data-action', 'open-queue');
         statusToggle.innerHTML = 'Open Queue';
         break;
     }
@@ -63,6 +59,7 @@ fetch(`/api/queue/${globalChannel}`)
       if (request === null) {
         return;
       }
+      console.log(request)
       let reqElem = document.createElement('div');
       let artist;
       if (request.track.artist !== undefined) {
@@ -84,8 +81,8 @@ fetch(`/api/queue/${globalChannel}`)
         <a href="#" data-srID="${request.id}" data-action="delete-req" class="reqDelBtn p-1 flex-fill text-center rounded">
           Delete
         </a>
-        <a href="#" data-srID="${request.id}" data-move="down" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-down"></i></a>
-        <a href="#" data-srID="${request.id}" data-move="up" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-up"></i></a>
+        <a href="#" data-srID="${request.id}" data-action="move-req" data-move="down" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-down"></i></a>
+        <a href="#" data-srID="${request.id}" data-action="move-req"  data-move="up" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-up"></i></a>
         <!--<a href="#" data-uri="${request.track.uri}" class="playBtn p-1 flex-fill text-center">Play <i class="fas fa-play-circle"></i></a>-->
       </div>
     `;
@@ -102,12 +99,12 @@ fetch(`/api/queue/${globalChannel}`)
     console.error('Error retreving queue');
   });
 
-// Event notifications
+// Get notifications
 fetch(`/api/events/${globalChannel}`)
   .then((res) => res.json())
   .then((events) => {
     events.forEach((noti) => {
-      console.log(noti);
+      //console.log(noti);
       let data = noti.data;
 
       switch (noti.type) {
@@ -185,7 +182,7 @@ document.addEventListener(
   (e) => {
     if (!e.target.attributes['data-action']) return;
     switch (e.target.attributes['data-action'].value) {
-      case '.open-queue':
+      case 'open-queue':
         {
           e.preventDefault();
           console.log('open');
@@ -199,8 +196,9 @@ document.addEventListener(
               statusBadge.innerHTML = 'Open';
               statusToggle.setAttribute(
                 'class',
-                'btn btn-danger m-2 queueToggle close-queue'
+                'btn btn-danger m-2 queueToggle'
               );
+              statusToggle.setAttribute('data-action', 'close-queue');
               statusToggle.innerHTML = 'Close Queue';
             } else {
               swal.fire({
@@ -214,7 +212,7 @@ document.addEventListener(
         }
         break;
 
-      case '.close-queue':
+      case 'close-queue':
         {
           e.preventDefault();
           console.log('close');
@@ -228,8 +226,9 @@ document.addEventListener(
               statusBadge.innerHTML = 'Closed';
               statusToggle.setAttribute(
                 'class',
-                'btn btn-success m-2 queueToggle open-queue'
+                'btn btn-success m-2 queueToggle'
               );
+              statusToggle.setAttribute('data-action', 'open-queue');
               statusToggle.innerHTML = 'Open Queue';
             } else {
               swal.fire({
@@ -284,7 +283,7 @@ document.addEventListener(
         }
         break;
 
-      case '.delte-reqs':
+      case 'clear-queue':
         {
           e.preventDefault();
           swal
@@ -335,6 +334,80 @@ document.addEventListener(
         }
         break;
 
+      case 'move-req': {
+        var srId = e.target.getAttribute('data-srID');
+        var move = e.target.getAttribute('data-move');
+        console.log('move song ' + move)
+        console.log(srId)
+        var xhr = new XMLHttpRequest();
+        xhr.open('PUT', `/api/queues/${globalChannel}/move-${move}/${srId}`);
+        xhr.onload = function () {
+          if (xhr.status === 200) {
+            try {
+              Toast.fire({
+                type: 'success',
+                title: `Song moved ${move}`,
+              });
+
+              // console.log(xhr.response);
+              let songs = document.querySelectorAll('.song');
+               console.log(songs);
+              songs.forEach((song) => {
+                song.remove();
+              });
+
+              // re-create list
+              let reqDiv = document.getElementById('requests');
+              let newQueue = JSON.parse(xhr.response);
+              console.log(newQueue)
+              newQueue.forEach((request, index) => {
+                if (request === null) {
+                  return;
+                }
+                let reqElem = document.createElement('div');
+                let artist;
+                if (request.track.artist !== undefined) {
+                  artist = `- ${request.track.artist}`;
+                } else {
+                  artist = '';
+                }
+                reqElem.setAttribute('id', `${request.id}`);
+                reqElem.setAttribute('class', 'song mb-3 border rounded');
+                reqElem.innerHTML = `
+                  <div class="song-top p-2">
+                  <div class="d-flex flex-column">
+                  <a class="srName pl-2" href="${request.track.link}" target="_blank">
+                      ${request.track.name} ${artist} </a>
+                  </div>
+                  </div>
+                  <div class="reqBy p-2 border-bottom"><i class="far fa-user ml-2 mr-2"></i>${request.requestedBy}</div>
+                  <div class="song-ctrl d-flex p-2">
+                  <a href="#" data-srID="${request.id}" data-action="delete-req" class="reqDelBtn p-1 flex-fill text-center rounded">
+                  Delete
+                  </a>
+                  <a href="#" data-srID="${request.id}" data-action="move-req" data-move="down" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-down"></i></a>
+                  <a href="#" data-srID="${request.id}" data-action="move-req" data-move="up" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-up"></i></a>
+                  <!--<a href="#" data-uri="${request.track.uri}" class="playBtn p-1 flex-fill text-center">Play <i class="fas fa-play-circle"></i></a>-->
+                  </div>
+                  `;
+                reqDiv.prepend(reqElem);
+              });
+
+              // console.log(beforeID);
+            } catch (err) {
+              console.error(err);
+            }
+          } else {
+            swal.fire({
+              type: 'error',
+              title: 'Error moving song!',
+              text: `${xhr.responseText}`,
+            });
+          }
+        };
+        xhr.send();
+      }
+
       default: {
       }
     }
@@ -371,8 +444,8 @@ socket.on('sr-event', (request) => {
         <a href="#" data-srID="req${request.id}" class="reqDelBtn p-1 flex-fill text-center">
           Delete
         </a>
-        <a href="#" data-srID="req${request.id}" data-move="down" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-down"></i></a>
-        <a href="#" data-srID="req${request.id}" data-move="up" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-up"></i></a>
+        <a href="#" data-srID="req${request.id}" data-action="move-req"  data-move="down" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-down"></i></a>
+        <a href="#" data-srID="req${request.id}" data-action="move-req"  data-move="up" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-up"></i></a>
         <!--<a href="#" data-uri="${request.uri}" class="playBtn p-1 flex-fill text-center">Play <i class="fas fa-play-circle"></i></a>-->
       </div>
     `;
@@ -482,11 +555,11 @@ function createSMG(id, username, numbOfSubs, senderTotal, subs, animate) {
   smgSubsDiv.setAttribute('class', 'collapse border p-2 m-2 rounded');
   subs.forEach((sub) => {
     let subElem = document.createElement('div');
-    console.log(sub);
+    //console.log(sub);
     subElem.innerHTML = `${sub.data.recipient}`;
     smgSubsDiv.append(subElem);
   });
-  notiElem.append(smgSubsDiv)
+  notiElem.append(smgSubsDiv);
   notiDiv.prepend(notiElem);
   if (animate) {
     gsap.from(`#noti${id}`, {
@@ -630,74 +703,6 @@ function reqTime() {
 //if (!e.target.matches('.moveBtn')) return;
 //e.preventDefault();
 //console.log(e.target.getAttribute('data-srID'));
-//var srId = e.target.getAttribute('data-srID');
-//var move = e.target.getAttribute('data-move');
-//var xhr = new XMLHttpRequest();
-//xhr.open('PUT', `/api/queues/${globalChannel}/move-${move}/${srId}`);
-//xhr.onload = function () {
-//if (xhr.status === 200) {
-//try {
-//Toast.fire({
-//type: 'success',
-//title: `Song moved ${move}`
-//});
-
-//// console.log(xhr.response);
-//let songs = document.querySelectorAll('.song');
-//// console.log(songs);
-//songs.forEach(song => {
-//song.remove();
-//});
-
-//// re-create list
-//let reqDiv = document.getElementById('requests');
-//let newQueue = JSON.parse(xhr.response);
-//newQueue.forEach((request, index) => {
-//if (request === null) {
-//return;
-//}
-//let reqElem = document.createElement('div');
-//let artist;
-//if (request.track.artist !== undefined) {
-//artist = `- ${request.track.artist}`;
-//} else {
-//artist = '';
-//}
-//reqElem.setAttribute('id', `${request.id}`);
-//reqElem.setAttribute('class', 'song mb-3 border rounded');
-//reqElem.innerHTML = `
-//<div class="song-top p-2">
-//<div class="d-flex flex-column">
-//<a class="srName pl-2" href="${request.track.link}" target="_blank">
-//${request.track.name} ${artist} </a>
-//</div>
-//</div>
-//<div class="reqBy p-2 border-bottom"><i class="far fa-user ml-2 mr-2"></i>${request.requestedBy}</div>
-//<div class="song-ctrl d-flex p-2">
-//<a href="#" data-srID="req${request.id}" class="reqDelBtn p-1 flex-fill text-center rounded">
-//Delete
-//</a>
-//<a href="#" data-srID="req${request.id}" data-move="down" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-down"></i></a>
-//<a href="#" data-srID="req${request.id}" data-move="up" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-up"></i></a>
-//<!--<a href="#" data-uri="${request.track.uri}" class="playBtn p-1 flex-fill text-center">Play <i class="fas fa-play-circle"></i></a>-->
-//</div>
-//`;
-//reqDiv.prepend(reqElem);
-//});
-
-//// console.log(beforeID);
-//} catch (err) {
-//console.error(err);
-//}
-//} else {
-//swal.fire({
-//type: 'error',
-//title: 'Error moving song!',
-//text: `${xhr.responseText}`
-//});
-//}
-//};
-//xhr.send();
 //},
 //false
 //);
