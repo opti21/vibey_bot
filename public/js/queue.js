@@ -96,6 +96,7 @@ fetch(`/api/queue/${globalChannel}`)
     });
   })
   .catch((err) => {
+    console.error(err)
     console.error('Error retreving queue');
   });
 

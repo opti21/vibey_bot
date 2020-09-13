@@ -41,6 +41,7 @@ router.get('/queue/:channel', loggedIn, async (req, res) => {
       res.status(500).send(err);
     }
   } else {
+    console.error("Not channel Owner")
     res.status(403).send('You are not the channel owner');
   }
 });
