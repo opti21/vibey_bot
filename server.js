@@ -46,7 +46,7 @@ const { Message, Producer } = require('redis-smq');
 const Redis = require('ioredis');
 const redis = new Redis({password: process.env.REDIS_PASS});
 
-// ComfyJS.Init(config.comfyChan);
+ ComfyJS.Init(config.comfyChan);
 
 // Discord Init
 ComfyDiscord.Init(process.env.DISCORDTOKEN);
