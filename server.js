@@ -36,16 +36,13 @@ const fs = require('fs');
 const axios = require('axios');
 const JoinedChannel = require('./models/joinedChannels');
 const qs = require('querystring');
-const ComfyJS = require('comfy.js');
 const { v4: uuidv4 } = require('uuid');
 const helmet = require('helmet');
 const { nanoid } = require('nanoid');
-require('./utils/StreamElements')(io);
+//require('./utils/StreamElements')(io);
 const { Message, Producer } = require('redis-smq');
 const Redis = require('ioredis');
 const redis = new Redis({ password: process.env.REDIS_PASS });
-
-ComfyJS.Init(config.comfyChan);
 
 const Queue = require('./models/queues');
 
@@ -428,7 +425,7 @@ function refreshTokenThenAdd(user, uri) {
     .post('https://accounts.spotify.com/api/token/', qs.stringify(body), config)
 
     .then((code_res) => {
-      console.log(code_res.data);
+      //console.log(code_res.data);
       try {
         User.findOneAndUpdate(
           {
@@ -449,7 +446,7 @@ function refreshTokenThenAdd(user, uri) {
             new: true,
           }
         ).then((update_res) => {
-          console.log(update_res);
+          //console.log(update_res);
           console.log('spotify token refreshed');
           checkPlaylist(uri, user.username, update_res.spotify.access_token);
         });
@@ -487,11 +484,10 @@ function checkPlaylist(uri, channel, user_token) {
     },
   })
     .then((res) => {
-      console.log(res.data.items);
       if (!findURI(res.data.items, 'uri', uri)) {
         addSongtoPlaylist(uri, channel, user_token);
       } else {
-        botclient.say(config.comfyChan, 'Song is already on the playlist');
+        botclient.say(channel, 'Song is already on the playlist');
         return;
       }
     })
@@ -533,18 +529,21 @@ function addSongtoPlaylist(uri, channel, user_token) {
     });
 }
 
-ComfyJS.onCommand = async (user, command, message, flags, extra) => {
-  if (command === 'sptest') {
-    // Check to see if URL matches for spotify
-    let song = message;
-    console.log('I see the redemption');
+// Spotify redemptions
+botclient.on('chat', async (channel, userstate, message, self) => {
+  if (self) return;
+  let noHashChan = channel.slice(1);
+  let song = message 
+  if(userstate['custom-reward-id'] === '609d1f92-0dde-4057-9902-30f5f78237e6') {
+    console.log("I SEE THE REDEMPTION")
 
     if (spRegex.test(song)) {
       try {
         var spID = spotifyUri.parse(song);
         var spURI = spotifyUri.formatURI(song);
         let vibeyUser = await User.findOne({
-          username: extra.channel,
+          username: 'opti_21',
+
         });
         //console.log(vibeyUser);
         let userToken = vibeyUser.spotify.access_token;
@@ -555,7 +554,7 @@ ComfyJS.onCommand = async (user, command, message, flags, extra) => {
 
         // Check to see if token is valid
         if (moment(moment().utc()).isBefore(tokenExpire)) {
-          checkPlaylist(spURI, user.username, userToken);
+          checkPlaylist(spURI, noHashChan, userToken);
         } else {
           refreshTokenThenAdd(vibeyUser, spURI);
         }
@@ -573,10 +572,7 @@ ComfyJS.onCommand = async (user, command, message, flags, extra) => {
       );
     }
   }
-};
-//'609d1f92-0dde-4057-9902-30f5f78237e6'
-
-// ComfyJs Client to catch channel point redemptions
+});
 
 // Clear events
 // if (process.argv.includes('-clearevents')) {
@@ -803,10 +799,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   if (self) return;
   let noHashChan = channel.slice(1);
   if (message === 'boop') {
-    rqs.to(noHashChan).emit('noti', {
-      type: 'test',
-      msg: 'Test noti',
-    });
+
   }
   if (message[0] !== '!') return;
   let parsedM = message.trim().split(' ');
@@ -1362,10 +1355,10 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     //var url = `https://api.twitch.tv/helix/users?id=${tUser}`;
     //var params = {};
     //var options = {
-      //headers: {
-        //'Client-ID': `${process.env.TWITCH_CLIENTID}`,
-        //Authorization: `Bearer ${twitchCreds.accessToken}`,
-      //},
+    //headers: {
+    //'Client-ID': `${process.env.TWITCH_CLIENTID}`,
+    //Authorization: `Bearer ${twitchCreds.accessToken}`,
+    //},
     //};
     //async function handleData(data) {}
 
@@ -1395,7 +1388,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     );
   }
 
-  if (command === 'test' && userstate.badges.broadcaster === '1') {
+  if (command === 'test' && userstate.username === 'opti_21') {
     botclient.say(channel, he.decode(`THIS IS A TEST`));
   }
 
@@ -1442,13 +1435,12 @@ botclient.on('chat', async (channel, userstate, message, self) => {
 });
 
 // Live learn copies
-ComfyDiscord.onChat = ( channel, user, message, flags, extra  ) => {
+ComfyDiscord.onChat = (channel, user, message, flags, extra) => {
   if (user === 'vibey_bot' || user === 'Yui') return;
   if (channel === 'live-learn-voting👂') {
-    ComfyDiscord.Say('live-learn-songs', message)
+    ComfyDiscord.Say('live-learn-songs', message);
   }
-  
-}
+};
 
 // TODO: add follows using PubSub
 
