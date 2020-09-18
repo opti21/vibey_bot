@@ -4,6 +4,7 @@ const version = require('project-version');
 const enviroment = process.env.NODE_ENV;
 const User = require('../models/users');
 const ChatUser = require('../models/chatUser');
+const Queue = require('../models/queues');
 const config = require('../config/config');
 const admins = config.admins;
 const JoinedChannel = require('../models/joinedChannels');
@@ -77,13 +78,32 @@ router.get('/:channel/queue', loggedIn, async (req, res) => {
   if (isAdmin || isChannelOwner) {
     isAllowed = true;
   }
-  if (isAdmin === false && isChannelOwner === false) {
-  }
-  var mixRequests = await mixReqs.find();
   res.render('queue', {
     isAllowed: isAllowed,
     loggedInUser: req.user.login,
     channel: req.params.channel,
+    loggedInUserPic: req.user['profile_image_url'],
+    version: version,
+    enviroment: enviroment,
+  });
+});
+
+router.get('/:channel/queue-settings', loggedIn, async (req, res) => {
+  let isChannelOwner = req.user.login === req.params.channel;
+  let isAdmin = admins.includes(req.user.login);
+  let isMod;
+  let isAllowed;
+  if (isAdmin || isChannelOwner) {
+    isAllowed = true;
+  }
+  let queue = Queue.findOne({ channel: req.params.channel }).select(
+    'allowReqs -_id'
+  );
+  res.render('queue', {
+    isAllowed: isAllowed,
+    loggedInUser: req.user.login,
+    channel: req.params.channel,
+    queue: queue,
     loggedInUserPic: req.user['profile_image_url'],
     version: version,
     enviroment: enviroment,

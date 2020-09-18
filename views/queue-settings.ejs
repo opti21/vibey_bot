@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+	<title>Queue Settings</title>
+	<%- include('./partials/head') %>
+	<link rel="stylesheet" href="/css/dashboard.css">
+</head>
+
+<body>
+	<div class="d-flex bg-dark" id="wrapper">
+
+		<!-- Sidebar -->
+		<%- include('./partials/sidebar') %>
+		<!-- /#sidebar-wrapper -->
+
+		<!-- Page Content -->
+		<div id="page-content-wrapper">
+
+			<div class="container-fluid">
+				<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+					<button class="btn btn-dark mr-3" id="menu-toggle"><i class="fas fa-bars"></i></button>
+				</nav>
+				<% if (isAllowed) { %>
+				<!-- Main Content -->
+				<h1>Dashboard</h1>
+				<!-- <div id="song-stats" class="vibey-card p-3 m-2">
+					<h3>Stats</h3>
+				</div> -->
+				<div class="card-deck p-3">
+					<div class="bot-status vibey-card dark-bg p-3 m-2" style="width: 300px; height: 400px;">
+						<h3>Queue Settings</h3>
+
+
+				<% } else { %>
+					<%- include('./partials/noAccess') %>
+				<% } %>
+			</div>
+			<!-- /#page-content-wrapper -->
+
+
+			<div id="pageInfo" data-channel="<%= channel %>" data-loggedIn="<%= loggedInUser %>" data-enviroment="<%= enviroment %>"></div>
+			<!-- /#wrapper -->
+
+			<!-- Menu Toggle Script -->
+
+			<%- include('./partials/sidebar-js') %>
+			<script src="/vendor/jquery/jquery.js"></script>
+			<% if (isAllowed) { %>
+      		<script src="https://cdn.jsdelivr.net/npm/gsap"></script>
+			<script src="/js/moment.min.js"></script>
+			<script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+			<script src="/js/dashboard.js"></script>
+			<% } %>
+</body>
+
+</html>

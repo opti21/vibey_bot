@@ -12,7 +12,7 @@ module.exports = (io, channels) => {
     console.log('Connected to the StreamElements WebSocket');
     streamElements.emit('authenticate', {
       method: 'jwt',
-      token: process.env.SE_TOKEN,
+      token: process.env.SE_TOKEN2,
     });
     //streamElements.emit('authenticate', {
       //method: 'jwt',

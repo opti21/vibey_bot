@@ -13,6 +13,10 @@ const queueSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  appendReqs: {
+    type: Boolean,
+    default: false
+  },
   maxReqsPerUser: {
     type: Number,
     default: 0,
