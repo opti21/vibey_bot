@@ -15,7 +15,7 @@ switch (process.env.NODE_ENV) {
 
 const config = {
   twitchChan: [`${channel}`],
-  comfyChan: `${channel}`,
+  comfyChan: `opti_21`,
   admins: ['veryhandsomebilly', 'vibey_bot', 'vibey_dev', 'opti_21'],
   spotify_playlist: process.env.SPOTIFY_PLAYLIST,
 };
