@@ -542,7 +542,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
         var spID = spotifyUri.parse(song);
         var spURI = spotifyUri.formatURI(song);
         let vibeyUser = await User.findOne({
-          username: 'opti_21',
+          username: noHashChan,
 
         });
         //console.log(vibeyUser);
@@ -1441,6 +1441,52 @@ ComfyDiscord.onChat = (channel, user, message, flags, extra) => {
     ComfyDiscord.Say('live-learn-songs', message);
   }
 };
+
+// Gauntlet submit
+const Discord = require('discord.js');
+const discordClient = new Discord.Client();
+
+discordClient.on('ready', () => {
+  console.log(`Logged in as ${discordClient.user.tag}!`);
+  //let discordChannel = discordClient.channels.find(ch => {ch.name === 'gauntlet-submissions'})
+  //console.log(discordChannel)
+  //discordClient.channels.forEach(ch => {
+  //console.log(ch.name)
+  //})
+});
+
+discordClient.on('message', async (msg) => {
+  if (msg.content === 'ping') {
+    msg.reply('pong');
+  }
+
+  if (msg.channel.name === 'the-gauntlet') {
+    let splitM = msg.content.split(' ');
+    if (splitM[0] === '!submit') {
+      let subText = splitM.slice(1).join(' ');
+      let submissionChannel = discordClient.channels.cache.get(
+        '760849748415610910'
+      );
+      let attachments = msg.attachments.array();
+      console.log(attachments);
+      if (attachments.length === 0) {
+        submissionChannel.send(
+          `${msg.author.username}'s submission:\n${subText}`
+        );
+      } else {
+        submissionChannel.send(
+          `${msg.author.username}'s submission:\n${subText}\n${attachments[0].url}`
+        );
+      }
+
+      msg.reply(`Thanks for your submission!`);
+    }
+  }
+
+  //console.log(msg);
+});
+
+discordClient.login(process.env.DISCORDTOKEN);
 
 // TODO: add follows using PubSub
 
