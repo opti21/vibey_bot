@@ -1461,11 +1461,11 @@ discordClient.on('message', async (msg) => {
   }
 
   if (msg.channel.name === 'the-gauntlet') {
-    let splitM = msg.content.split(' ');
-    if (splitM[0] === '!submit') {
-      let subText = splitM.slice(1).join(' ');
+    if (msg.content.slice(0,7) ==='!submit') {
+      // remove command in case user uses multiple lines
+      let subText = msg.content.slice(7);
       let submissionChannel = discordClient.channels.cache.get(
-        '760849748415610910'
+      '760849748415610910'
       );
       let attachments = msg.attachments.array();
       console.log(attachments);
