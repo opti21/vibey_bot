@@ -307,10 +307,12 @@ if (process.argv.includes('-testserv')) {
     secure: true,
     // Test server
     server: 'irc.fdgt.dev',
+    reconnect: true
   };
 } else {
   connectConfig = {
     secure: true,
+    reconnect: true
   };
 }
 
