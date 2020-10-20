@@ -12,7 +12,7 @@
   "dependencies": {
     "bee-queue": "^1.2.3",
     "ioredis": "^4.17.3",
-    "mongoose": "^5.9.27",
+    "mongoose": "^5.10.7",
     "redis": "^3.0.2",
     "redis-smq": "^2.0.0",
     "rsmq": "^0.12.2",
