@@ -48,7 +48,7 @@
     "socket.io": "^2.3.0",
     "socket.io-client": "^2.3.0",
     "spotify-uri": "^2.1.0",
-    "sqreen": "^1.52.2",
+    "sqreen": "^1.54.0",
     "tmi.js": "^1.5.0",
     "twitch": "^4.2.2",
     "twitchps": "^1.5.5",
