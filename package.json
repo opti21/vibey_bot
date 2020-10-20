@@ -15,7 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@discordjs/uws": "^10.149.0",
-    "@sentry/node": "^5.23.0",
+    "@sentry/node": "^5.24.2",
     "@timberio/node": "^0.35.0",
     "axios": "^0.20.0",
     "body-parser": "^1.19.0",
