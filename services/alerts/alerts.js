@@ -98,7 +98,7 @@ class AlertQueueConsumer extends Consumer {
    * @param cb
    */
   async consume(message, cb) {
-    console.log('Got an alert message to consume:', message);
+    // console.log('Got an alert message to consume:', message);
 
     switch (message.type) {
       case 'sub':

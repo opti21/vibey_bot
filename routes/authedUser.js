@@ -9,8 +9,8 @@ const config = require('../config/config');
 const admins = config.admins;
 const JoinedChannel = require('../models/joinedChannels');
 const SongRequest = require('../models/songRequests');
-const mixReqs = require('../models/mixRequests');
 const rqs = io.of('/req-namescape');
+const SeTokens = require('../models/setokens')
 
 function loggedIn(req, res, next) {
   if (!req.user) {
@@ -33,7 +33,6 @@ router.get('/login', (req, res) => {
 // Logout
 router.get('/logout', async function (req, res) {
   try {
-    await User.deleteOne({ twitch_id: req.user.id });
     req.session = null;
     req.user = null;
     req.logout();
@@ -48,6 +47,8 @@ router.get('/:channel/dashboard', loggedIn, async (req, res) => {
   let isAdmin = admins.includes(req.user.login);
   let isMod;
   let isAllowed;
+  let user = await User.findOne({twitch_id: req.user.id});
+  
   let botConnected = await JoinedChannel.exists({
     channel: req.params.channel,
   });
@@ -62,6 +63,8 @@ router.get('/:channel/dashboard', loggedIn, async (req, res) => {
   res.render('dashboard', {
     isAllowed: isAllowed,
     botConnected: botConnected,
+    ppConnected: user.paypal_connected,
+    ppEmail: user.paypal_email,
     loggedInUser: req.user.login,
     channel: req.params.channel,
     loggedInUserPic: req.user['profile_image_url'],

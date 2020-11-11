@@ -1,4 +1,19 @@
-.vibey-card {
+body {
+  background: url(/img/vibey-tip-bg.jpg) no-repeat center center fixed;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+  background-color: #372d47 !important;
+}
+
+.tip-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 500px;
   border: 1px solid #372d47;
 
   border-radius: 31px 31px 31px 31px;
@@ -39,10 +54,4 @@
     rgba(32, 0, 51, 1) 100%
   );
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#372d47', endColorstr='#200033', GradientType=0 );
-}
-
-.bot-status {
-  width: 300px;
-  height: 400px;
-  text-align: center;
 }

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+	<title>Support <%= channel %></title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+  integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+	<link rel="stylesheet" href="/css/tip-page.css">
+   <script src="https://www.google.com/recaptcha/api.js"></script>
+
+</head>
+
+<body>
+
+		<!-- Sidebar -->
+		<!-- /#sidebar-wrapper -->
+
+		<!-- Page Content -->
+      <% if (ppConnected) { %>
+      <div class="tip-card text-white dark-bg p-3 m-2">
+        <div class="text-center">
+          <img style="height: 100px; width: 100px;" 
+          class="rounded-circle"
+          src="<%= userProfilePic %>"/>
+          <h3><%= channel %>'s tip page</h3>
+        </div>
+      <form method="POST" id="tip-form" action="/api/create-tip/<%= channel %>" 
+      >
+          <div class="form-group p-2">
+            <label for="name">Name:</label><br>
+            <input type="text" id="name" name="name" maxlength="25" required><br>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group p-2">
+              <label for="amount">Amount:</label><br>
+              <input type="number" id="amount" name="amount" max="10000" required><br>
+            </div>
+
+            <div class="form-group p-2">
+              <label for="currency">Currency:</label><br>
+              <select id="currency" class="form-control" name="currency" required>
+                <option selected>Choose...</option>
+                <% currencies.forEach(currency => { %>
+                  <option><%= currency %></option>
+                <% }) %>
+              </select>
+            </div>
+
+          </div>
+
+          <div class="form-group p-2">
+            <label for="donomsg">Message:</label><br>
+            <textarea id="donomsg" name="message" maxlength="500" pattern="<\s*a[^>]*>(.*?)<\s*/\s*a>"></textarea>
+          </div>
+          <input type="submit" class="btn btn-info" value="Submit">
+      </form>
+      <p class="text-muted text-center">Made with ❤️ by opti_21</p>
+      </div>
+      <% } else { %>
+      <div class="tip-card text-white text-center dark-bg p-3 m-2">
+        <h1> This channel doesn't have tipping setup</h3>
+      </div>
+      <% } %>
+
+      <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+</body>
+
+</html>

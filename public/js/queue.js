@@ -67,7 +67,7 @@ fetch(`/api/queue/${globalChannel}`)
       } else {
         artist = '';
       }
-      reqElem.setAttribute('id', `${request.id}`);
+      reqElem.setAttribute('id', `req${request.id}`);
       reqElem.setAttribute('class', 'song mb-3 border rounded');
       reqElem.innerHTML = `
       <div class="song-top p-2">
@@ -78,7 +78,7 @@ fetch(`/api/queue/${globalChannel}`)
       </div>
       <div class="reqBy p-2 border-bottom"><i class="far fa-user ml-2 mr-2"></i>${request.requestedBy}</div>
       <div class="song-ctrl d-flex p-2">
-        <a href="#" data-srID="${request.id}" data-action="delete-req" class="reqDelBtn p-1 flex-fill text-center rounded">
+        <a href="#" data-srID="req${request.id}" data-action="delete-req" class="reqDelBtn p-1 flex-fill text-center rounded">
           Delete
         </a>
         <a href="#" data-srID="${request.id}" data-action="move-req" data-move="down" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-down"></i></a>
@@ -87,7 +87,7 @@ fetch(`/api/queue/${globalChannel}`)
       </div>
     `;
       reqDiv.prepend(reqElem);
-      // gsap.from(`#${request.id}`, {
+      // gsap.from(`#req${request.id}`, {
       //   opacity: 0,
       //   y: -50,
       //   duration: 0.5,
@@ -442,7 +442,7 @@ socket.on('sr-event', (request) => {
       </div>
       <div class="reqBy p-2"><i class="far fa-user ml-2 mr-2"></i>${request.reqBy}</div>
       <div class="song-ctrl d-flex p-2">
-        <a href="#" data-srID="req${request.id}" class="reqDelBtn p-1 flex-fill text-center">
+        <a href="#" data-srID="req${request.id}" data-action="delete-req" class="reqDelBtn p-1 flex-fill text-center rounded">
           Delete
         </a>
         <a href="#" data-srID="req${request.id}" data-action="move-req"  data-move="down" class="moveBtn p-1 ml-1 flex-fill text-center rounded"><i class="fas fa-angle-down"></i></a>
@@ -687,27 +687,6 @@ socket.on('noti', (noti) => {
   }
 });
 
-// Checks how long ago song was requested
-var timeDiff = setInterval(reqTime, 1000);
-
-function reqTime() {
-  $('.timeReq').each(function () {
-    var ago = moment.utc(`${$(this).attr('data-time')}`).fromNow();
-    $(this).text(`${ago}`);
-  });
-}
-
-// Move song
-//document.addEventListener(
-//'click',
-//e => {
-//if (!e.target.matches('.moveBtn')) return;
-//e.preventDefault();
-//console.log(e.target.getAttribute('data-srID'));
-//},
-//false
-//);
-
 function removeDiv(div) {
   console.log(div);
   let srDiv = document.getElementById(div);
@@ -732,42 +711,7 @@ function removeDiv(div) {
 //   console.log(uri);
 // });
 
-// document.addEventListener("click", (e) => {
-//   if (!e.target.matches(".songpoll")) return;
-//   e.preventDefault();
-//   var xhr = new XMLHttpRequest();
-//   xhr.open("POST", `/api/polls/opensongpoll/${globalChannel}`);
-//   xhr.onload = function () {
-//     if (xhr.status === 200) {
-//       try {
-//         Toast.fire({
-//           type: "success",
-//           title: "Song Poll Started",
-//         });
-//       } catch (err) {
-//         swal.fire({
-//           type: "error",
-//           title: "Error startng poll",
-//         });
-//         console.error(err);
-//       }
-//     } else if (xhr.status === 418) {
-//       swal.fire({
-//         type: "error",
-//         title: "Poll already running",
-//       });
-//     } else {
-//       swal.fire({
-//         type: "error",
-//         title: "Error deleting song!",
-//         text: `${xhr.responseText}`,
-//       });
-//     }
-//   };
-//   xhr.send();
-// });
-
-// // Generate random IDs for table elements
+// Generate random IDs for table elements
 function makeid(length) {
   var result = '';
   var characters =

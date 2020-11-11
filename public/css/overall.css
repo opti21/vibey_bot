@@ -2,77 +2,26 @@ body {
   color: white !important;
   font-family: "Montserrat", sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji";
+  background-image: url("/img/bg.png") !important;
+  background-repeat: repeat;
 }
-#sidebar-wrapper {
-  background-color: #372d47 !important;
-  border-right: 1px solid #372d47;
+#page-content-wrapper {
+  background-image: url("/img/bg.png") !important;
+  background-repeat: repeat;
 }
-.nav-btn {
+
+.navbar {
   background-color: #372d47 !important;
 }
 a.nav-btn:hover {
   background-color: #745f96 !important;
-}
-.bg-dark {
-  background-image: url("/img/bg.png") !important;
-  background-repeat: repeat;
-}
-.dark-bg {
-  background-color: #200033 !important;
 }
 
 a.bg-dark:hover {
   background-color: #745f96 !important;
 }
 
-/*!
- * Start Bootstrap - Simple Sidebar (https://startbootstrap.com/template-overviews/simple-sidebar)
- * Copyright 2013-2019 Start Bootstrap
- * Licensed under MIT (https://github.com/BlackrockDigital/startbootstrap-simple-sidebar/blob/master/LICENSE)
- */
-#sidebar-wrapper {
-  position: relative;
-  min-height: 100vh;
-  margin-left: -15rem;
-  -webkit-transition: margin 0.25s ease-out;
-  -moz-transition: margin 0.25s ease-out;
-  -o-transition: margin 0.25s ease-out;
-  transition: margin 0.25s ease-out;
-}
-
 #version {
   position: absolute;
   bottom: 0;
-}
-
-#sidebar-wrapper .sidebar-heading {
-  padding: 0.875rem 1.25rem;
-  font-size: 1.2rem;
-}
-
-#sidebar-wrapper .list-group {
-  width: 15rem;
-}
-
-#page-content-wrapper {
-  min-width: 100vw;
-}
-
-#wrapper.toggled #sidebar-wrapper {
-  margin-left: 0;
-}
-
-@media (min-width: 768px) {
-  #sidebar-wrapper {
-    margin-left: 0;
-  }
-
-  #page-content-wrapper {
-    min-width: 0;
-    width: 100%;
-  }
-
-  #wrapper.toggled #sidebar-wrapper {
-    margin-left: -15rem;
-  }
 }

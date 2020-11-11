@@ -48,6 +48,11 @@ const userSchema = new mongoose.Schema({
   refreshToken: String,
   // expireAt: { type: Date, default: undefined },
   settings: [settingSchema],
+  paypal_connected: {
+    type: Boolean,
+    default: false
+  },
+  paypal_email: String
 });
 
 // userSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
