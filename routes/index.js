@@ -50,37 +50,63 @@ router.get('/logout', async function (req, res) {
   }
 });
 
-router.get('/poll', loggedIn, async (req, res) => {
-  try {
-    let isAdmin = admins.includes(req.user.login);
-    var user = await User.findOne({ twitch_id: req.user.id });
-    // console.log(user.username);
-    if (user === null) {
-      res.redirect('/login');
-    }
-    if (admins.includes(user.username)) {
-      res.render('poll', {
-        isAllowed: true,
-        loggedInUser: req.user.login,
-        loggedInUserPic: req.user['profile_image_url'],
-        channel: req.user.login,
-        version: version,
-        feUser: user.username,
-        profilePic: req.user['profile_image_url'],
-      });
-    } else {
-      res.redirect('/login');
-    }
-  } catch (err) {
-    console.error(err);
+router.get('/tip/:channel', async (req, res) => {
+  let user = await User.findOne({ username: req.params.channel });
+  let channelExists;
+  let ppConnected = false;
+
+  if (!user) {
+    channelExists = false;
+  } else {
+    channelExists = true;
+    ppConnected = user.paypal_connected
   }
+
+  let currencies = [
+    'AUD',
+    'BRL',
+    'CAD',
+    'CNY',
+    'CZK',
+    'DKK',
+    'EUR',
+    'HKD',
+    'HUF',
+    'INR',
+    'ILS',
+    'JPY',
+    'MYR',
+    'MXN',
+    'TWD',
+    'NZD',
+    'NOK',
+    'PHP',
+    'PLN',
+    'NZD',
+    'PLN',
+    'GBP',
+    'RUB',
+    'SGD',
+    'SEK',
+    'CHF',
+    'TWD',
+    'THB',
+    'USD',
+  ];
+
+  res.render('tip-page', {
+    channelExists: channelExists,
+    channel: req.params.channel,
+    ppConnected: ppConnected,
+    currencies: currencies,
+    userProfilePic: user.profile_pic_url
+  });
 });
 
-// Test
-router.get('/test', function (req, res) {
-  console.log('REQ.SESSION:');
-  console.log(req.user);
-  res.send(req.user);
-});
+router.get('/tip-success/:channel', async (req, res) => {
+  res.render('tip-success', {
+    channel: req.params.channel
+  })
+})
 
 module.exports = router;

@@ -1,0 +1,20 @@
+{
+  "name": "streamelements",
+  "version": "1.0.0",
+  "description": "",
+  "main": "StreamElements.js",
+  "scripts": {
+    "dev": "nodemon StreamElements.js",
+    "start" : "node StreamElements"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cryptr": "^6.0.2",
+    "ioredis": "^4.17.3",
+    "mongoose": "^5.10.7",
+    "nodemon": "^2.0.4",
+    "redis-smq": "^2.0.5",
+    "socket.io-client": "^2.3.0"
+  }
+}

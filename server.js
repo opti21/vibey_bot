@@ -41,8 +41,14 @@ const helmet = require('helmet');
 const { nanoid } = require('nanoid');
 //require('./utils/StreamElements')(io);
 const { Message, Producer } = require('redis-smq');
+const volleyball = require('volleyball');
 const Redis = require('ioredis');
 const redis = new Redis({ password: process.env.REDIS_PASS });
+
+redis.on('connect', (reply) => {
+  console.log('SUB Processor redis client connected');
+  console.log(reply);
+});
 
 const Queue = require('./models/queues');
 
@@ -58,12 +64,12 @@ async function updateDocs() {
 //updateDocs()
 
 // Discord Init
-ComfyDiscord.Init(process.env.DISCORDTOKEN);
+//ComfyDiscord.Init(process.env.DISCORDTOKEN);
 
 // Twitch Creds for App
 const TwitchCreds = require('./models/twitchCreds');
 
-getTwitchCreds();
+// getTwitchCreds();
 async function getTwitchCreds() {
   const twitchCreds = await TwitchCreds.findOne({});
   console.log(twitchCreds);
@@ -111,7 +117,38 @@ app.set('trust proxy', 1);
 app.set('views', './views');
 app.set('view engine', 'ejs');
 
-app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: [
+        "'self'",
+        '*.cloudflare.com',
+        '*.bootstrapcdn.com',
+        '*.fontawesome.com',
+        'cdn.jsdelivr.net',
+        'static-cdn.jtvnw.net',
+        'code.jquery.com',
+        '*.google.com',
+        '*.gstatic.com',
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        '*.cloudflare.com',
+        '*.bootstrapcdn.com',
+        '*.fontawesome.com',
+        'cdn.jsdelivr.net',
+        'fonts.googleapis.com',
+      ],
+      fontSrc: [
+        'fonts.googleapis.com',
+        'fonts.gstatic.com',
+        '*.fontawesome.com'
+      ],
+      upgradeInsecureRequests: [],
+    },
+  })
+);
 app.use(express.static('public'));
 app.use(
   bodyParser.urlencoded({
@@ -129,6 +166,7 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(volleyball);
 
 // Route Files
 const indexRoute = require('./routes/index');
@@ -223,7 +261,6 @@ const Poll = require('./models/polls');
 const Good = require('./models/goods');
 const channelQueue = require('./models/queues');
 const ChannelEvent = require('./models/channelEvent');
-const SubMysteryGift = require('./models/subMysteryGifts');
 
 // Twitch auth
 passport.use(
@@ -294,7 +331,6 @@ app.get('*', (req, res) => {
 
 // Twitch Client
 const tmi = require('tmi.js');
-const { type } = require('os');
 const twitchclientid = process.env.TWITCH_CLIENTID;
 const twitchuser = process.env.TWITCH_USER;
 const twitchpass = process.env.TWITCH_PASS;
@@ -307,12 +343,12 @@ if (process.argv.includes('-testserv')) {
     secure: true,
     // Test server
     server: 'irc.fdgt.dev',
-    reconnect: true
+    reconnect: true,
   };
 } else {
   connectConfig = {
     secure: true,
-    reconnect: true
+    reconnect: true,
   };
 }
 
@@ -535,9 +571,11 @@ function addSongtoPlaylist(uri, channel, user_token) {
 botclient.on('chat', async (channel, userstate, message, self) => {
   if (self) return;
   let noHashChan = channel.slice(1);
-  let song = message 
-  if(userstate['custom-reward-id'] === '609d1f92-0dde-4057-9902-30f5f78237e6') {
-    console.log("I SEE THE REDEMPTION")
+  let song = message;
+  if (
+    userstate['custom-reward-id'] === '609d1f92-0dde-4057-9902-30f5f78237e6'
+  ) {
+    console.log('I SEE THE REDEMPTION');
 
     if (spRegex.test(song)) {
       try {
@@ -545,7 +583,6 @@ botclient.on('chat', async (channel, userstate, message, self) => {
         var spURI = spotifyUri.formatURI(song);
         let vibeyUser = await User.findOne({
           username: noHashChan,
-
         });
         //console.log(vibeyUser);
         let userToken = vibeyUser.spotify.access_token;
@@ -577,206 +614,11 @@ botclient.on('chat', async (channel, userstate, message, self) => {
 });
 
 // Clear events
-// if (process.argv.includes('-clearevents')) {
-//   ChannelEvent.deleteMany({}).then((doc) => {
-//     console.log('EVENTS DELETED');
-//   });
-// }
-
-const redisOpts = {
-  redis: {
-    driver: 'ioredis',
-    options: {
-      password: process.env.REDIS_PASS,
-    },
-  },
-};
-
-const subProducer = new Producer('sub_queue', redisOpts);
-
-const alertProducer = new Producer('alerts', redisOpts);
-
-// Channel Events
-botclient.on(
-  'subscription',
-  (channel, username, method, message, userstate) => {
-    let noHashChan = channel.slice(1);
-
-    let newAlert = {
-      channel: noHashChan,
-      type: 'sub',
-      data: {
-        username: username,
-        method: method,
-        message: message,
-        userstate: userstate,
-      },
-    };
-
-    const alertMessage = new Message();
-
-    alertMessage.setBody(newAlert);
-
-    alertProducer.produceMessage(alertMessage, (err) => {
-      if (err) console.log(err);
-      else console.log('Sub Successfully produced');
-    });
-  }
-);
-
-botclient.on(
-  'subgift',
-  async (channel, username, streakMonths, recipient, methods, userstate) => {
-    let noHashChan = channel.slice(1);
-    let senderCount = ~~userstate['msg-param-sender-count'];
-    const jobData = {
-      type: 'subgift',
-      data: {
-        channel: noHashChan,
-        userGivingSubs: username,
-        userstate: userstate,
-        recipient: recipient,
-        streakMonths: streakMonths,
-        senderCount: senderCount,
-      },
-    };
-
-    const subMessage = new Message();
-
-    subMessage.setBody(jobData);
-
-    subProducer.produceMessage(subMessage, (err) => {
-      if (err) console.log(err);
-      else console.log('SUB gift Successfully produced');
-    });
-  }
-);
-
-// Random sub gifts aka Sub bombs
-botclient.on(
-  'submysterygift',
-  (channel, username, numbOfSubs, methods, userstate) => {
-    let noHashChan = channel.slice(1);
-    console.log(numbOfSubs);
-
-    // console.log(userstate);
-    // console.log('NEW SMG')
-    // Do not change this job structure
-    let SMGjob = {
-      type: 'submysterygift',
-      channel: noHashChan,
-      userstate: userstate,
-      numbOfSubs: numbOfSubs,
-      userGivingSubs: username,
-      userstate: userstate,
-    };
-    const subMessage = new Message();
-
-    subMessage.setBody(SMGjob);
-
-    subProducer.produceMessage(subMessage, (err) => {
-      if (err) console.log(err);
-      console.log('----------SMG PRODUCED----------');
-    });
-  }
-);
-
-botclient.on('raided', (channel, username, viewers) => {
-  let noHashChan = channel.slice(1);
-
-  let newAlert = {
-    channel: noHashChan,
-    type: 'raid',
-    data: {
-      username: username,
-      viewers: viewers,
-    },
-  };
-
-  const alertMessage = new Message();
-
-  alertMessage.setBody(newAlert);
-
-  alertProducer.produceMessage(alertMessage, (err) => {
-    if (err) console.log(err);
-    else console.log('Raid Successfully produced');
+if (process.argv.includes('-clearevents')) {
+  ChannelEvent.deleteMany({}).then((doc) => {
+    console.log('EVENTS DELETED');
   });
-});
-
-botclient.on('giftpaidupgrade', (channel, username, sender, userstate) => {
-  let noHashChan = channel.slice(1);
-
-  let newAlert = {
-    channel: noHashChan,
-    type: 'giftpaidupgrade',
-    data: {
-      username: username,
-      sender: sender,
-      userstate: userstate,
-    },
-  };
-
-  const alertMessage = new Message();
-
-  alertMessage.setBody(newAlert);
-
-  alertProducer.produceMessage(alertMessage, (err) => {
-    if (err) console.log(err);
-    else console.log('Giftpaidupgrade Successfully produced');
-  });
-});
-
-botclient.on(
-  'resub',
-  (channel, username, months, message, userstate, methods) => {
-    let noHashChan = channel.slice(1);
-
-    let newAlert = {
-      channel: noHashChan,
-      type: 'resub',
-      data: {
-        username: username,
-        months: months,
-        message: message,
-        userstate: userstate,
-      },
-    };
-
-    const alertMessage = new Message();
-
-    alertMessage.setBody(newAlert);
-
-    alertProducer.produceMessage(alertMessage, (err) => {
-      if (err) console.log(err);
-      else console.log('Resub Successfully produced');
-    });
-  }
-);
-
-botclient.on('cheer', (channel, userstate, message) => {
-  let noHashChan = channel.slice(1);
-
-  let newAlert = {
-    channel: noHashChan,
-    type: 'cheer',
-    data: {
-      username: userstate.login,
-      message: message,
-      userstate: userstate,
-    },
-  };
-
-  const alertMessage = new Message();
-
-  alertMessage.setBody(newAlert);
-
-  alertProducer.produceMessage(alertMessage, (err) => {
-    if (err) console.log(err);
-    else console.log('Cheer Successfully produced');
-  });
-});
-
-// TODO: Add the rest of the events
+}
 
 // Publish alerts to the front end
 redis.subscribe('wsalerts', (err) => {
@@ -801,7 +643,6 @@ botclient.on('chat', async (channel, userstate, message, self) => {
   if (self) return;
   let noHashChan = channel.slice(1);
   if (message === 'boop') {
-
   }
   if (message[0] !== '!') return;
   let parsedM = message.trim().split(' ');
@@ -1463,11 +1304,11 @@ discordClient.on('message', async (msg) => {
   }
 
   if (msg.channel.name === 'the-gauntlet') {
-    if (msg.content.slice(0,7) ==='!submit') {
+    if (msg.content.slice(0, 7) === '!submit') {
       // remove command in case user uses multiple lines
       let subText = msg.content.slice(7);
       let submissionChannel = discordClient.channels.cache.get(
-      '760849748415610910'
+        '760849748415610910'
       );
       let attachments = msg.attachments.array();
       console.log(attachments);
@@ -1488,11 +1329,12 @@ discordClient.on('message', async (msg) => {
   //console.log(msg);
 });
 
-discordClient.login(process.env.DISCORDTOKEN);
+//discordClient.login(process.env.DISCORDTOKEN);
 
 // TODO: add follows using PubSub
 
 const port = process.env.PORT || 3000;
+console.log('Server is connected to Port: ' + process.env.PORT)
 server.listen(port);
 
 // Utils
