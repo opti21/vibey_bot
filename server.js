@@ -1291,6 +1291,7 @@ ComfyDiscord.onChat = (channel, user, message, flags, extra) => {
 // Gauntlet submit
 const Discord = require('discord.js');
 const discordClient = new Discord.Client();
+const Submission = require("./models/submissions")
 
 discordClient.on('ready', () => {
   console.log(`Logged in as ${discordClient.user.tag}!`);
@@ -1305,7 +1306,8 @@ discordClient.on('message', async (msg) => {
   if (msg.content === 'ping') {
     msg.reply('pong');
   }
-
+  
+  // GuildID, ChannelID, msgID
   if (msg.channel.name === 'the-gauntlet') {
     if (msg.content.slice(0, 7) === '!submit') {
       // remove command in case user uses multiple lines
@@ -1313,17 +1315,24 @@ discordClient.on('message', async (msg) => {
       let submissionChannel = discordClient.channels.cache.get(
         '760849748415610910'
       );
-      let attachments = msg.attachments.array();
+
+      // Test Channel
+      // let submissionChannel = discordClient.channels.cache.get(
+      //   '761805260691865600'
+      // );
+
+      let newSubmission = new Submission({
+        submitter: msg.author.username,
+        description: subText,
+        link: `https://discord.com/channels/${msg.channel.guild.id}/${msg.channel.id}/${msg.id}`
+      })
+
+      newSubmission.save()
+
       console.log(attachments);
-      if (attachments.length === 0) {
-        submissionChannel.send(
-          `${msg.author.username}'s submission:\n${subText}`
-        );
-      } else {
-        submissionChannel.send(
-          `${msg.author.username}'s submission:\n${subText}\n${attachments[0].url}`
-        );
-      }
+      submissionChannel.send(
+        `${msg.author.username}'s submission:\n${subText}\nhttps://discord.com/channels/${msg.channel.guild.id}/${msg.channel.id}/${msg.id}`
+      );
 
       msg.reply(`Thanks for your submission!`);
     }
@@ -1332,9 +1341,28 @@ discordClient.on('message', async (msg) => {
   //console.log(msg);
 });
 
-//discordClient.login(process.env.DISCORDTOKEN);
+const Path = require('path')
+async function downloadImage (urlToGet, submitter) {  
+  const url = urlToGet
+  const path = Path.resolve(__dirname, 'public/img/submissions', `submission_${submitter + '_' + Date.now()}`)
+  const writer = fs.createWriteStream(path)
 
-// TODO: add follows using PubSub
+  const response = await axios({
+    url,
+    method: 'GET',
+    responseType: 'stream'
+  })
+
+  response.data.pipe(writer)
+
+  return new Promise((resolve, reject) => {
+    writer.on('finish', resolve)
+    writer.on('error', reject)
+  })
+}
+
+
+discordClient.login(process.env.DISCORDTOKEN);
 
 const port = process.env.PORT || 3000;
 console.log('Server is connected to Port: ' + process.env.PORT)
