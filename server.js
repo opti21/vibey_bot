@@ -1329,7 +1329,6 @@ discordClient.on('message', async (msg) => {
 
       newSubmission.save()
 
-      console.log(attachments);
       submissionChannel.send(
         `${msg.author.username}'s submission:\n${subText}\nhttps://discord.com/channels/${msg.channel.guild.id}/${msg.channel.id}/${msg.id}`
       );
