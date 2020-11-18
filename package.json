@@ -9,6 +9,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run alerts\" \"npm run tmi-alerts\" \"npm run sub-queue\" -n \"SERVER,ALERTS,TMI,SUBS\" -c \"bgCyan.bold,bgMagenta.bold,bgGreen.bold,bgYellow.bold\"",
+    "setup": "cd services/alerts && npm install && cd ../subQueue && npm install && cd ../tmi-alerts && npm install",
     "server": "nodemon --inspect server.js --ignore public/ --ignore client/ --ignore services/",
     "alerts": "cd services/alerts && npm run dev",
     "tmi-alerts": "cd services/tmi-alerts && npm run dev",
@@ -52,6 +53,7 @@
     "querystring": "^0.2.0",
     "redis": "^3.0.2",
     "redis-smq": "^2.0.11",
+    "sanitize-html": "^2.1.2",
     "simple-youtube-api": "^5.2.1",
     "socket.io": "^2.3.0",
     "socket.io-client": "^2.3.1",

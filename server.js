@@ -40,9 +40,12 @@ const { v4: uuidv4 } = require('uuid');
 const helmet = require('helmet');
 const { nanoid } = require('nanoid');
 //require('./utils/StreamElements')(io);
-const { Message, Producer } = require('redis-smq');
 const volleyball = require('volleyball');
+const sanitizeHtml = require('sanitize-html');
+
+// Redis
 const Redis = require('ioredis');
+const { Message, Producer } = require('redis-smq');
 const redis = new Redis({ password: process.env.REDIS_PASS });
 
 redis.on('connect', (reply) => {
@@ -869,7 +872,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
       } else {
         // Searches Spotify & Youtube when only text is provided
         if (!ytRegex.test(parsedM[1])) {
-          var request = parsedM.slice(1).join(' ');
+          let request = sanitizeText(parsedM.slice(1).join(' '))
           // var ytQuery = parsedM.slice(1).join('+');
           // var ytSearch = `https://www.youtube.com/results?search_query=${ytQuery}`;
           spotify.search(
@@ -1019,7 +1022,7 @@ botclient.on('chat', async (channel, userstate, message, self) => {
     let chatRespond = queue.replyInChat;
     // console.log(queue.settings);
     if (queue.allowReqs) {
-      var request = parsedM.slice(1).join(' ');
+      let request = sanitizeText(parsedM.slice(1).join(' '))
 
       let newSr = {
         id: uuidv4(),
@@ -1352,4 +1355,11 @@ function makeid(length) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   return result;
+}
+
+const sanitizeText = (text) => {
+  return sanitizeHtml(text, {
+    allowedTags: [],
+    allowedAttributes: {}
+  })
 }
