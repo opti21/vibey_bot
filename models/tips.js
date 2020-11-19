@@ -10,6 +10,8 @@ const tipSchema = new mongoose.Schema({
   tipper_name: String,
   tipper_email: String,
   tipperID: String,
+  currency: String,
+  amount: Number,
   order_result: Object,
   message: String
 })

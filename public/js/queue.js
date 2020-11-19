@@ -165,6 +165,17 @@ fetch(`/api/events/${globalChannel}`)
           );
           break;
 
+        case 'dono':
+          console.log('Dono alert');
+          createDonoNoti(
+            makeid(10),
+            data.tipper,
+            data.amount,
+            data.currency,
+            true
+          );
+          break;
+
         case 'test':
           console.log('Test noti');
           break;
@@ -620,6 +631,24 @@ function createRaidNoti(id, username, viewers, animate) {
   }
 }
 
+function createDonoNoti(id, tipper, amount, currency, animate) {
+  let notiDiv = document.getElementById('noti-container');
+  let notiElem = document.createElement('div');
+  notiElem.setAttribute('id', `noti${id}`);
+  notiElem.setAttribute('class', 'noti rounded-lg p-3 m-2');
+  notiElem.innerHTML = `
+      <h4><span><i class="fas fa-dollar-sign"></i></span><b> ${tipper}</b> tipped <b>${amount} ${currency}</b></h4>
+  `;
+  notiDiv.prepend(notiElem);
+  if (animate) {
+    gsap.from(`#noti${id}`, {
+      x: 100,
+      duration: 1,
+      ease: 'power4.out',
+    });
+  }
+}
+
 // Realtime notifications
 socket.on('noti', (noti) => {
   console.log(noti);
@@ -674,6 +703,17 @@ socket.on('noti', (noti) => {
         data.message,
         true
       );
+      break;
+
+      case 'dono':
+        console.log('Dono alert');
+        createDonoNoti(
+          makeid(10),
+          data.tipper,
+          data.amount,
+          data.currency,
+          true
+        );
       break;
 
     case 'test':

@@ -25,6 +25,19 @@ let ppClient = new paypal.core.PayPalHttpClient(ppEnv);
 const Cryptr = require('cryptr');
 const cryptr = new Cryptr(process.env.CRYPT_KEY);
 
+const { Message, Producer } = require('redis-smq');
+
+const redisOpts = {
+  redis: {
+    driver: 'ioredis',
+    options: {
+      password: process.env.REDIS_PASS,
+    },
+  },
+};
+
+const alertProducer = new Producer('alerts', redisOpts);
+
 function loggedIn(req, res, next) {
   if (!req.user) {
     res.redirect('/login');
@@ -442,6 +455,109 @@ router.get('/disconnect-paypal', loggedIn, async (req, res) => {
   }
 });
 
+router.post('/create-tip/:channel', async (req, res) => {
+  let ppRequest = new paypal.orders.OrdersCreateRequest();
+  let user = await User.findOne({ username: req.params.channel });
+  console.log(req.body);
+  if (!user) {
+    res.status(401).send("Channel doesn't exist");
+  } else {
+    ppRequest.requestBody({
+      intent: 'CAPTURE',
+      application_context: {
+        brand_name: user.paypal_email,
+        user_action: 'PAY_NOW',
+        payment_method: {
+          payee_preferred: 'IMMEDIATE_PAYMENT_REQUIRED',
+        },
+        shipping_preference: 'NO_SHIPPING',
+        return_url: `${process.env.APP_URL}/api/paypal-callback`,
+      },
+      purchase_units: [
+        {
+          amount: {
+            currency_code: req.body.currency,
+            value: req.body.amount,
+          },
+          payee: {
+            email_address: user.paypal_email,
+          },
+        },
+      ],
+    });
+
+    console.log(ppRequest);
+
+    try {
+      let ppRes = await ppClient.execute(ppRequest);
+      console.log(ppRes.result);
+      let newTip = new Tip({
+        tip_receiver: user.twitch_id,
+        ppOrderID: ppRes.result.id,
+        status: ppRes.result.status,
+        tipper_name: req.body.name,
+        amount: parseInt(req.body.amount),
+        currency: req.body.currency,
+        message: decodeURIComponent(req.body.message),
+      });
+      await newTip.save((doc) => {
+        console.log('Init tip doc')
+        console.log(doc)
+        res.status(308).redirect(ppRes.result.links[1].href);
+      });
+    } catch (e) {
+      console.error(e);
+      res.status(500).send('Server Error');
+    }
+  }
+});
+
+router.get('/paypal-callback', async (req, res) => {
+  console.log(req.query);
+  let ppToken = decodeURIComponent(req.query.token);
+
+  let ppRequest = new paypal.orders.OrdersCaptureRequest(ppToken);
+  ppRequest.requestBody({});
+  let response = await ppClient.execute(ppRequest);
+
+  let newTipDoc = await Tip.findOneAndUpdate(
+    { ppOrderID: ppToken },
+    {
+      status: response.result.status,
+      tipper_email: response.result.payer.email_address,
+      tipperID: response.result.payer.payer_id,
+      order_result: response.result,
+    }
+  );
+  let user = await User.findOne({ twitch_id: newTipDoc.tip_receiver });
+
+  let newAlert = {
+    channel: user.username,
+    type: 'dono',
+    data: {
+      tipper: newTipDoc.tipper,
+      amount: newTipDoc.amount,
+      currency: newTipDoc.currency
+    }
+  };
+
+  const alertMessage = new Message();
+
+  alertMessage.setBody(newAlert);
+
+  alertProducer.produceMessage(alertMessage, (err) => {
+    if (err) console.log(err);
+    else console.log('Sub Successfully produced');
+  });
+
+  console.log(response.result);
+  console.log('New tip doc')
+  console.log(newTipDoc);
+  // If call returns body in response, you can get the deserialized version from the result attribute of the response.
+  // console.log(`Capture: ${JSON.stringify(response.result)}`);
+  res.redirect('/tip-success/' + user.username);
+});
+
 // Song Poll
 router.get('/createSongpoll', loggedIn, async (req, res) => {
   try {
@@ -550,85 +666,6 @@ router.get('/polls/close/:id', loggedIn, async (req, res) => {
   }
 });
 
-router.post('/create-tip/:channel', async (req, res) => {
-  let ppRequest = new paypal.orders.OrdersCreateRequest();
-  let user = await User.findOne({ username: req.params.channel });
-  console.log(req.body);
-  if (!user) {
-    res.status(401).send("Channel doesn't exist");
-  } else {
-    ppRequest.requestBody({
-      intent: 'CAPTURE',
-      application_context: {
-        brand_name: user.paypal_email,
-        user_action: 'PAY_NOW',
-        payment_method: {
-          payee_preferred: 'IMMEDIATE_PAYMENT_REQUIRED',
-        },
-        shipping_preference: 'NO_SHIPPING',
-        return_url: `${process.env.APP_URL}/api/paypal-callback`,
-      },
-      purchase_units: [
-        {
-          amount: {
-            currency_code: req.body.currency,
-            value: req.body.amount,
-          },
-          payee: {
-            email_address: user.paypal_email,
-          },
-        },
-      ],
-    });
-
-    console.log(ppRequest);
-
-    try {
-      let ppRes = await ppClient.execute(ppRequest);
-      console.log(ppRes.result);
-      let newTip = new Tip({
-        tip_receiver: user.twitch_id,
-        ppOrderID: ppRes.result.id,
-        status: ppRes.result.status,
-        tipper_name: req.body.name,
-        amount: req.body.amount,
-        currency: req.body.curreny,
-        message: decodeURIComponent(req.body.message),
-      });
-      newTip.save((doc) => {
-        res.status(308).redirect(ppRes.result.links[1].href);
-      });
-    } catch (e) {
-      console.error(e);
-      res.status(500).send('Server Error');
-    }
-  }
-});
-
-router.get('/paypal-callback', async (req, res) => {
-  console.log(req.query);
-  let ppToken = decodeURIComponent(req.query.token);
-
-  let ppRequest = new paypal.orders.OrdersCaptureRequest(ppToken);
-  ppRequest.requestBody({});
-  let response = await ppClient.execute(ppRequest);
-
-  let newTipDoc = await Tip.findOneAndUpdate(
-    { ppOrderID: ppToken },
-    {
-      status: response.result.status,
-      tipper_email: response.result.payer.email_address,
-      tipperID: response.result.payer.payer_id,
-      order_result: response.result,
-    }
-  );
-  let user = await User.findOne({ twitch_id: newTipDoc.tip_receiver });
-  console.log(response.result);
-  console.log(newTipDoc);
-  // If call returns body in response, you can get the deserialized version from the result attribute of the response.
-  // console.log(`Capture: ${JSON.stringify(response.result)}`);
-  res.redirect('/tip-success/' + user.username);
-});
 
 module.exports = router;
 

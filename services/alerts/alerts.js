@@ -256,6 +256,32 @@ class AlertQueueConsumer extends Consumer {
         }
         break;
 
+      case 'dono':
+        {
+          console.log('RAID ALERT');
+
+          let donoAlert = new ChannelEvent({
+            channel: message.channel,
+            type: 'dono',
+            data: message.data
+          });
+
+          donoAlert.save((err, doc) => {
+            if (err) {
+              console.error(err);
+              cb(err);
+            }
+
+            pub.publish('wsalerts', JSON.stringify({
+              type: 'dono',
+              channel: message.channel,
+              data: message.data
+            }));
+          });
+          cb();
+        }
+        break;
+
       default: {
         console.log('SOME OTHER ALERT');
         console.log(message.type);
