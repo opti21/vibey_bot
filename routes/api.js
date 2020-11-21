@@ -5,6 +5,7 @@ const pollsIO = io.of('/polls-namescape');
 const moment = require('moment-timezone');
 const rqs = io.of('/req-namescape');
 const admins = config.admins;
+const axios = require('axios')
 
 const User = require('../models/users');
 const SongRequest = require('../models/songRequests');
@@ -15,12 +16,15 @@ const JoinedChannel = require('../models/joinedChannels');
 const ChannelEvent = require('../models/channelEvent');
 const SeTokens = require('../models/setokens');
 const Tip = require('../models/tips');
+const TwitchCreds = require('../models/twitchCreds');
 
 const paypal = require('@paypal/checkout-server-sdk');
-let ppClientID = process.env.PAYPAL_CLIENTID;
-let ppSecret = process.env.PAYPAL_SECRET;
-let ppEnv = new paypal.core.LiveEnvironment(ppClientID, ppSecret);
+let ppClientID = process.env.PAYPAL_DEV_CLIENTID;
+let ppSecret = process.env.PAYPAL_DEV_SECRET;
+let ppEnv = new paypal.core.SandboxEnvironment(ppClientID, ppSecret);
 let ppClient = new paypal.core.PayPalHttpClient(ppEnv);
+
+const redis = require('../utils/redis')
 
 const Cryptr = require('cryptr');
 const cryptr = new Cryptr(process.env.CRYPT_KEY);
@@ -319,6 +323,60 @@ router.get('/events/:channel', loggedIn, async (req, res) => {
       let events = await ChannelEvent.find({ channel: req.params.channel });
       //console.log(events);
       res.status(200).send(events);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Error getting events');
+    }
+  } else {
+    res.status(403).send('Nah ah ah, you naughty naughty');
+  }
+});
+
+// Cheermotes
+router.get('/cheermotes', loggedIn, async (req, res) => {
+  let isAdmin = admins.includes(req.user.login);
+  let isMod;
+  let channel = await User.findOne({ username: req.query.channel  });
+  let isChannelOwner = false;
+  const twitchCreds = await TwitchCreds.findOne({})
+
+  if (req.user.login === req.params.channel) {
+    isChannelOwner = true;
+  }
+  if (isAdmin || isChannelOwner) {
+    await axios.get(`https://api.twitch.tv/helix/bits/cheermotes?broadcaster_id=${channel.twitch_id}`, {
+    headers: {
+      Authorization: `Bearer ${twitchCreds.accessToken}`,
+      'client-id': process.env.TWITCH_CLIENTID
+    },
+  })
+    .then(resp => {
+      res.status(200).json(resp.data)
+    })
+    .catch(err => {
+      console.error(err)
+      res.status(500).json(err)
+    })
+  } else {
+    res.status(403).send('Nah ah ah, you naughty naughty');
+  }
+});
+
+router.get('/stats', loggedIn, async (req, res) => {
+  let isAdmin = admins.includes(req.user.login);
+  if (isAdmin) {
+    try {
+      redis.get('sr-processed', (err, response) => {
+        if (err) {
+          console.error(err);
+          res.status(500).send('Error getting events');
+        }
+        console.log(response)
+        res.status(200).json({
+          srProcessed: response
+        });
+      });
+      //console.log(events);
     } catch (err) {
       console.error(err);
       res.status(500).send('Error getting events');

@@ -105,13 +105,13 @@ class AlertQueueConsumer extends Consumer {
         {
           console.log('SUB ALERT');
 
-          let cheerAlert = new ChannelEvent({
+          let subAlert = new ChannelEvent({
             channel: message.channel,
             type: 'sub',
             data: message.data
           });
 
-          cheerAlert.save((err, doc) => {
+          subAlert.save((err, doc) => {
             if (err) {
               console.error(err);
               cb(err);

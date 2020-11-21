@@ -73,6 +73,30 @@ router.get('/:channel/dashboard', loggedIn, async (req, res) => {
   });
 });
 
+router.get('/stats', loggedIn, async (req, res) => {
+  let isAdmin = admins.includes(req.user.login);
+  let isAllowed;
+  let user = await User.findOne({twitch_id: req.user.id});
+  
+  let botConnected = await JoinedChannel.exists({
+    channel: req.params.channel,
+  });
+
+  console.log(botConnected);
+
+  if (isAdmin || isChannelOwner) {
+    isAllowed = true;
+  }
+  res.render('stats', {
+    isAllowed: isAllowed,
+    loggedInUser: req.user.login,
+    channel: req.params.channel,
+    loggedInUserPic: req.user['profile_image_url'],
+    version: version,
+    enviroment: enviroment,
+  });
+});
+
 router.get('/:channel/queue', loggedIn, async (req, res) => {
   let isChannelOwner = req.user.login === req.params.channel;
   let isAdmin = admins.includes(req.user.login);

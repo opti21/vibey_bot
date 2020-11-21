@@ -44,12 +44,14 @@ const volleyball = require('volleyball');
 const sanitizeHtml = require('sanitize-html');
 
 // Redis
-const Redis = require('ioredis');
 const { Message, Producer } = require('redis-smq');
-const redis = new Redis({ password: process.env.REDIS_PASS });
+const redis = require('./utils/redis')
 
-redis.on('connect', (reply) => {
-  console.log('SUB Processor redis client connected');
+const Redis = require('ioredis');
+const subRedis = new Redis({ password: process.env.REDIS_PASS });
+
+subRedis.on('connect', (reply) => {
+  console.log('Alerts redis client connected');
   console.log(reply);
 });
 
@@ -71,8 +73,7 @@ async function updateDocs() {
 
 // Twitch Creds for App
 const TwitchCreds = require('./models/twitchCreds');
-
-// getTwitchCreds();
+// TODO: Rewrite to use fetch and add refresh check
 async function getTwitchCreds() {
   const twitchCreds = await TwitchCreds.findOne({});
   console.log(twitchCreds);
@@ -96,6 +97,7 @@ async function getTwitchCreds() {
     console.log('Twitch Creds already exist');
   }
 }
+getTwitchCreds();
 
 // Real time data
 const rqs = io.of('/req-namescape');
@@ -133,6 +135,7 @@ app.use(
         'code.jquery.com',
         '*.google.com',
         '*.gstatic.com',
+        '*.cloudfront.net'
       ],
       styleSrc: [
         "'self'",
@@ -624,12 +627,12 @@ if (process.argv.includes('-clearevents')) {
 }
 
 // Publish alerts to the front end
-redis.subscribe('wsalerts', (err) => {
+subRedis.subscribe('wsalerts', (err) => {
   if (err) console.error(err);
   console.log('Subscribed to alerts redis');
 });
 
-redis.on('message', (channel, message) => {
+subRedis.on('message', (channel, message) => {
   switch (channel) {
     case 'wsalerts':
       {
@@ -788,6 +791,12 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                     timeOfReq: `${newSr.timeOfReq}`,
                   });
 
+                  redis.incr('sr-processed', (err, res) => {
+                    if(err) {
+                      console.error(err)
+                    }
+                  })
+
                   if (chatRespond) {
                     botclient.say(
                       channel,
@@ -849,6 +858,12 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                   source: `${newSr.source}`,
                   timeOfReq: `${newSr.timeOfReq}`,
                 });
+
+                redis.incr('sr-processed', (err, res) => {
+                  if(err) {
+                    console.error(err)
+                  }
+                })
 
                 if (chatRespond) {
                   botclient.say(
@@ -933,6 +948,12 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                           timeOfReq: `${newSr.timeOfReq}`,
                         });
 
+                        redis.incr('sr-processed', (err, res) => {
+                          if(err) {
+                            console.error(err)
+                          }
+                        })
+
                         if (chatRespond) {
                           botclient.say(
                             channel,
@@ -992,6 +1013,12 @@ botclient.on('chat', async (channel, userstate, message, self) => {
                       source: `${newSr.source}`,
                       timeOfReq: `${newSr.timeOfReq}`,
                     });
+
+                    redis.incr('sr-processed', (err, res) => {
+                      if(err) {
+                        console.error(err)
+                      }
+                    })
 
                     if (chatRespond) {
                       botclient.say(
@@ -1063,6 +1090,12 @@ botclient.on('chat', async (channel, userstate, message, self) => {
             source: `${newSr.source}`,
             timeOfReq: `${newSr.timeOfReq}`,
           });
+
+          redis.incr('sr-processed', (err, res) => {
+            if(err) {
+              console.error(err)
+            }
+          })
 
           if (chatRespond) {
             botclient.say(
@@ -1361,7 +1394,9 @@ async function downloadImage (urlToGet, submitter) {
 }
 
 
-discordClient.login(process.env.DISCORDTOKEN);
+if (process.env.NODE_ENV === 'production') {
+  discordClient.login(process.env.DISCORDTOKEN);
+}
 
 const port = process.env.PORT || 3000;
 console.log('Server is connected to Port: ' + process.env.PORT)
