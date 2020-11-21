@@ -17,3 +17,16 @@ let enviroment = document
   .getElementById('pageInfo')
   .getAttribute('data-enviroment');
 
+function getStats () {
+  fetch('/api/stats')
+    .then((res) => res.json())
+    .then((data) => {
+      let numDiv = document.querySelector('#processed-num')
+      numDiv.innerHTML = data.srProcessed
+      
+    })
+  return
+}
+
+setInterval(getStats, 1000)
+

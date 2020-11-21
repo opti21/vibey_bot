@@ -59,7 +59,7 @@ fetch(`/api/queue/${globalChannel}`)
       if (request === null) {
         return;
       }
-      console.log(request)
+      // console.log(request)
       let reqElem = document.createElement('div');
       let artist;
       if (request.track.artist !== undefined) {
@@ -100,7 +100,25 @@ fetch(`/api/queue/${globalChannel}`)
     console.error('Error retreving queue');
   });
 
+// Get Cheermotes
+const cheermotes = {};
+let cheermoteRegex = null;
+async function getCheermotes() {
+  const response = await fetch(`/api/cheermotes?channel=${globalChannel}`);
+  const { data } = await response.json();
+  let regexString = '';
+  data.forEach((cheermote) => {
+    cheermotes[cheermote.prefix] = cheermote;
+    cheermote.tiers.sort((a, b) => b.min_bits - a.min_bits);
+    regexString += `${cheermote.prefix}\\d+|`;
+  });
+  cheermoteRegex = new RegExp(regexString.slice(0, regexString.length - 1), 'ig');
+  getNotis()
+}
+getCheermotes();
+
 // Get notifications
+function getNotis() {
 fetch(`/api/events/${globalChannel}`)
   .then((res) => res.json())
   .then((events) => {
@@ -155,7 +173,7 @@ fetch(`/api/events/${globalChannel}`)
           break;
 
         case 'cheer':
-          console.log('Cheer alert');
+          // console.log('Cheer alert');
           createCheerNoti(
             makeid(10),
             data.userstate.username,
@@ -166,7 +184,7 @@ fetch(`/api/events/${globalChannel}`)
           break;
 
         case 'dono':
-          console.log('Dono alert');
+          // console.log('Dono alert');
           createDonoNoti(
             makeid(10),
             data.tipper,
@@ -187,6 +205,8 @@ fetch(`/api/events/${globalChannel}`)
       }
     });
   });
+}
+console.log(cheermoteRegex)
 
 // clicks
 document.addEventListener(
@@ -477,7 +497,7 @@ socket.on('sr-event', (request) => {
 function createSubNoti(id, username, method, message, animate) {
   let notiDiv = document.getElementById('noti-container');
   let notiElem = document.createElement('div');
-  console.log('create sub');
+  // console.log('create sub');
   notiElem.setAttribute('id', `noti${id}`);
   notiElem.setAttribute('class', 'noti rounded-lg p-3 m-2');
   notiElem.innerHTML = `
@@ -501,7 +521,7 @@ function createSubNoti(id, username, method, message, animate) {
 function createSubGiftNoti(id, username, recipient, senderTotal, animate) {
   let notiDiv = document.getElementById('noti-container');
   let notiElem = document.createElement('div');
-  console.log('create sub gift');
+  // console.log('create sub gift');
   notiElem.setAttribute('id', `noti${id}`);
   notiElem.setAttribute('class', 'noti rounded-lg p-3 m-2');
   notiElem.innerHTML = `
@@ -521,7 +541,7 @@ function createSubGiftNoti(id, username, recipient, senderTotal, animate) {
 function createResubNoti(id, username, months, message, animate) {
   let notiDiv = document.getElementById('noti-container');
   let notiElem = document.createElement('div');
-  console.log('create resub');
+  // console.log('create resub');
   notiElem.setAttribute('id', `noti${id}`);
   notiElem.setAttribute('class', 'noti rounded-lg p-3 m-2');
   notiElem.innerHTML = `
@@ -592,7 +612,17 @@ function createSMG(id, username, numbOfSubs, senderTotal, subs, animate) {
 function createCheerNoti(id, username, bits, message, animate) {
   let notiDiv = document.getElementById('noti-container');
   let notiElem = document.createElement('div');
-  console.log('sub gift');
+  const messageHTML = message.replace(cheermoteRegex, (item) => {
+    const amount = item.match(/(\d+)/)[1];
+    const cheermote = item.replace(amount, '');
+    if (cheermotes[cheermote]) {
+      const info = cheermotes[cheermote];
+      const tier = info.tiers.find(({ min_bits }) => amount >= min_bits);
+      return `<img class="cheer-mote" src="${tier.images.dark.animated[1]}">`;
+    }
+    return item;
+  });
+  message = message.replace(cheermoteRegex, '');
   notiElem.setAttribute('id', `noti${id}`);
   notiElem.setAttribute('class', 'noti rounded-lg p-3 m-2');
   notiElem.innerHTML = `
@@ -600,7 +630,7 @@ function createCheerNoti(id, username, bits, message, animate) {
   `;
   if (message != null) {
     let messageElem = document.createElement('p');
-    messageElem.innerHTML = message;
+    messageElem.innerHTML = messageHTML;
     notiElem.append(messageElem);
   }
   notiDiv.prepend(notiElem);

@@ -353,6 +353,7 @@ botclient.on(
 );
 
 botclient.on('cheer', (channel, userstate, message) => {
+  console.log(userstate)
   let noHashChan = channel.slice(1);
 
   let newAlert = {
