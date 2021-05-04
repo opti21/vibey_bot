@@ -320,9 +320,11 @@ router.get('/events/:channel', loggedIn, async (req, res) => {
   }
   if (isAdmin || isChannelOwner) {
     try {
-      let events = await ChannelEvent.find({
-        channel: req.params.channel,
-      }).limit(30);
+      let events = await ChannelEvent.find({ channel: req.params.channel })
+        .limit(30)
+        .sort({
+          created_at: -1,
+        });
       //console.log(events);
       res.status(200).send(events);
     } catch (err) {
