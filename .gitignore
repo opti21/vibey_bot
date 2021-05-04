@@ -11,3 +11,4 @@ Dockerfile
 .vscode
 TODO
 /client
+dump.rdb

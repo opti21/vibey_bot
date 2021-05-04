@@ -5,7 +5,7 @@ const pollsIO = io.of('/polls-namescape');
 const moment = require('moment-timezone');
 const rqs = io.of('/req-namescape');
 const admins = config.admins;
-const axios = require('axios')
+const axios = require('axios');
 
 const User = require('../models/users');
 const SongRequest = require('../models/songRequests');
@@ -24,7 +24,7 @@ let ppSecret = process.env.PAYPAL_DEV_SECRET;
 let ppEnv = new paypal.core.SandboxEnvironment(ppClientID, ppSecret);
 let ppClient = new paypal.core.PayPalHttpClient(ppEnv);
 
-const redis = require('../utils/redis')
+const redis = require('../utils/redis');
 
 const Cryptr = require('cryptr');
 const cryptr = new Cryptr(process.env.CRYPT_KEY);
@@ -50,8 +50,6 @@ function loggedIn(req, res, next) {
   }
 }
 
-// TODO: Add check that user matches logged in user or admin
-
 router.get('/queue/:channel', loggedIn, async (req, res) => {
   let isAdmin = admins.includes(req.user.login);
   let isMod;
@@ -61,7 +59,9 @@ router.get('/queue/:channel', loggedIn, async (req, res) => {
   }
   if (isAdmin || isChannelOwner) {
     try {
-      let queue = await Queue.findOne({ channel: req.params.channel });
+      let queue = await Queue.findOne({ channel: req.params.channel }).limit(
+        30
+      );
       // console.log(queue.currQueue);
       res.status(200).send(queue);
     } catch (err) {
@@ -320,7 +320,9 @@ router.get('/events/:channel', loggedIn, async (req, res) => {
   }
   if (isAdmin || isChannelOwner) {
     try {
-      let events = await ChannelEvent.find({ channel: req.params.channel });
+      let events = await ChannelEvent.find({
+        channel: req.params.channel,
+      }).limit(30);
       //console.log(events);
       res.status(200).send(events);
     } catch (err) {
@@ -336,27 +338,31 @@ router.get('/events/:channel', loggedIn, async (req, res) => {
 router.get('/cheermotes', loggedIn, async (req, res) => {
   let isAdmin = admins.includes(req.user.login);
   let isMod;
-  let channel = await User.findOne({ username: req.query.channel  });
+  let channel = await User.findOne({ username: req.query.channel });
   let isChannelOwner = false;
-  const twitchCreds = await TwitchCreds.findOne({})
+  const twitchCreds = await TwitchCreds.findOne({});
 
   if (req.user.login === req.params.channel) {
     isChannelOwner = true;
   }
   if (isAdmin || isChannelOwner) {
-    await axios.get(`https://api.twitch.tv/helix/bits/cheermotes?broadcaster_id=${channel.twitch_id}`, {
-    headers: {
-      Authorization: `Bearer ${twitchCreds.accessToken}`,
-      'client-id': process.env.TWITCH_CLIENTID
-    },
-  })
-    .then(resp => {
-      res.status(200).json(resp.data)
-    })
-    .catch(err => {
-      console.error(err)
-      res.status(500).json(err)
-    })
+    await axios
+      .get(
+        `https://api.twitch.tv/helix/bits/cheermotes?broadcaster_id=${channel.twitch_id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${twitchCreds.accessToken}`,
+            'client-id': process.env.TWITCH_CLIENTID,
+          },
+        }
+      )
+      .then((resp) => {
+        res.status(200).json(resp.data);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).json(err);
+      });
   } else {
     res.status(403).send('Nah ah ah, you naughty naughty');
   }
@@ -371,9 +377,9 @@ router.get('/stats', loggedIn, async (req, res) => {
           console.error(err);
           res.status(500).send('Error getting events');
         }
-        console.log(response)
+        console.log(response);
         res.status(200).json({
-          srProcessed: response
+          srProcessed: response,
         });
       });
       //console.log(events);
@@ -559,8 +565,8 @@ router.post('/create-tip/:channel', async (req, res) => {
         message: decodeURIComponent(req.body.message),
       });
       await newTip.save((doc) => {
-        console.log('Init tip doc')
-        console.log(doc)
+        console.log('Init tip doc');
+        console.log(doc);
         res.status(308).redirect(ppRes.result.links[1].href);
       });
     } catch (e) {
@@ -595,8 +601,8 @@ router.get('/paypal-callback', async (req, res) => {
     data: {
       tipper: newTipDoc.tipper,
       amount: newTipDoc.amount,
-      currency: newTipDoc.currency
-    }
+      currency: newTipDoc.currency,
+    },
   };
 
   const alertMessage = new Message();
@@ -609,7 +615,7 @@ router.get('/paypal-callback', async (req, res) => {
   });
 
   console.log(response.result);
-  console.log('New tip doc')
+  console.log('New tip doc');
   console.log(newTipDoc);
   // If call returns body in response, you can get the deserialized version from the result attribute of the response.
   // console.log(`Capture: ${JSON.stringify(response.result)}`);
@@ -723,7 +729,6 @@ router.get('/polls/close/:id', loggedIn, async (req, res) => {
     console.error(err);
   }
 });
-
 
 module.exports = router;
 
