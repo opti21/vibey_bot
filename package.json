@@ -55,11 +55,11 @@
     "redis-smq": "^2.0.11",
     "sanitize-html": "^2.1.2",
     "simple-youtube-api": "^5.2.1",
-    "socket.io": "^2.3.0",
-    "socket.io-client": "^2.3.1",
+    "socket.io": "^2.4.0",
+    "socket.io-client": "^2.4.0",
     "spotify-uri": "^2.1.0",
     "sqreen": "^1.55.0",
-    "tmi.js": "^1.5.0",
+    "tmi.js": "^1.8.0",
     "twitch": "^4.2.7",
     "twitchps": "^1.5.5",
     "uglify-es": "^3.3.9",
@@ -67,7 +67,7 @@
     "uuid": "^8.3.1",
     "uws": "^200.0.0",
     "volleyball": "^1.5.1",
-    "ws": "^7.3.1"
+    "ws": "^7.4.6"
   },
   "prettier": {
     "singleQuote": true
