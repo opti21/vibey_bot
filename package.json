@@ -52,7 +52,7 @@
     "pusher": "^4.0.0",
     "querystring": "^0.2.0",
     "redis": "^3.0.2",
-    "redis-smq": "^2.0.11",
+    "redis-smq": "^3.0.0",
     "sanitize-html": "^2.1.2",
     "simple-youtube-api": "^5.2.1",
     "socket.io": "^2.3.0",
