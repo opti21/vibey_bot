@@ -39,7 +39,7 @@
     "helmet": "^4.1.1",
     "ioredis": "^4.19.1",
     "js-base64": "^3.5.2",
-    "moment": "^2.29.1",
+    "moment": "^2.29.4",
     "moment-timezone": "^0.5.31",
     "mongoose": "^5.10.11",
     "mongoose-field-encryption": "4.0.0",
